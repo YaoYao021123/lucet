@@ -64,6 +64,12 @@ public struct PreparedVideo {
     public let duration: Double
 }
 
+public enum VideoCodecChoice: String, Codable, CaseIterable, Sendable {
+    case h264, hevc
+    public var title: String { self == .h264 ? "H.264（兼容）" : "HEVC（更小）" }
+    var preset: String { self == .h264 ? AVAssetExportPresetHighestQuality : AVAssetExportPresetHEVCHighestQuality }
+}
+
 public enum VideoPipeline {
     /// Previews and exports the same selected range, geometry, LUT and audio mix.
     public static func prepare(_ url: URL, clip: ClipSettings, edits: MediaEdits,
@@ -128,7 +134,8 @@ public enum VideoPipeline {
             let previewSize = CGSize(width: previewWidth, height: previewHeight)
             let value = try await AVMutableVideoComposition.videoComposition(with: composition, applyingCIFiltersWithHandler: { request in
                 do {
-                    let settings = preview?.snapshot() ?? edits
+                    let showOriginal = preview?.showsOriginal == true
+                    let settings = showOriginal ? MediaEdits() : (preview?.snapshot() ?? edits)
                     // This path is deliberately SDR; the unfiltered AVPlayer path
                     // retains the source HDR transfer function for native playback.
                     // Rec.709 composition properties below ask AVFoundation to
@@ -137,7 +144,7 @@ public enum VideoPipeline {
                     // An HLG composition gives SDR frames an HDR container's
                     // headroom metadata. It does not make those source pixels
                     // HDR; tone mapping that metadata would darken white twice.
-                    let source = settings.hdrEffect && !sourceIsHDR ? request.sourceImage
+                    let source = settings.hdrEffect && !sourceIsHDR && !showOriginal ? request.sourceImage
                         : ColorPipeline.toneMap(request.sourceImage, sourceHeadroom: max(1, request.sourceImage.contentHeadroom))
                     // Scale before grading: 4K source decoding is retained, but
                     // interactive LUT/HDR/geometry work uses a bounded canvas.
@@ -177,6 +184,7 @@ public enum VideoPipeline {
     }
 
     public static func export(_ url: URL, to output: URL, clip: ClipSettings, edits: MediaEdits,
+                              codec: VideoCodecChoice = .h264,
                               progress: (@Sendable (Double) -> Void)? = nil) async throws {
         try Task.checkCancellation()
         guard output.isFileURL, !FileManager.default.fileExists(atPath: output.path) else { throw VideoWorkError.outputExists }
@@ -190,7 +198,7 @@ public enum VideoPipeline {
             progress?(1)
             return
         }
-        guard let exporter = AVAssetExportSession(asset: prepared.asset, presetName: AVAssetExportPresetHighestQuality) else {
+        guard let exporter = AVAssetExportSession(asset: prepared.asset, presetName: codec.preset) else {
             throw VideoWorkError.failed("无法创建编码器")
         }
         exporter.videoComposition = prepared.videoComposition; exporter.audioMix = prepared.audioMix

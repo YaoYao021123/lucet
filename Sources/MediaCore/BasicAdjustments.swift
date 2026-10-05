@@ -24,6 +24,25 @@ public struct BasicAdjustments: Codable, Equatable, Sendable {
     public var noiseReduction = 0.0
     public var vignette = 0.0
     public init() {}
+    private struct Key: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+    /// Missing keys default to 0, so recipes survive parameters added later.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: Key.self)
+        for parameter in AdjustmentParameter.allCases {
+            self[keyPath: parameter.keyPath] = try values.decodeIfPresent(Double.self, forKey: Key(stringValue: parameter.rawValue)) ?? 0
+        }
+    }
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: Key.self)
+        for parameter in AdjustmentParameter.allCases {
+            try values.encode(self[keyPath: parameter.keyPath], forKey: Key(stringValue: parameter.rawValue))
+        }
+    }
     public subscript(parameter: AdjustmentParameter) -> Double {
         get { self[keyPath: parameter.keyPath] }
         set { self[keyPath: parameter.keyPath] = newValue.isFinite ? min(parameter.range.upperBound, max(parameter.range.lowerBound, newValue)) : 0 }
@@ -34,6 +53,12 @@ public struct BasicAdjustments: Codable, Equatable, Sendable {
         return result
     }
     public var isNeutral: Bool { self == Self() }
+    public var isDetailNeutral: Bool { definition == 0 && sharpness == 0 && noiseReduction == 0 && vignette == 0 }
+    public var isToneNeutral: Bool { exposure == 0 && isKernelNeutral }
+    var isKernelNeutral: Bool {
+        brilliance == 0 && highlights == 0 && shadows == 0 && brightness == 0 && contrast == 0 && whites == 0
+            && blackPoint == 0 && warmth == 0 && tint == 0 && saturation == 0 && vibrance == 0
+    }
     public var dictionary: [String: Double] {
         Dictionary(uniqueKeysWithValues: AdjustmentParameter.allCases.map { ($0.rawValue, sanitized[$0]) })
     }
@@ -119,33 +144,60 @@ public enum BasicColorPipeline {
         """
         return (try? CIKernel.kernels(withMetalString: code))?.first as? CIColorKernel
     }()
+    /// Full basic stage in its historical order (tone, then detail, then vignette).
     public static func image(_ source: CIImage, adjustments: BasicAdjustments) throws -> CIImage {
         let a = adjustments.sanitized
         guard !a.isNeutral else { return source }
+        var result = try tone(source, adjustments: a)
+        result = denoise(result, a, reference: source.extent)
+        result = sharpen(result, a, reference: source.extent)
+        result = vignette(result, a, reference: source.extent)
+        return result.cropped(to: source.extent)
+    }
+
+    /// Exposure, tone regions, white balance and saturation.
+    public static func tone(_ source: CIImage, adjustments: BasicAdjustments) throws -> CIImage {
+        let a = adjustments.sanitized
+        guard !a.isToneNeutral else { return source }
         var input = source
         if a.exposure != 0 { input = input.applyingFilter("CIExposureAdjust", parameters: ["inputEV": a.exposure]) }
+        // The tone kernel also bounds luminance to display white, so it runs even for exposure-only edits.
         guard let encoded = input.matchedFromWorkingSpace(to: encodedSpace), let kernel,
               let tuned = kernel.apply(extent: input.extent, arguments: [encoded,
                 CIVector(x: a.brilliance / 100, y: a.brightness / 100, z: a.contrast / 100, w: 0),
                 CIVector(x: a.highlights / 100, y: a.shadows / 100, z: a.whites / 100, w: a.blackPoint / 100),
                 CIVector(x: a.warmth / 100, y: a.tint / 100, z: a.saturation / 100, w: a.vibrance / 100)]),
-              var result = tuned.matchedToWorkingSpace(from: encodedSpace) else {
+              let result = tuned.matchedToWorkingSpace(from: encodedSpace) else {
             throw VideoWorkError.failed("基础调色滤镜不可用，未应用调整。")
         }
-        let scale = max(source.extent.width, source.extent.height) / 1600
-        if a.noiseReduction > 0 {
-            result = result.applyingFilter("CINoiseReduction", parameters: ["inputNoiseLevel": a.noiseReduction / 100 * 0.06, "inputSharpness": 0])
-        }
+        return result.cropped(to: source.extent)
+    }
+
+    /// Radii follow the image size so a 2560 px preview and a full export look alike.
+    private static func scale(_ reference: CGRect) -> CGFloat { max(reference.width, reference.height) / 1600 }
+
+    public static func denoise(_ image: CIImage, _ a: BasicAdjustments, reference: CGRect? = nil) -> CIImage {
+        guard a.noiseReduction > 0 else { return image }
+        return image.applyingFilter("CINoiseReduction", parameters: ["inputNoiseLevel": a.noiseReduction / 100 * 0.06, "inputSharpness": 0])
+            .cropped(to: reference ?? image.extent)
+    }
+
+    public static func sharpen(_ image: CIImage, _ a: BasicAdjustments, reference: CGRect) -> CIImage {
+        var result = image
+        let scale = scale(reference)
         if a.definition > 0 {
-            result = result.clampedToExtent().applyingFilter("CIUnsharpMask", parameters: ["inputRadius": max(1, 8 * scale), "inputIntensity": a.definition / 100 * 0.7]).cropped(to: source.extent)
+            result = result.clampedToExtent().applyingFilter("CIUnsharpMask", parameters: ["inputRadius": max(1, 8 * scale), "inputIntensity": a.definition / 100 * 0.7]).cropped(to: reference)
         }
         if a.sharpness > 0 {
-            result = result.clampedToExtent().applyingFilter("CIUnsharpMask", parameters: ["inputRadius": max(0.5, 1.2 * scale), "inputIntensity": a.sharpness / 100 * 1.2]).cropped(to: source.extent)
+            result = result.clampedToExtent().applyingFilter("CIUnsharpMask", parameters: ["inputRadius": max(0.5, 1.2 * scale), "inputIntensity": a.sharpness / 100 * 1.2]).cropped(to: reference)
         }
-        if a.vignette > 0 {
-            result = result.applyingFilter("CIVignetteEffect", parameters: ["inputCenter": CIVector(x: source.extent.midX, y: source.extent.midY),
-                "inputRadius": min(source.extent.width, source.extent.height) * 0.55, "inputIntensity": a.vignette / 100 * 1.5, "inputFalloff": 1])
-        }
-        return result.cropped(to: source.extent)
+        return result
+    }
+
+    public static func vignette(_ image: CIImage, _ a: BasicAdjustments, reference: CGRect) -> CIImage {
+        guard a.vignette > 0 else { return image }
+        return image.applyingFilter("CIVignetteEffect", parameters: ["inputCenter": CIVector(x: reference.midX, y: reference.midY),
+            "inputRadius": min(reference.width, reference.height) * 0.55, "inputIntensity": a.vignette / 100 * 1.5, "inputFalloff": 1])
+            .cropped(to: reference)
     }
 }

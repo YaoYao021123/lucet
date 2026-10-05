@@ -62,6 +62,11 @@ private struct WorkbenchView: View {
             }.background(Color.black)
             if showInspector { InspectorView(model: model).transition(.move(edge: .trailing).combined(with: .opacity)) }
         }.background(WorkbenchTheme.panel).tint(WorkbenchTheme.accent)
+            .onAppear {
+                DebugSnapshot.runIfRequested { command, argument in
+                    if command == "open" { model.addSources([URL(fileURLWithPath: argument)]) }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigation) {
                     Button { withAnimation(.easeOut(duration: 0.16)) { showSidebar.toggle() } } label: { Image(systemName: "sidebar.left") }
