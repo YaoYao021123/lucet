@@ -1,4 +1,5 @@
 import AppKit
+import MediaCore
 
 /// Developer-only layout check. Launch with
 /// `GUANGJI_SNAPSHOT_DIR=/tmp/shots GUANGJI_SNAPSHOT_STEPS="open:/a.jpg;wait:2;shot:edit;quit"`
@@ -35,6 +36,57 @@ enum DebugSnapshot {
         }
     }
 
+    /// Maps script commands onto app actions.
+    static func perform(_ command: String, _ argument: String, app: AppModel) {
+        switch command {
+        case "import": app.importURLs(argument.split(separator: ",").map { URL(fileURLWithPath: String($0)) })
+        case "open":
+            let id = URL(fileURLWithPath: argument).standardizedFileURL.path
+            if app.library.entry(id) == nil { app.library.add([URL(fileURLWithPath: argument)]) }
+            app.open(id)
+        case "mode": app.mode = argument == "edit" ? .edit : .browse
+        case "tab": app.inspectorTab = InspectorTab(rawValue: argument) ?? .color
+        case "scope": UserDefaults.standard.set(argument, forKey: "scope.kind")
+        case "expand": UserDefaults.standard.set(false, forKey: "section.collapsed.\(argument)")
+        case "collapse": UserDefaults.standard.set(true, forKey: "section.collapsed.\(argument)")
+        case "compare": app.editor.compareMode = CompareMode(rawValue: argument) ?? .off
+        case "clipping": app.editor.showClipping = argument == "on"
+        case "zoom": if argument == "100" { app.editor.zoomToActualPixels() } else { app.editor.zoomToFit() }
+        case "select": app.library.select(URL(fileURLWithPath: argument).standardizedFileURL.path)
+        case "rate": app.rate(Int(argument) ?? 0)
+        case "flag": app.flag(argument == "pick" ? .pick : argument == "reject" ? .reject : .none)
+        case "preset": if let preset = app.presets.first(where: { $0.name == argument }) { app.applyPreset(preset) }
+        case "adjust":
+            let parts = argument.split(separator: "=")
+            if parts.count == 2, let parameter = AdjustmentParameter(rawValue: String(parts[0])), let value = Double(parts[1]) {
+                app.editor.setAdjustment(parameter, value)
+            }
+        case "export": app.enqueueCurrentExport(to: URL(fileURLWithPath: argument))
+        case "live":
+            app.editor.selectLiveRange()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(400))
+                app.enqueueLive(to: URL(fileURLWithPath: argument))
+            }
+        case "jobs":
+            for job in app.exports.jobs { NSLog("job %@ state=%@ detail=%@", job.title, String(describing: job.state), job.detail) }
+        case "sheet":
+            switch argument {
+            case "export": app.exportCurrent()
+            case "shortcuts": app.sheet = .shortcuts
+            case "sync": app.sheet = .sync
+            default: app.sheet = nil
+            }
+        case "key":
+            if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0,
+                                            context: nil, characters: argument, charactersIgnoringModifiers: argument,
+                                            isARepeat: false, keyCode: 0) {
+                _ = app.handleKey(event)
+            }
+        default: break
+        }
+    }
+
     static var workbenchWindow: NSWindow? {
         NSApp.windows.first { $0.identifier?.rawValue.contains("workbench") == true && $0.isVisible }
             ?? NSApp.windows.first { $0.isVisible && $0.contentView != nil }
@@ -42,8 +94,8 @@ enum DebugSnapshot {
 
     static func capture(named name: String) {
         guard let directory else { return }
-        let window = NSApp.keyWindow ?? workbenchWindow
-        guard let window, let content = window.contentView else { return }
+        let main = workbenchWindow
+        guard let window = main?.attachedSheet ?? main, let content = window.contentView else { return }
         let view = content.superview ?? content
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: bitmap)

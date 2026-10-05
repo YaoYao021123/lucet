@@ -1,0 +1,759 @@
+import AppKit
+import Foundation
+import MediaCore
+import Observation
+import UniformTypeIdentifiers
+
+enum WorkspaceMode: String, Sendable {
+    case browse, edit
+}
+
+enum ExportTarget: String, Sendable {
+    case current, selection
+}
+
+enum ActiveSheet: Identifiable {
+    case export(ExportTarget)
+    case sync
+    case snapshots
+    case collage
+    case savePreset
+    case shortcuts
+    case livePreview(LivePhotoResources)
+
+    var id: String {
+        switch self {
+        case .export(let target): "export-\(target.rawValue)"
+        case .sync: "sync"
+        case .snapshots: "snapshots"
+        case .collage: "collage"
+        case .savePreset: "preset"
+        case .shortcuts: "shortcuts"
+        case .livePreview(let resources): "live-\(resources.identifier)"
+        }
+    }
+}
+
+struct AppAlert: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+struct Toast: Identifiable {
+    struct Action: Identifiable {
+        let id = UUID()
+        let title: String
+        let perform: @MainActor () -> Void
+    }
+    let id = UUID()
+    let message: String
+    var actions: [Action] = []
+}
+
+struct ExportSettings: Codable, Equatable {
+    var image = ImageExportOptions()
+    var codec = VideoCodecChoice.h264
+    var liveOnly = false
+}
+
+enum AppPaths {
+    /// `GUANGJI_DATA_DIR` keeps development runs away from the user's library.
+    static var dataRoot: URL {
+        if let custom = ProcessInfo.processInfo.environment["GUANGJI_DATA_DIR"] { return URL(fileURLWithPath: custom, isDirectory: true) }
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Guangji")
+    }
+}
+
+/// Coordinates the library, the open editor and background exports.
+@MainActor
+@Observable
+final class AppModel {
+    let drafts: DraftStore
+    let library: LibraryModel
+    let thumbnails: ThumbnailStore
+    let editor: EditorModel
+    let exports: ExportQueue
+
+    var mode = WorkspaceMode.browse
+    var showSidebar = true
+    var showInspector = true
+    var inspectorTab = InspectorTab(rawValue: UserDefaults.standard.string(forKey: "inspector.tab") ?? "") ?? .color {
+        didSet { UserDefaults.standard.set(inspectorTab.rawValue, forKey: "inspector.tab") }
+    }
+    var sheet: ActiveSheet?
+    var alert: AppAlert?
+    private(set) var toast: Toast?
+    private(set) var presets: [GradePreset] = []
+    private(set) var lutLibrary: [LUTReference] = []
+    private(set) var hasClipboard = false
+    private(set) var lastBatch: [BatchChange] = []
+    private(set) var isImporting = false
+    var collageDrafts: [CollageDraftPane] = []
+    var exportSettings: ExportSettings {
+        didSet { if let data = try? JSONEncoder().encode(exportSettings) { UserDefaults.standard.set(data, forKey: "guangji.export") } }
+    }
+
+    @ObservationIgnored private var clipboard: (EditRecipe, CreativeLUT?)?
+    @ObservationIgnored private var panelOpen = false
+    @ObservationIgnored private var toastTask: Task<Void, Never>?
+    @ObservationIgnored private var terminationObserver: NSObjectProtocol?
+
+    init() {
+        let root = AppPaths.dataRoot
+        drafts = DraftStore(root: root)
+        library = LibraryModel(root: root)
+        thumbnails = ThumbnailStore(drafts: drafts)
+        editor = EditorModel(drafts: drafts)
+        exports = ExportQueue()
+        if let data = UserDefaults.standard.data(forKey: "guangji.export"),
+           let settings = try? JSONDecoder().decode(ExportSettings.self, from: data) {
+            exportSettings = settings
+        } else {
+            exportSettings = ExportSettings()
+        }
+        presets = drafts.presets()
+        lutLibrary = drafts.importedLUTs()
+        editor.onNotice = { [weak self] notice in self?.alert = AppAlert(title: notice.title, message: notice.message) }
+        editor.onRecipeSaved = { [weak self] url in self?.thumbnails.invalidate(url.standardizedFileURL.path) }
+        exports.onFinish = { [weak self] job in self?.exportFinished(job) }
+        terminationObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
+                                                                     object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.editor.flushDraft()
+                self?.library.saveNow()
+            }
+        }
+    }
+
+    var currentEntry: LibraryEntry? { library.entry(library.currentID) }
+
+    // MARK: Messages
+
+    func show(_ message: String, actions: [Toast.Action] = [], seconds: Double = 5) {
+        toast = Toast(message: message, actions: actions)
+        toastTask?.cancel()
+        toastTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled else { return }
+            self?.toast = nil
+        }
+    }
+
+    func dismissToast() { toastTask?.cancel(); toast = nil }
+
+    func fail(_ title: String, _ error: Error) {
+        alert = AppAlert(title: title, message: error.localizedDescription)
+    }
+
+    // MARK: Panels
+
+    /// Window-attached panels; repeated clicks while one is open are ignored.
+    private func present(_ panel: NSSavePanel, completion: @escaping @MainActor ([URL]) -> Void) {
+        guard !panelOpen else { return }
+        panelOpen = true
+        NSApplication.shared.activate()
+        let handler: (NSApplication.ModalResponse) -> Void = { [weak self, panel] response in
+            self?.panelOpen = false
+            guard response == .OK else { return }
+            if let open = panel as? NSOpenPanel { completion(open.urls) } else if let url = panel.url { completion([url]) }
+        }
+        if let window = NSApplication.shared.mainWindow ?? NSApplication.shared.keyWindow {
+            panel.beginSheetModal(for: window, completionHandler: handler)
+        } else {
+            panel.begin(completionHandler: handler)
+        }
+    }
+
+    // MARK: Library
+
+    func importMedia(folders: Bool = false) {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = !folders
+        panel.allowedContentTypes = folders ? [] : [.image, .movie, .mpeg4Movie, .quickTimeMovie]
+        // Third-party players can register nonconforming types for standard video extensions.
+        panel.allowsOtherFileTypes = true
+        panel.message = folders ? "选择包含照片或视频的文件夹" : "选择照片、视频或文件夹"
+        present(panel) { [weak self] urls in self?.importURLs(urls) }
+    }
+
+    func importURLs(_ urls: [URL]) {
+        guard !urls.isEmpty, !isImporting else { return }
+        isImporting = true
+        Task {
+            defer { isImporting = false }
+            do {
+                let collected = try await Task.detached(priority: .userInitiated) { try LibraryFiles.collect(urls) }.value
+                guard !collected.files.isEmpty else { show("没有找到支持的照片或视频。"); return }
+                let ids = library.add(collected.files, liveCompanions: collected.liveStills)
+                if collected.files.count == 1, let id = ids.first {
+                    open(id)
+                } else {
+                    library.filter = LibraryFilter()
+                    if let first = ids.first { library.select(first) }
+                    mode = .browse
+                    show("已添加 \(collected.files.count) 项" + (collected.truncated ? "（已达上限，仅读取部分）" : "") + "。按 ↑↓←→ 浏览，⏎ 进入编辑。")
+                }
+            } catch { fail("导入失败", error) }
+        }
+    }
+
+    func open(_ id: String) {
+        guard let entry = library.entry(id) else { return }
+        library.currentID = id
+        if !library.selection.contains(id) || library.selection.count > 1 { library.select(id) }
+        mode = .edit
+        editor.open(entry.url)
+    }
+
+    func openSelection() {
+        let id = library.anchorID.flatMap { library.selection.contains($0) ? $0 : nil } ?? library.selection.first
+        if let id { open(id) }
+    }
+
+    /// ↑/↓ in the editor, arrows in the grid.
+    func step(_ offset: Int) {
+        switch mode {
+        case .edit:
+            if let next = library.neighbor(of: library.currentID, offset: offset), next != library.currentID { open(next) }
+        case .browse:
+            let anchor = library.anchorID ?? library.selection.first
+            if let next = library.neighbor(of: anchor, offset: offset) { library.select(next) }
+        }
+    }
+
+    var ratingTargets: [String] {
+        mode == .browse ? Array(library.selection) : library.currentID.map { [$0] } ?? []
+    }
+
+    func rate(_ rating: Int) {
+        let ids = ratingTargets
+        guard !ids.isEmpty else { return }
+        library.setRating(rating, for: ids)
+        editor.status = rating == 0 ? "已清除评级" : "评级 " + String(repeating: "★", count: rating)
+    }
+
+    func flag(_ flag: LibraryFlag) {
+        let ids = ratingTargets
+        guard !ids.isEmpty else { return }
+        library.setFlag(flag, for: ids)
+        editor.status = flag == .pick ? "已选用" : flag == .reject ? "已排除" : "已取消标记"
+    }
+
+    func removeSelectionFromLibrary() {
+        let ids = library.selection
+        guard !ids.isEmpty else { return }
+        if let current = library.currentID, ids.contains(current) { editor.close(); mode = .browse }
+        library.remove(ids)
+        show("已从素材库移除 \(ids.count) 项；原文件未改动。")
+    }
+
+    func revealSelection() {
+        let urls = library.actionTargets.map(\.url)
+        if !urls.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+    }
+
+    // MARK: LUTs and presets
+
+    func importLUT() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "cube") ?? .plainText]
+        panel.message = "选择 .cube 创意 LUT"
+        present(panel) { [weak self] urls in
+            guard let self, let url = urls.first else { return }
+            let drafts = self.drafts
+            Task {
+                do {
+                    let lut = try await Task.detached(priority: .userInitiated) { () -> CreativeLUT in
+                        let size = (try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
+                        guard size <= 100_000_000 else { throw VideoWorkError.failed("LUT 超过 100 MB") }
+                        let cube = try CubeLUT(data: Data(contentsOf: url))
+                        let lut = CreativeLUT(cube: cube, name: cube.title ?? url.deletingPathExtension().lastPathComponent)
+                        let reference = try drafts.storeLUT(lut)
+                        try drafts.rememberImportedLUT(reference)
+                        return lut
+                    }.value
+                    self.lutLibrary = drafts.importedLUTs()
+                    self.editor.selectLUT(lut)
+                    self.show("已导入 \(lut.name)。相机 Log 素材请先套用对应的转换 LUT。")
+                } catch { self.fail("无法导入 LUT", error) }
+            }
+        }
+    }
+
+    func selectLUT(_ reference: LUTReference) {
+        let drafts = self.drafts
+        Task {
+            do {
+                let lut = try await Task.detached(priority: .userInitiated) { try drafts.loadLUT(reference) }.value
+                editor.selectLUT(lut)
+            } catch { fail("无法载入 LUT", error) }
+        }
+    }
+
+    func setLUTEncoding(_ encoding: LUTEncoding) {
+        guard let lut = editor.selectedLUT, !lut.isBuiltIn, lut.encoding != encoding else { return }
+        let drafts = self.drafts
+        Task {
+            do {
+                let next = lut.with(encoding: encoding)
+                let reference = try await Task.detached(priority: .userInitiated) { try drafts.storeLUT(next) }.value
+                try drafts.rememberImportedLUT(reference)
+                lutLibrary = drafts.importedLUTs()
+                editor.selectLUT(next)
+            } catch { fail("无法切换 LUT 色彩空间", error) }
+        }
+    }
+
+    func applyPreset(_ preset: GradePreset) {
+        guard editor.isLoaded else { return }
+        let drafts = self.drafts
+        Task {
+            do {
+                let lut = try await Task.detached { try preset.recipe.lut.map { try drafts.loadLUT($0) } }.value
+                editor.applyLook(preset.recipe, lut: lut, name: "预设「\(preset.name)」")
+            } catch { fail("无法应用预设", error) }
+        }
+    }
+
+    func savePreset(named name: String) {
+        do {
+            var recipe = EditRecipe().applyingLook(from: try editor.currentRecipe())
+            recipe.hdrPreview = true
+            let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            try drafts.savePreset(GradePreset(name: title.isEmpty ? "我的预设" : String(title.prefix(40)), recipe: recipe))
+            presets = drafts.presets()
+            show("已存为预设，可在任意照片或视频上一键套用。")
+        } catch { fail("预设未保存", error) }
+    }
+
+    func deletePreset(_ preset: GradePreset) {
+        do { try drafts.deletePreset(preset); presets = drafts.presets() } catch { fail("无法删除预设", error) }
+    }
+
+    // MARK: Copy / paste / sync
+
+    func copySettings() {
+        guard editor.isLoaded else { return }
+        do {
+            clipboard = (try editor.currentRecipe(), editor.selectedLUT)
+            hasClipboard = true
+            show("已拷贝调色设置（不含裁切、片段与声音）。⇧⌘V 粘贴到当前或所选素材。")
+        } catch { fail("无法拷贝设置", error) }
+    }
+
+    func pasteSettings() {
+        guard let (recipe, lut) = clipboard else { return }
+        let others = library.selection.subtracting([library.currentID ?? ""])
+        if mode == .edit || others.isEmpty {
+            if editor.isLoaded { editor.applyLook(recipe, lut: lut, name: "粘贴的设置") }
+            return
+        }
+        writeLook(recipe, to: library.entries.filter { others.contains($0.id) }, label: "粘贴")
+        if let current = library.currentID, library.selection.contains(current), editor.isLoaded {
+            editor.applyLook(recipe, lut: lut, name: "粘贴的设置")
+        }
+    }
+
+    func synchronize(groups: Set<AdjustmentGroup>, includeLUT: Bool, stages: Set<GradeStage>) {
+        guard editor.isLoaded else { return }
+        editor.flushDraft()
+        do {
+            let source = try editor.currentRecipe()
+            let targets = library.selectedEntries.filter { $0.id != library.currentID }
+            writeLook(source, to: targets, label: "同步") { before in
+                before.applying(from: source, groups: groups, includeLUT: includeLUT, stages: stages)
+            }
+        } catch { fail("无法同步", error) }
+    }
+
+    /// Writes recipes for other files in the background, remembering the batch for undo.
+    private func writeLook(_ source: EditRecipe, to targets: [LibraryEntry], label: String,
+                           transform: (@Sendable (EditRecipe) -> EditRecipe)? = nil) {
+        guard !targets.isEmpty else { return }
+        let store = drafts
+        let change = transform ?? { $0.applyingLook(from: source) }
+        Task {
+            let (changes, skipped) = await Task.detached(priority: .utility) { () -> ([BatchChange], Int) in
+                var changes: [BatchChange] = [], skipped = 0
+                for target in targets {
+                    do {
+                        let stamp = try SourceStamp(target.url)
+                        let record = try store.loadRecord(target.url)
+                        let before = record?.recipe ?? EditRecipe()
+                        let after = change(before)
+                        try store.save(after, source: stamp, companion: record?.companion)
+                        changes.append(BatchChange(stamp: stamp, companion: record?.companion, before: before, after: after))
+                    } catch { skipped += 1 }
+                }
+                return (changes, skipped)
+            }.value
+            lastBatch = changes
+            for item in changes { thumbnails.invalidate(item.stamp.path) }
+            let suffix = skipped > 0 ? "；\(skipped) 项离线或已变化，已跳过" : ""
+            show("已\(label)到 \(changes.count) 项\(suffix)。", actions: [Toast.Action(title: "撤回") { self.undoBatch() }], seconds: 8)
+        }
+    }
+
+    func undoBatch() {
+        guard !lastBatch.isEmpty else { return }
+        editor.flushDraft()
+        let batch = lastBatch, store = drafts, active = editor.url
+        lastBatch = []
+        Task {
+            let (count, restored) = await Task.detached(priority: .utility) { () -> (Int, EditRecipe?) in
+                var count = 0
+                var restored: EditRecipe?
+                for change in batch {
+                    let file = URL(fileURLWithPath: change.stamp.path)
+                    guard (try? store.load(file)) == change.after else { continue }
+                    guard (try? store.save(change.before, source: change.stamp, companion: change.companion)) != nil else { continue }
+                    count += 1
+                    if file == active { restored = change.before }
+                }
+                return (count, restored)
+            }.value
+            for change in batch { thumbnails.invalidate(change.stamp.path) }
+            if let restored {
+                let lut = try? restored.lut.map { try drafts.loadLUT($0) }
+                editor.restoreRecipe(restored, lut: lut ?? nil)
+            }
+            show("已撤回 \(count) 项；之后又单独修改过的素材保持不变。")
+        }
+    }
+
+    // MARK: Export
+
+    func exportCurrent() {
+        guard editor.isLoaded else { return }
+        sheet = .export(.current)
+    }
+
+    func exportSelection() {
+        guard !library.actionTargets.isEmpty else { return }
+        sheet = .export(.selection)
+    }
+
+    func confirmExport(_ target: ExportTarget) {
+        sheet = nil
+        // Let the options sheet close before presenting the next panel.
+        Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            switch target {
+            case .current: exportCurrentNow()
+            case .selection: exportSelectionNow()
+            }
+        }
+    }
+
+    private func exportCurrentNow() {
+        guard let source = editor.url, editor.isLoaded else { return }
+        let settings = exportSettings
+        let video = editor.isVideo
+        let panel = NSSavePanel()
+        let stem = source.deletingPathExtension().lastPathComponent + "-编辑"
+        if video {
+            panel.allowedContentTypes = [.quickTimeMovie]
+            panel.nameFieldStringValue = stem + ".mov"
+        } else {
+            panel.allowedContentTypes = [settings.image.format.type]
+            panel.nameFieldStringValue = stem + "." + settings.image.format.fileExtension
+        }
+        panel.message = "另存编辑副本；原片不会被修改。"
+        present(panel) { [weak self] urls in
+            if let output = urls.first { self?.enqueueCurrentExport(to: output) }
+        }
+    }
+
+    /// Queues an export of the open document with its current edits, captured now.
+    func enqueueCurrentExport(to output: URL) {
+        guard let input = editor.mediaURL, editor.isLoaded else { return }
+        let settings = exportSettings
+        let edits = editor.edits, clip = editor.clip, video = editor.isVideo
+        exports.enqueue("导出 \(output.lastPathComponent)") { report in
+            if video {
+                try await Self.exportVideo(input, to: output, clip: clip, edits: edits, codec: settings.codec, report: report)
+            } else {
+                report(nil, "正在渲染…")
+                try await Task.detached(priority: .userInitiated) {
+                    try ImageExporter.export(input, to: output, edits: edits, options: settings.image, allowReplacing: true)
+                }.value
+            }
+            return ExportQueue.Result(outputs: [output], live: nil, summary: "已保存")
+        }
+    }
+
+    /// Video export that honours a confirmed replacement in the save panel.
+    private nonisolated static func exportVideo(_ input: URL, to output: URL, clip: ClipSettings, edits: MediaEdits,
+                                                codec: VideoCodecChoice, report: @escaping ExportQueue.Report) async throws {
+        guard output.standardizedFileURL != input.standardizedFileURL else { throw VideoWorkError.outputExists }
+        let replacing = FileManager.default.fileExists(atPath: output.path)
+        let target = replacing ? output.deletingLastPathComponent().appendingPathComponent(".guangji-\(UUID().uuidString).mov") : output
+        try await VideoPipeline.export(input, to: target, clip: clip, edits: edits, codec: codec) { report($0, nil) }
+        if replacing { _ = try FileManager.default.replaceItemAt(output, withItemAt: target) }
+    }
+
+    func makeLive() {
+        guard let source = editor.url, editor.isVideo else { return }
+        guard editor.liveIsValid else {
+            alert = AppAlert(title: "无法制作 Live", message: "Live 输出需为 0.5–3 秒。可缩短选取范围，或使用「适配 3 秒」提高速度。")
+            return
+        }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = source.deletingPathExtension().lastPathComponent + "-Live"
+        panel.message = editor.hdrEffect ? "新建 Live 文件夹：HEIC 增益图封面 + 10-bit HLG 视频 + 参数记录。" : "新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。"
+        present(panel) { [weak self] urls in
+            if let output = urls.first { self?.enqueueLive(to: output) }
+        }
+    }
+
+    func enqueueLive(to output: URL) {
+        guard let input = editor.mediaURL, editor.isVideo, editor.liveIsValid else { return }
+        let edits = editor.edits, clip = editor.clip
+        exports.enqueue("制作 Live · \(output.lastPathComponent)") { report in
+            let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits) { report($0, nil) }
+            _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
+            return ExportQueue.Result(outputs: [output], live: resources, summary: "系统配对检查通过")
+        }
+    }
+
+
+    private func exportSelectionNow() {
+        let entries = library.actionTargets
+        guard !entries.isEmpty else { return }
+        editor.flushDraft()
+        let settings = exportSettings, store = drafts
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
+        panel.prompt = "导出到这里"
+        panel.message = "将新建一个文件夹保存 \(entries.count) 项副本；原片不会被修改。"
+        present(panel) { [weak self] urls in
+            guard let self, let directory = urls.first else { return }
+            let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false)).replacingOccurrences(of: ":", with: "")
+            let destination = directory.appendingPathComponent("光集导出-" + stamp)
+            self.exports.enqueue("导出 \(entries.count) 项") { report in
+                try await Self.runBatchExport(entries, to: destination, settings: settings, store: store, report: report)
+            }
+        }
+    }
+
+    private nonisolated static func runBatchExport(_ entries: [LibraryEntry], to destination: URL, settings: ExportSettings,
+                                                   store: DraftStore, report: @escaping ExportQueue.Report) async throws -> ExportQueue.Result {
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
+        var completed = 0, skipped = 0
+        var log = ["光集批量导出记录", "原片保留；下列路径仅记录本次结果。", ""]
+        var luts: [String: CreativeLUT] = [:]
+        defer {
+            log.append("完成 \(completed) 项；跳过或失败 \(skipped) 项。")
+            try? log.joined(separator: "\n").write(to: destination.appendingPathComponent("导出记录.txt"), atomically: true, encoding: .utf8)
+        }
+        for (index, entry) in entries.enumerated() {
+            try Task.checkCancellation()
+            report(Double(index) / Double(entries.count), "\(index + 1)/\(entries.count) · \(entry.name)")
+            do {
+                let recipe = try store.load(entry.url) ?? EditRecipe()
+                var lut: CreativeLUT?
+                if let reference = recipe.lut {
+                    let key = reference.file + reference.encoding.rawValue
+                    if let cached = luts[key] { lut = cached } else { let loaded = try store.loadLUT(reference); luts[key] = loaded; lut = loaded }
+                }
+                var info = try await MediaInspector.inspect(entry.url)
+                var input = entry.url
+                var liveInput = false
+                if info.kind == .image, let movie = try await LivePhotoPipeline.pairedMovie(for: entry.url) {
+                    _ = try await LivePhotoPipeline.load(imageURL: entry.url, videoURL: movie)
+                    input = movie; info = try await MediaInspector.inspect(movie); liveInput = true
+                }
+                let edits = MediaEdits(degrees: recipe.degrees, lut: lut, strength: recipe.strength,
+                                       hdrEffect: info.kind == .video && recipe.hdrEffect, adjustments: recipe.adjustments,
+                                       geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
+                                       hsl: recipe.hsl, bypass: recipe.bypass)
+                let stem = entry.url.deletingPathExtension().lastPathComponent
+                var name = stem
+                if info.kind == .video {
+                    let duration = info.durationSeconds ?? 0
+                    let range = recipe.clip ?? ClipSettings(start: 0, end: duration, cover: min(duration / 2, max(0, duration - 0.05)))
+                    try range.validate(duration: duration, live: settings.liveOnly || liveInput)
+                    if settings.liveOnly || liveInput {
+                        name = unique(stem + "-Live", in: destination)
+                        _ = try await LivePhotoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits)
+                    } else {
+                        name = unique(stem, ext: "mov", in: destination)
+                        try await VideoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits, codec: settings.codec)
+                    }
+                } else if !settings.liveOnly {
+                    name = unique(stem, ext: settings.image.format.fileExtension, in: destination)
+                    try ImageExporter.export(input, to: destination.appendingPathComponent(name), edits: edits, options: settings.image)
+                } else {
+                    skipped += 1
+                    log.append("跳过 · \(entry.name) · 静态照片没有动态片段")
+                    continue
+                }
+                completed += 1
+                log.append("完成 · \(entry.name) → \(name)")
+            } catch {
+                if Task.isCancelled { throw CancellationError() }
+                skipped += 1
+                log.append("失败 · \(entry.name) · \(error.localizedDescription)")
+            }
+        }
+        return ExportQueue.Result(outputs: [destination], live: nil,
+                                  summary: "完成 \(completed) 项" + (skipped > 0 ? "，跳过 \(skipped) 项（见导出记录）" : ""))
+    }
+
+    private nonisolated static func unique(_ stem: String, ext: String? = nil, in folder: URL) -> String {
+        func name(_ suffix: String) -> String { stem + suffix + (ext.map { "." + $0 } ?? "") }
+        var candidate = name(""), counter = 2
+        while FileManager.default.fileExists(atPath: folder.appendingPathComponent(candidate).path) {
+            candidate = name("-\(counter)"); counter += 1
+        }
+        return candidate
+    }
+
+    private func exportFinished(_ job: ExportQueue.Job) {
+        switch job.state {
+        case .finished:
+            var actions = [Toast.Action(title: "在 Finder 中显示") { [weak self] in self?.exports.reveal(job) }]
+            if let live = job.live {
+                actions.insert(Toast.Action(title: "预览 Live") { [weak self] in self?.sheet = .livePreview(live) }, at: 0)
+            }
+            show("\(job.title) · \(job.detail)", actions: actions, seconds: 8)
+        case .failed(let message):
+            alert = AppAlert(title: "\(job.title) 失败", message: message)
+        default: break
+        }
+    }
+
+    // MARK: Collage
+
+    func openCollage() {
+        editor.flushDraft()
+        let entries = library.actionTargets
+        guard (1...3).contains(entries.count) else {
+            alert = AppAlert(title: "拼图 Live", message: "请先在素材库选择 1–3 个视频或 Live Photo。")
+            return
+        }
+        let store = drafts
+        Task {
+            do {
+                var items: [CollageDraftPane] = []
+                for entry in entries {
+                    var input = entry.url
+                    var info = try await MediaInspector.inspect(input)
+                    if info.kind == .image, let movie = try await LivePhotoPipeline.pairedMovie(for: input) {
+                        input = movie; info = try await MediaInspector.inspect(movie)
+                    }
+                    guard info.kind == .video, let duration = info.durationSeconds, duration >= 1.5 else {
+                        throw VideoWorkError.failed("\(entry.name)：拼图需要至少 1.5 秒的视频或 Live 动态资源。")
+                    }
+                    let recipe = try store.load(entry.url) ?? EditRecipe()
+                    let lut = try recipe.lut.map { try store.loadLUT($0) }
+                    let edits = MediaEdits(degrees: recipe.degrees, lut: lut, strength: recipe.strength, adjustments: recipe.adjustments,
+                                           geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
+                                           hsl: recipe.hsl, bypass: recipe.bypass)
+                    let speed = min(recipe.clip?.speed ?? 1, duration / 3)
+                    let start = min(max(0, recipe.clip?.start ?? 0), max(0, duration - 3 * speed))
+                    items.append(.init(url: input, duration: duration, start: start, speed: speed, edits: edits))
+                }
+                collageDrafts = items
+                sheet = .collage
+            } catch { fail("无法准备拼图", error) }
+        }
+    }
+
+    func exportCollage(_ items: [CollageDraftPane]) {
+        let panes = items.map {
+            LiveCollagePane(url: $0.url, clip: .init(start: $0.start, end: $0.start + 3 * $0.speed, cover: $0.start + 1.5 * $0.speed,
+                                                      originalVolume: 0, speed: $0.speed), edits: $0.edits)
+        }
+        do { _ = try LiveCollagePipeline.validate(panes) } catch { fail("拼图设置无效", error); return }
+        sheet = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = "光集-\(panes.count)画面-Live"
+            panel.message = "新建 Live 文件夹：静音 SDR，3 秒，各画面独立调色与变速。"
+            present(panel) { urls in
+                guard let output = urls.first else { return }
+                self.exports.enqueue("拼图 Live · \(panes.count) 画面") { report in
+                    let resources = try await LiveCollagePipeline.export(panes, to: output) { report($0, nil) }
+                    _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
+                    return ExportQueue.Result(outputs: [output], live: resources, summary: "系统配对检查通过")
+                }
+            }
+        }
+    }
+
+    // MARK: Sound
+
+    func chooseMusic() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.audio]
+        present(panel) { [weak self] urls in
+            if let url = urls.first { self?.editor.musicURL = url }
+        }
+    }
+
+    // MARK: Keyboard (single-key shortcuts, like Lightroom / Resolve)
+
+    /// Called for key-downs in the workbench window when no text field is editing.
+    func handleKey(_ event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags.contains(.command) || flags.contains(.control) || flags.contains(.option) { return false }
+        let editing = mode == .edit && editor.isLoaded
+        switch event.keyCode {
+        case 123, 124: // ← →
+            let direction = event.keyCode == 123 ? -1 : 1
+            if mode == .browse { step(direction) }
+            else if editor.isVideo { editor.stepFrame(Double(direction)) }
+            else { step(direction) }
+            return true
+        case 125, 126: // ↓ ↑
+            let direction = event.keyCode == 126 ? -1 : 1
+            step(mode == .browse ? direction * gridColumns : direction)
+            return true
+        case 36, 76: // return
+            if mode == .browse { openSelection(); return true }
+            return false
+        case 49: // space
+            if mode == .browse { openSelection() }
+            else if editor.isVideo { editor.togglePlayback() }
+            else if editing { editor.toggleZoom() }
+            return true
+        case 48: // tab
+            let hide = showSidebar || showInspector
+            showSidebar = !hide
+            showInspector = !hide
+            return true
+        case 53: // escape
+            if editing, editor.canvas?.isZoomed == true { editor.zoomToFit() }
+            else if mode == .edit { mode = .browse }
+            return true
+        default: break
+        }
+        guard let key = event.charactersIgnoringModifiers?.lowercased(), key.count == 1 else { return false }
+        switch key {
+        case "0", "1", "2", "3", "4", "5": rate(Int(key) ?? 0)
+        case "p": flag(.pick)
+        case "x": flag(.reject)
+        case "u": flag(.none)
+        case "g": mode = .browse
+        case "e": if mode == .browse { openSelection() }
+        case "\\", "m": if editing { editor.compareMode = editor.compareMode == .original ? .off : .original }
+        case "y": if editing, !editor.isVideo { editor.compareMode = editor.compareMode == .split ? .off : .split }
+        case "j": if editing { editor.showClipping.toggle() }
+        case "z": if editing, !editor.isVideo { editor.toggleZoom() }
+        case "i": if editing, editor.isVideo { editor.setInPoint() }
+        case "o": if editing, editor.isVideo { editor.setOutPoint() }
+        case "c": if editing, editor.isVideo { editor.setCoverAtPlayhead() }
+        case "?", "/": sheet = .shortcuts
+        default: return false
+        }
+        return true
+    }
+
+    /// Columns in the browse grid, reported by the grid for ↑/↓ navigation.
+    @ObservationIgnored var gridColumns = 4
+}

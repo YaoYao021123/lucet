@@ -267,6 +267,7 @@ enum GradeKernels {
         #include <CoreImage/CoreImage.h>
         using namespace metal;
         [[stitchable]] float4 colorWheels(coreimage::sample_t p, float4 lift, float4 gain, float4 invGamma, float4 offset) {
+            if (p.a < 0.001) return p;
             float3 c = p.rgb;
             c = c + lift.rgb * (1.0 - clamp(c, 0.0, 1.0));
             c = c * gain.rgb;
@@ -319,6 +320,7 @@ enum GradeKernels {
             return a.x;
         }
         [[stitchable]] float4 hslMix(coreimage::sample_t p, float4 h0, float4 h1, float4 s0, float4 s1, float4 l0, float4 l1) {
+            if (p.a < 0.001) return p;
             float3 rgb = max(p.rgb, float3(0.0));
             float3 hsv = toHSV(rgb);
             float weight = smoothstep(0.02, 0.18, hsv.y);

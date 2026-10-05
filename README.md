@@ -1,76 +1,83 @@
-# Mac 素材工作台 · 光集
+# 光集 · 照片 / 视频 / Live Photo 浏览与调色
 
-Mac 原生调色与 Live Photo 制作原型，Swift 6 / SwiftUI / AppKit，最低 **macOS 15**，当前无第三方依赖。最新功能与缺口见 [基础调色与功能补齐](docs/workbench-completion-2026-10-05.html)。
+Mac 原生应用（Swift 6 · SwiftUI · Core Image · AVFoundation），最低 macOS 15；在 macOS 26 上使用 Liquid Glass 界面。无第三方依赖，原片从不修改：所有编辑以配方（JSON）自动保存，导出总是另存副本。
 
-当前可用：
-
-- 16 项基础调色：曝光 / 鲜明度 / 高光 / 阴影 / 亮度 / 对比 / 白色 / 黑点、暖色 / 色调 / 饱和度 / 自然饱和度、清晰度 / 锐度 / 降噪 / 暗角；RGB SDR 显示直方图。
-- 90°旋转、镜像、比例裁切与位置调整；当前素材撤销 / 重做、连续拖动合并一步、原子配方自动保存与恢复、命名参数快照。
-- 多文件 / 文件夹列表、收藏、混合选择、按参数组同步与当前会话撤回最近一次同步、批量另存和导出取消；结果目录含逐项导出记录。
-
-- 图片、视频打开；同名 JPEG / HEIC + MOV 的 Live 配对通过系统检查后可从动态部分重新制作。
-- `.cube` 创意 LUT 导入、暖调 / 柔和预设、强度、原片对比；图片自动调正、图片 / 视频手动调正和安全裁切。
-- HDR 增益图读取、浮点 Metal / EDR 图片画布、原生 HDR 视频预览；显示能力不足时适配 SDR。
-- 视频播放、定位、片段起止点、封面选择；选取框整体拖动保持长度与封面相对位置；原声静音 / 音量、单段本地 BGM 与音量。
-- 0.5–4 倍速度、显示原片与输出长度；6 秒原片可按 2 倍速生成 3 秒 Live，BGM 保持原节奏。
-- 另存 SDR PNG / MOV；按输出长度 0.5–3 秒生成 Live Photo，系统配对验证后保存资源、参数记录与 LUT 副本。
-- 默认关闭的实验性 HDR 效果：扩展 SDR 视频高光，另存 HEVC Main10 / Rec.2020 HLG；Live 使用增益图 HEIC + HLG MOV。
-
-创意 LUT 默认按非线性 sRGB 输入处理，导入后可按作者说明明确选择 Rec.709，支持 `.cube` 的 DOMAIN_MIN / DOMAIN_MAX；不自动判断 DJI D-Log / D-Log2 / D-Log M、Apple Log 或 LUT 输入空间。默认编辑与导出仍使用 SDR。实验性 HDR 效果扩展现有高光亮度，无法恢复拍摄时已经丢失的细节；相机原生 HDR 的完整保真编辑管线与 iPhone HDR Live 导入兼容性仍待验收。
-
-已有 Live 的重制封面从动态视频提取，可能低于原静态图片的分辨率；原静态资源保留，不宣称无损保留 Live 封面。原件不改、目标已存在时拒绝覆盖。Live 参数文件是导出记录；编辑草稿与参数快照另存应用支持目录 Guangji。撤销栈与最近一次批量撤回仅在当前会话保留，跨会话数据库历史、设备直接导入与文件内容去重 / 路径合并仍未实现。
-
-启动：
+## 运行
 
 ```sh
-bash scripts/run-workbench.sh
+bash scripts/run-workbench.sh            # 构建 Release 并打开 .build/MediaWorkbench.app
+bash scripts/run-workbench.sh --build-only
+bash scripts/test-workbench.sh           # 60 项测试
+bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行文件路径
 ```
 
-脚本构建 Release 并生成 `.build/MediaWorkbench.app`，可在 Finder 中打开。`--build-only` 只构建打包。当前为本机开发原型；尚未验证应用沙盒、签名与分发配置。脚本关闭 SwiftPM 嵌套编译沙盒以兼容受限宿主，未修改系统保护设置。
+## 功能
 
-2026-10-04 原生控件修正：参数已改用系统 Slider，保留直接输入、范围限制、右键复位，支持方向键微调；macOS 26 及以上的双向参数提供零点语义。通过“开发 → 原生控件样板…”查看真实系统按钮、工具栏、滑块、深浅外观和禁用状态。样板不处理或导出素材。拖动位置与调色参数分开保存，参数以 33 ms 间隔合并更新，松手立即提交最终值；移除叠加的双击手势以减少拖动竞争。已完成样板交互检查，真实素材预览帧率尚未测量。
+**浏览（G）**：导入文件夹或拖入文件；缩略图网格可调大小，侧栏带缩略图列表。显示的缩略图已套用保存的调色与裁切。同名 HEIC/JPG + MOV 自动合并为一个 Live 项。评级 0–5、选用 P / 排除 X、按类型 / 评级 / 标记筛选、文件名搜索，⌘ / ⇧ 多选。
 
-分段切换新增点击平滑过渡、连续拖动与松手吸附；拖动期间只移动高亮，松手才切换面板。该交互由应用实现，高亮使用系统玻璃材质，并响应“减少动态效果”和“降低透明度”。普通按钮使用系统 Regular 玻璃样式与胶囊 / 圆形边框，文字 13 pt、操作图标 16 pt；仅主要 Live 操作使用强调色。已在样板及主工作台验证点击、跨段拖动与面板切换，并保存[深色实机截图](docs/ui-concepts/2026-10-04/native-controls-interaction-v3-dark.png)和[浅色实机截图](docs/ui-concepts/2026-10-04/native-controls-interaction-v3-light.png)。
+**编辑（E）**：按 DaVinci 式固定顺序处理，每一步都可单独开关比较：
 
-主工作台控件已统一：LUT 风格按钮、Live 确认按钮、导入 / 归零 / 音乐操作采用同一按钮规范；HDR 与网格开关使用 Small 尺寸，顶部采用单行素材标题避免玻璃底座内裁切。视频工具栏按可用宽度自动切换单排 / 两排，保留完整标签与 16 pt 操作图标。Release 编译及合成视频上的分段切换、LUT / 音量滑块、逐帧、静音、片段选择、Live 保存面板已验证；本轮未重新验证媒体导出或测量帧率。见[主窗口实机截图](docs/ui-concepts/2026-10-04/workbench-controls-v4-color.png)、[窄窗口截图](docs/ui-concepts/2026-10-04/workbench-controls-v4-narrow-audio.png)和[施工记录](docs/ui-concepts/2026-10-04/workbench-controls-v4-record.json)。
+1. 基础：曝光、鲜明度、高光、阴影、亮度、对比度、白色、黑点、色温、色调、饱和度、自然饱和度
+2. 色轮：暗部 / 中间调 / 亮部 / 整体（Lift / Gamma / Gain / Offset），方向与矢量示波器一致
+3. 曲线：RGB 主曲线 + 红绿蓝单通道
+4. HSL 色彩混合：8 个色系的色相 / 饱和度 / 明亮度
+5. 风格 LUT：.cube（2–128 阶，兼容 GBK 标题、CRLF、DOMAIN / INPUT_RANGE），sRGB 或 Rec.709，强度可调，导入后长期保留
+6. 细节：降噪（最先）、清晰度、锐度、暗角（最后）
 
-本日后续：移除顶部标题的玻璃底座；修复切换视频时缩略图数组更新引起的崩溃。选取框拖动仅更新轻量草稿，松手再重建视频预览。已使用获授权的真实 4K DJI 素材验证整体移动、加速预览、官方创意 LUT 与完整视频 / SDR Live / HDR Live 导出；结果、对比图和官方 Pocket 4P LUT 下载记录见[真实素材验证报告](media-tests/2026-10-04/test-report.html)。实际导出通过与窗口相同的 MediaCore 管线执行，未将 CLI 导出记为窗口导出点击验收。
+此外还有：
 
-当前 CLT 的默认 Swift Build 引擎将应用的 SDK 元数据错误记录为 15.0，会使控件使用旧外观；运行脚本暂用 SwiftPM native 引擎并显式选择实际 SDK，已核对二进制为 SDK 27.0、最低系统 15.0。native 引擎已被 SwiftPM 标为弃用，后续切换完整 Xcode / 修复后的构建引擎时，应再次核对二进制 SDK 元数据。见 [构建记录](docs/ui-concepts/2026-10-04/native-controls-build-record.json)。
+- 示波器：直方图、波形、RGB 分量、矢量，带溢出指示。
+- 对比与检查：原片对比（\）、左右分屏（Y）、溢出显示（J）。
+- 缩放：适合窗口 ↔ 100%（Z、双击、捏合），放大时自动载入原尺寸。
+- 预设：4 个内置，可自建。
+- 设置的复用：拷贝 / 粘贴调色（⇧⌘C / ⇧⌘V）、同步到所选（可撤回）。
+- 撤销 / 重做、命名快照，以及拉直、旋转、镜像、裁剪画幅。
 
-检查：
+**视频与 Live**：时间线裁切、整体移动、逐帧、入点 / 出点（I / O）、封面（C）、0.5–4× 变速（原声同步，背景音乐保持原节奏）、「适配 3 秒」；制作 Live Photo（系统配对校验）与 1–3 画面拼图 Live；实验性 HDR 高光扩展（HLG）。
+
+**导出**（后台队列，不阻塞编辑）：照片可选 JPEG / HEIC / PNG、质量和长边尺寸，默认保留拍摄时间、相机与镜头信息并移除 GPS；视频可选 H.264 / HEVC；也可批量导出所选，并写入导出记录。
+
+按 ⌘/ 查看全部快捷键。单键快捷键在文本框中输入时不会触发。
+
+## 与 ChatGPT 原型相比（2026-10-06）
+
+| 项目 | 原型 | 现在 |
+|---|---|---|
+| 导入 2000 个文件的文件夹 | 主线程卡顿 6.9 s（O(n²)） | 4.5 ms |
+| 解析 64³ LUT（DJI Winter Pro） | 609 ms，且每次打开文件都在主线程重复解析 | 20 ms，并全局缓存 |
+| DJI Pocket 3 Spring / Winter Pro LUT | 无法导入（GBK 标题） | 正常导入 |
+| 拖动一个滑块时重绘 | 侧栏、全部 16 个滑块、工具栏和菜单栏 | 只重绘该滑块与画面（已测量） |
+| 预览分辨率 | 上限 1600 px，Retina 下发虚，不能缩放 | 按屏幕（≤3200 px），100% 时载入原尺寸 |
+| 全部调色阶段渲染（2560 px） | — | 中位数 7.8 ms / P95 9.5 ms |
+| 视频对比原片 / 首次调色 | 每次重建播放器 | 只更新滤镜参数（HDR 素材首次调色时切换一次 SDR 预览） |
+| 播放头 | 10 Hz，并重绘整条时间线 | 30 Hz，独立小视图 |
+| 照片导出 | 仅 PNG，丢失全部 EXIF | JPEG / HEIC / PNG，保留拍摄信息 |
+| 导出时 | 整个应用锁定 | 后台队列 |
+| 素材浏览 | 只有文件名列表 | 缩略图网格、评级、标记、筛选、键盘浏览 |
+
+基准：`swift run --configuration release media-benchmark`（合成 12MP 图片；仅测渲染，不含显示）。
+
+## 代码结构
+
+- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、`CubeLUT`、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）。
+- `Sources/MediaWorkbenchApp`：界面。
+  - 模型：`AppModel` 负责协调（导入、导出、同步、快捷键），`LibraryModel` 管理素材库，`EditorModel` 管理当前文档，`ExportQueue` 是导出队列，`ThumbnailStore` 生成缩略图。
+  - 视图：`WorkbenchView`、`LibraryViews`、`InspectorView`、`GradeControls`、`MediaCanvas`、`MediaTimeline`、`Sheets`。
+- 数据位置：`~/Library/Application Support/Guangji`（素材库 `library.json`、配方、快照、预设、LUT）。
+
+### 开发：无屏幕录制权限的界面截图
 
 ```sh
-bash scripts/test-workbench.sh
+GUANGJI_DATA_DIR=/tmp/guangji-dev GUANGJI_SNAPSHOT_DIR=/tmp/shots \
+GUANGJI_SNAPSHOT_STEPS="import:/path/to/folder;wait:3;shot:browse;open:/path/a.jpg;wait:2;shot:edit;quit" \
+"$(bash scripts/dev-build.sh)"
 ```
 
-**46 项 Swift Testing 测试、10 个套件通过**，新增调色方向与细节、旋转镜像 / 裁切、配方旧版本、原件变化保护、命名快照和分组历史；包含 PQ / HLG 视频、增益图 HEIC、明确的 LUT 传递函数、预览 / 导出像素、范围移动与速度限制、加速后音频 / 封面时间、HDR 实际亮像素和 Photos 系统配对识别。自动化套件仅使用合成素材，不调用模型 API；另有获授权的真实 4K 视频测试，两个 Live 均为 3.000 秒，完整解码与系统配对检查通过。新增复用视频滤镜、预览尺寸上限与原尺寸导出隔离测试。端到端预览帧率未测量，真实手机 / Pocket 设备读取、iPhone 导入与外接 HDR 屏视觉验收仍待完成。当前屏幕仅有 SDR 亮度范围，格式与像素检查不代表 HDR 显示效果验收。
+脚本命令见 `DebugSnapshot.swift`。`GUANGJI_DATA_DIR` 使开发运行与正式素材库隔离；Metal、视频和 Liquid Glass 材质无法被视图缓存截取，截图只用于检查布局。
 
-可选保存测试素材到指定的新目录：
+## 已知限制
 
-```sh
-WORKBENCH_TEST_ARTIFACTS="$PWD/.build/my-fixtures" bash scripts/test-workbench.sh
-```
-
-Vision、Core Image、视频编码和 Photos 集成测试需要能调用系统媒体框架的普通本机环境。测试脚本自动定位 Swift Testing 宏插件，当前 CLT 缺少 XCTest，已关闭 XCTest 运行器。
-
-原有检查 CLI 保留：
-
-```sh
-swift run media-probe inspect /absolute/path/to/file.mov
-swift run media-probe lut /absolute/path/to/filter.cube
-swift run media-probe straighten /absolute/path/to/image.jpg
-swift run media-probe rotate /absolute/path/to/image.jpg 3 /absolute/path/to/new.png
-```
-
-CLI `lut` 只检查表结构；实际 LUT 调色在原生窗口执行。旧 CLI 图片导出仍是独立 SDR 调正工具。完整 Xcode、真实设备测试、权限与签名随后配置，当前目录尚未初始化 Git。
-
-性能（2026-10-05 修正）：图片缓存一次浮点预览，复用 Metal / Core Image 渲染器；视频调色 / 角度直接更新线程安全滤镜快照，复用播放器资源，交互渲染最长边 1600px。音量直接更新混音，速度松手才重建；拖动定位单次飞行、保留最新请求，松手精确定位。导出继续使用原尺寸管线。实际 DJI 4K 画面 LUT + HDR + 旋转的浮点位图处理基准：中位数 10.04 → 5.81 ms，P95 16.43 → 8.87 ms，各预热后 24 次；不包含视频解码、seek 或屏幕显示。最新构建已完成，已在真实 DJI 4K 窗口检查曝光滑块、撤销/重做、固定三秒范围整体移动、快照恢复和播放响应；未测量连续拖动帧率。新增拼图窗口复验时 Mac 再次锁定，界面交互仍待检查。暂停画面刷新参考 [Apple QA1966](https://developer.apple.com/library/archive/qa/qa1966/_index.html)。基准运行 `swift run --configuration release media-benchmark`，范围与历史测量见 [性能记录](docs/development-readiness.html#preview-performance)。旧版 31.63 → 2.76 ms 是 SDR 调正管线测量，不能当成当前 HDR / LUT 画布帧率。
-
-2026-10-05 拼图 Live：素材栏勾选 1–3 个视频或配对 Live，打开“拼图 Live…”。每格继承已保存的调色与裁切，可设置起点、0.5–4 倍速度和上下顺序，统一导出 3 秒静音 SDR；窗口显示各格中间帧。双拼为 1080×1216，三拼为 1080×1824，单画面保留原尺寸。新建资源目录，原件和已有输出不覆盖，Photos 配对通过后才发布。自由布局、实时合成播放、拼图 HDR、独立音轨和拼图项目自动保存尚未接入。新增测试覆盖独立调色、上下位置、各格时间与速度记录、资源配对、取消清理和无覆盖保护。
-
-[秋日行旅 · 九张单/双/三画面 Live 成品画廊](media-tests/2026-10-05/nine-live-mixed/index.html)：18 个原始镜头，3 单画面 / 3 双拼 / 3 三拼，雪景仅 1 张。全部 3 秒，调色采用 DJI 官方 Rec.709 创意 LUT 与基础参数；9 项系统配对、时长、封面及完整解码通过。iPhone 实际导入未验收。
-
-工作区维护（2026-10-05）：已清理 2.16 GiB 可重建 Swift / SDK 编译缓存，工作区约 3.28 → 1.12 GiB。保留 App、全部原片、两版 Live 成品、LUT、预览和验证日志；333 个媒体文件 SHA256 与 App 二进制校验一致。后续先运行 `python3 scripts/clean-workspace.py` 预览，需清理时加 `--apply`；下次构建会自动重建必要缓存。目录用途及体积详见 [工作区整理记录](docs/workspace-cleanup-2026-10-05.html)。
-
-主视觉接入（2026-10-05）：[完整主视觉资产页](assets/brand/preview.html)。保留四片光圈母版，新增深浅色主视觉、竖版海报、透明标志、转曲字标、空状态插画、16–1024 px iconset 与 ICNS；应用图标、原生工具栏无底色标志与空状态已接入。Release 构建、打包一致性、NSImage 资源解码和原生窗口目验通过；Dock/Finder 缓存外观未单独验收。Icon Composer SVG 分层源已提供，尚未构建系统 Liquid Glass `.icon`。重导出用 `bash scripts/generate-brand.sh`。
+- 调色后的照片以 SDR 输出；HDR 原片编辑后不保留增益图。
+- 裁剪通过滑块设置，画面上暂无拖拽裁剪框。
+- 尚未配置签名、沙盒与分发；设备直连导入、相机 Log 自动识别、AI 打标仍在规划中（见 `docs/`）。
+- 原型阶段的文档与验证记录保留在 `docs/` 与 `docs/archive/`。

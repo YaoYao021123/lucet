@@ -1,0 +1,261 @@
+import AppKit
+import MediaCore
+import Photos
+import SwiftUI
+
+struct SheetContent: View {
+    let app: AppModel
+    let sheet: ActiveSheet
+    var body: some View {
+        content.tint(WorkbenchTheme.accent)
+    }
+    @ViewBuilder private var content: some View {
+        switch sheet {
+        case .export(let target): ExportOptionsSheet(app: app, target: target)
+        case .sync: SyncSheet(app: app)
+        case .snapshots: SnapshotSheet(app: app)
+        case .collage: CollageSheet(app: app)
+        case .savePreset: SavePresetSheet(app: app)
+        case .shortcuts: ShortcutsSheet(app: app)
+        case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
+        }
+    }
+}
+
+private struct SheetHeader: View {
+    let title: String
+    var subtitle: String?
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.title3.weight(.semibold))
+            if let subtitle { Text(subtitle).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+        }
+    }
+}
+
+// MARK: - Export options
+
+struct ExportOptionsSheet: View {
+    let app: AppModel
+    let target: ExportTarget
+    @UIState private var settings = ExportSettings()
+
+    private var entries: [LibraryEntry] { target == .current ? app.currentEntry.map { [$0] } ?? [] : app.library.actionTargets }
+    private var hasImages: Bool { target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo } }
+    private var hasVideos: Bool { target == .current ? app.editor.isVideo : entries.contains { $0.isVideo || $0.hasLiveCompanion } }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SheetHeader(title: target == .current ? "导出副本" : "导出 \(entries.count) 项",
+                        subtitle: "导出会在后台进行，你可以继续浏览和编辑。原片从不修改。")
+            Form {
+                if hasImages {
+                    Section("照片") {
+                        Picker("格式", selection: $settings.image.format) {
+                            ForEach(ImageExportOptions.Format.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        if settings.image.format.isLossy {
+                            LabeledContent("质量") {
+                                HStack {
+                                    Slider(value: $settings.image.quality, in: 0.5...1)
+                                    Text("\(Int(settings.image.quality * 100))").monospacedDigit().frame(width: 30)
+                                }
+                            }
+                        }
+                        Picker("尺寸", selection: Binding(get: { settings.image.maxLongEdge ?? 0 }, set: { settings.image.maxLongEdge = $0 == 0 ? nil : $0 })) {
+                            Text("原始尺寸").tag(0)
+                            Text("长边 4096 px").tag(4096)
+                            Text("长边 2048 px").tag(2048)
+                            Text("长边 1080 px（社交平台）").tag(1080)
+                        }
+                        Toggle("保留拍摄信息（时间、相机、镜头）", isOn: $settings.image.keepMetadata)
+                        Toggle("移除位置信息", isOn: $settings.image.removeLocation).disabled(!settings.image.keepMetadata)
+                    }
+                }
+                if hasVideos {
+                    Section("视频") {
+                        Picker("编码", selection: $settings.codec) {
+                            ForEach(VideoCodecChoice.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        if target == .selection {
+                            Toggle("只导出有效的 Live 片段（0.5–3 秒）", isOn: $settings.liveOnly)
+                        }
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            HStack {
+                Spacer()
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button(target == .current ? "选择位置…" : "选择文件夹…") {
+                    app.exportSettings = settings
+                    app.confirmExport(target)
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(entries.isEmpty)
+            }
+        }
+        .padding(22)
+        .frame(width: 480)
+        .onAppear { settings = app.exportSettings }
+    }
+}
+
+// MARK: - Sync
+
+struct SyncSheet: View {
+    let app: AppModel
+    @UIState private var groups: Set<AdjustmentGroup> = [.light, .color]
+    @UIState private var stages: Set<GradeStage> = [.wheels, .curves, .hsl]
+    @UIState private var includeLUT = true
+
+    var body: some View {
+        let count = app.library.selection.subtracting([app.library.currentID ?? ""]).count
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: "同步调色", subtitle: "把当前素材的所选调色复制到另外 \(count) 项。裁切、片段、封面、速度与声音保持各自设置。")
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(AdjustmentGroup.allCases, id: \.self) { group in
+                    Toggle(group.rawValue, isOn: Binding(get: { groups.contains(group) }, set: { if $0 { groups.insert(group) } else { groups.remove(group) } }))
+                }
+                ForEach([GradeStage.wheels, .curves, .hsl], id: \.self) { stage in
+                    Toggle(stage == .hsl ? "HSL 色彩混合" : stage.title, isOn: Binding(get: { stages.contains(stage) }, set: { if $0 { stages.insert(stage) } else { stages.remove(stage) } }))
+                }
+                Toggle("风格 LUT 与强度", isOn: $includeLUT)
+            }
+            .toggleStyle(.checkbox)
+            Text("离线或已被修改的原片会跳过并计数。同步后可在提示中一键撤回。").font(.callout).foregroundStyle(.secondary)
+            HStack {
+                Spacer()
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("应用到 \(count) 项") {
+                    app.sheet = nil
+                    app.synchronize(groups: groups, includeLUT: includeLUT, stages: stages)
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(count == 0 || (groups.isEmpty && stages.isEmpty && !includeLUT))
+            }
+        }
+        .padding(22).frame(width: 440)
+    }
+}
+
+// MARK: - Snapshots
+
+struct SnapshotSheet: View {
+    let app: AppModel
+    @UIState private var name = ""
+    @UIState private var snapshots: [SavedSnapshot] = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: "快照与版本", subtitle: "快照保存一个命名版本，重启后仍可恢复。只保存参数，不复制原片。")
+            HStack {
+                TextField("版本名称，例如：自然暖调", text: $name).textFieldStyle(.roundedBorder)
+                Button("保存当前版本") { app.editor.saveSnapshot(named: name); name = ""; snapshots = app.editor.snapshots() }
+            }
+            List(snapshots) { value in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(value.name)
+                        Text(value.record.savedAt.formatted(date: .numeric, time: .shortened)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("恢复") { app.editor.restoreSnapshot(value); app.sheet = nil }
+                }
+            }
+            .frame(height: 220)
+            .overlay { if snapshots.isEmpty { Text("尚未保存快照").foregroundStyle(.secondary) } }
+            HStack { Spacer(); Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction) }
+        }
+        .padding(22).frame(width: 480)
+        .onAppear { snapshots = app.editor.snapshots() }
+    }
+}
+
+// MARK: - Presets
+
+struct SavePresetSheet: View {
+    let app: AppModel
+    @UIState private var name = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: "存为预设", subtitle: "保存当前的基础调整、色轮、曲线、HSL 与 LUT，可套用到任意照片或视频。")
+            TextField("预设名称", text: $name).textFieldStyle(.roundedBorder)
+            HStack {
+                Spacer()
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("保存") { app.savePreset(named: name); app.sheet = nil }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(22).frame(width: 400)
+    }
+}
+
+// MARK: - Shortcuts
+
+struct ShortcutsSheet: View {
+    let app: AppModel
+    private let groups: [(String, [(String, String)])] = [
+        ("浏览", [("G / E", "浏览网格 / 编辑"), ("↑ ↓ ← →", "上一项 / 下一项"), ("⏎ 或 空格", "打开所选"),
+                 ("0 – 5", "评级"), ("P / X / U", "选用 / 排除 / 取消标记"), ("⌘ / ⇧ 点按", "多选"), ("Tab", "隐藏 / 显示侧栏")]),
+        ("编辑", [("\\ 或 M", "对比原片"), ("Y", "左右分屏对比"), ("J", "显示高光 / 暗部溢出"), ("Z 或 空格", "适合窗口 ↔ 100%"),
+                 ("⌘0 / ⌘1 / ⌘+ / ⌘−", "适合 / 实际像素 / 放大 / 缩小"), ("⌘Z / ⇧⌘Z", "撤销 / 重做"),
+                 ("⇧⌘C / ⇧⌘V", "拷贝 / 粘贴调色设置"), ("双击参数名", "恢复默认")]),
+        ("视频", [("空格", "播放 / 暂停"), ("← →", "逐帧"), ("I / O", "设置入点 / 出点"), ("C", "把播放头设为封面")]),
+        ("其他", [("⌘E / ⇧⌘E", "导出当前 / 导出所选"), ("⌘S", "立即保存配方"), ("?", "显示本页")])
+    ]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: "键盘快捷键")
+            HStack(alignment: .top, spacing: 28) {
+                ForEach(0..<2, id: \.self) { column in
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(groups.indices.filter { $0 % 2 == column }, id: \.self) { index in
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(groups[index].0).font(.headline)
+                                Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
+                                    ForEach(groups[index].1, id: \.0) { item in
+                                        GridRow {
+                                            Text(item.0).font(.callout.monospaced())
+                                            Text(item.1).font(.callout).foregroundStyle(.secondary).fixedSize()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            HStack { Spacer(); Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction) }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Live preview
+
+struct LivePreviewSheet: View {
+    let app: AppModel
+    let resources: LivePhotoResources
+    @UIState private var photo: PHLivePhoto?
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Text("Live Photo").font(.headline)
+                Spacer()
+                Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([resources.imageURL]) }
+                Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction)
+            }
+            ZStack {
+                Color.black
+                if let photo { LiveCanvas(photo: photo) } else { ProgressView() }
+            }
+            .frame(minWidth: 640, minHeight: 420)
+            Text("按住画面播放").font(.callout).foregroundStyle(.secondary)
+        }
+        .padding(22)
+        .task { photo = try? await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL) }
+    }
+}

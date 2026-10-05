@@ -87,7 +87,7 @@ public enum ScopeAnalyzer {
                 for level in 0..<rows {
                     let count = counts[(group * columns + column) * rows + level]
                     guard count > 0 else { continue }
-                    let intensity = min(1, 0.25 + log1p(Float(count)) / log1p(expected))
+                    let intensity = min(1, 0.08 + 0.92 * log1p(Float(count)) / log1p(expected))
                     let row = rows - 1 - level
                     let offset = (row * width + group * columns + column) * 4
                     let tint = tints[group] * intensity
