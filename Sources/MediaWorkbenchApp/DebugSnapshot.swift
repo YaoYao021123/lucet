@@ -68,6 +68,21 @@ enum DebugSnapshot {
                 try? await Task.sleep(for: .milliseconds(400))
                 app.enqueueLive(to: URL(fileURLWithPath: argument))
             }
+        case "influence":
+            let kinds: [String: InfluenceKind] = ["highlights": .highlights, "shadows": .shadows, "sky": .sky, "skin": .skin,
+                                                  "neutral": .neutral, "blue": .hue(.blue), "lift": .lift, "none": .neutral]
+            app.editor.pinnedInfluence = argument == "none" ? nil : kinds[argument]
+        case "try":
+            let insights = CoachState(app: app).insights
+            if let index = Int(argument), insights.indices.contains(index), let suggestion = insights[index].suggestion {
+                app.trySuggestion(suggestion, concept: insights[index].concept)
+            }
+        case "level": app.learner.level = LearningLevel(rawValue: argument) ?? .beginner
+        case "topics": app.learner.topics = Set(argument.split(separator: ",").compactMap { LearningTopic(rawValue: String($0)) })
+        case "insights":
+            for insight in CoachState(app: app).insights {
+                NSLog("insight %@ sev=%.2f %@ | %@", insight.id, insight.severity, insight.title, insight.suggestion?.label ?? "-")
+            }
         case "jobs":
             for job in app.exports.jobs { NSLog("job %@ state=%@ detail=%@", job.title, String(describing: job.state), job.detail) }
         case "sheet":

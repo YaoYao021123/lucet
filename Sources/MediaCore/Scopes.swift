@@ -12,6 +12,8 @@ public struct ScopeData: Sendable {
     /// Fractions of pixels at pure white / pure black (any channel), for clipping badges.
     public let clippedHighlights: Double
     public let clippedShadows: Double
+    /// Photo facts for the coach, from the same pixels.
+    public let analysis: PhotoAnalysis
 }
 
 public enum ScopeAnalyzer {
@@ -43,12 +45,14 @@ public enum ScopeAnalyzer {
         var vector = [UInt32](repeating: 0, count: vectorSize * vectorSize)
         var vectorColor = [SIMD3<Float>](repeating: .zero, count: vectorSize * vectorSize)
         var white = 0, black = 0, counted = 0
+        var facts = PhotoAnalysis.Builder(width: w, height: h)
         for y in 0..<h {
             for x in 0..<w {
                 let index = (y * w + x) * 4
                 guard bytes[index + 3] > 0 else { continue }
                 counted += 1
                 let r = Int(bytes[index]), g = Int(bytes[index + 1]), b = Int(bytes[index + 2])
+                facts.add(r: r, g: g, b: b, x: x, y: y)
                 histogram[0][r / 4] += 1; histogram[1][g / 4] += 1; histogram[2][b / 4] += 1
                 if max(r, g, b) >= 254 { white += 1 }
                 if max(r, g, b) <= 1 { black += 1 }
@@ -72,7 +76,8 @@ public enum ScopeAnalyzer {
                          waveform: densityImage(luma, columns: w, rows: levels, tints: [SIMD3(0.75, 1, 0.8)]),
                          parade: densityImage(parade, columns: w, rows: levels, tints: [SIMD3(1, 0.35, 0.3), SIMD3(0.35, 1, 0.45), SIMD3(0.4, 0.6, 1)]),
                          vectorscope: vectorImage(vector, colors: vectorColor, size: vectorSize),
-                         clippedHighlights: Double(white) / total, clippedShadows: Double(black) / total)
+                         clippedHighlights: Double(white) / total, clippedShadows: Double(black) / total,
+                         analysis: facts.build())
     }
 
     /// Columns of level counts → an image with level 0 at the bottom. Several

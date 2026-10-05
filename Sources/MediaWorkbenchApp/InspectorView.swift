@@ -3,9 +3,9 @@ import MediaCore
 import SwiftUI
 
 enum InspectorTab: String, CaseIterable {
-    case color, geometry, audio, info
+    case color, geometry, audio, learn, info
     var title: String {
-        switch self { case .color: "调色"; case .geometry: "构图"; case .audio: "声音"; case .info: "信息" }
+        switch self { case .color: "调色"; case .geometry: "构图"; case .audio: "声音"; case .learn: "学习"; case .info: "信息" }
     }
 }
 
@@ -20,8 +20,8 @@ struct InspectorView: View {
             Picker("检查器", selection: Binding(get: { tabs.contains(tab) ? tab : .color }, set: { app.inspectorTab = $0 })) {
                 ForEach(tabs, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented).labelsHidden()
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .pickerStyle(.segmented).labelsHidden().controlSize(.small)
+            .padding(.horizontal, 12).padding(.vertical, 7)
             WorkbenchTheme.hairline.frame(height: 1)
             if editor.isLoaded {
                 ScrollView {
@@ -30,10 +30,11 @@ struct InspectorView: View {
                         case .color: ColorPanel(app: app)
                         case .geometry: GeometryPanel(editor: editor)
                         case .audio: AudioPanel(app: app)
+                        case .learn: LearnPanel(app: app)
                         case .info: InfoPanel(app: app)
                         }
                     }
-                    .padding(.horizontal, 14).padding(.bottom, 16)
+                    .padding(.horizontal, 12).padding(.bottom, 12)
                 }
                 .scrollIndicators(.automatic)
                 footer
@@ -54,12 +55,12 @@ struct InspectorView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            Label(editor.draftStatus, systemImage: "checkmark.circle").font(.callout).foregroundStyle(.secondary)
+            Label(editor.draftStatus, systemImage: "checkmark.circle").font(.caption).foregroundStyle(.secondary)
                 .help("编辑自动保存为配方，原片从不修改。")
             Spacer()
-            Button("复位全部", action: editor.resetAll).buttonStyle(.borderless).help("恢复原片画面（可撤销）")
+            Button("复位全部", action: editor.resetAll).buttonStyle(.borderless).font(.caption).help("恢复原片画面（可撤销）")
         }
-        .padding(.horizontal, 14).frame(height: 36)
+        .padding(.horizontal, 12).frame(height: 30)
         .overlay(alignment: .top) { WorkbenchTheme.hairline.frame(height: 1) }
     }
 }
@@ -76,16 +77,15 @@ struct ColorPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScopePanel(editor: editor).padding(.top, 12).padding(.bottom, 6)
-            Text("按 1→6 的顺序处理；关闭某一步可单独比较它的效果。")
-                .font(.caption).foregroundStyle(.tertiary).padding(.bottom, 4)
+            ScopePanel(editor: editor, level: app.learner.level).padding(.top, 8).padding(.bottom, 4)
+            InsightStrip(app: app)
             PresetStrip(app: app)
             InspectorSection("基础", number: 1, isOn: stage(.basic), help: "曝光、白平衡与影调", onReset: { editor.resetStage(.basic) }) {
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     SubHeading(title: "光线")
-                    AdjustmentRows(editor: editor, group: .light)
-                    SubHeading(title: "色彩").padding(.top, 6)
-                    AdjustmentRows(editor: editor, group: .color)
+                    AdjustmentRows(editor: editor, group: .light, hints: app.learner.hoverHints)
+                    SubHeading(title: "色彩").padding(.top, 4)
+                    AdjustmentRows(editor: editor, group: .color, hints: app.learner.hoverHints)
                 }
             }
             InspectorSection("色轮", number: 2, isOn: stage(.wheels),
@@ -107,7 +107,7 @@ struct ColorPanel: View {
             }
             InspectorSection("细节", number: 6, isOn: stage(.detail), help: "降噪在调色前进行，锐化与暗角在最后。",
                              startsCollapsed: true, onReset: { editor.resetStage(.detail) }) {
-                AdjustmentRows(editor: editor, group: .detail)
+                AdjustmentRows(editor: editor, group: .detail, hints: app.learner.hoverHints)
             }
             HDRSection(editor: editor)
         }
@@ -126,14 +126,17 @@ struct CurveSection: View {
 struct AdjustmentRows: View {
     let editor: EditorModel
     let group: AdjustmentGroup
+    var hints = true
     var body: some View {
         let values = editor.adjustments
-        VStack(spacing: 4) {
+        VStack(spacing: 1) {
             ForEach(AdjustmentParameter.allCases.filter { $0.group == group }) { parameter in
                 ParameterRow(title: parameter.title, value: values[parameter], range: parameter.range,
                              step: parameter == .exposure ? 0.05 : 1, decimals: parameter == .exposure ? 2 : 0,
                              suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
-                             onChange: { editor.setAdjustment(parameter, $0) }, onEditing: editor.beginEditing)
+                             influence: hints ? InfluenceKind.forParameter(parameter) : nil,
+                             onChange: { editor.setAdjustment(parameter, $0) }, onEditing: editor.beginEditing,
+                             onHover: { editor.hoverInfluence = $0 })
                     .equatable()
             }
         }
@@ -144,7 +147,7 @@ struct WheelGrid: View {
     let editor: EditorModel
     var body: some View {
         let wheels = editor.wheels
-        Grid(horizontalSpacing: 14, verticalSpacing: 12) {
+        Grid(horizontalSpacing: 10, verticalSpacing: 8) {
             GridRow {
                 wheel(.lift, wheels); wheel(.gamma, wheels)
             }
@@ -152,11 +155,12 @@ struct WheelGrid: View {
                 wheel(.gain, wheels); wheel(.offset, wheels)
             }
         }
-        .padding(.top, 4)
+        .padding(.top, 2)
     }
 
     private func wheel(_ kind: ColorWheels.Wheel, _ wheels: ColorWheels) -> some View {
-        ColorWheelControl(wheel: kind, value: wheels[kind], onChange: { editor.setWheel(kind, $0) }, onEditing: editor.beginEditing)
+        ColorWheelControl(wheel: kind, value: wheels[kind], onChange: { editor.setWheel(kind, $0) }, onEditing: editor.beginEditing,
+                          onHover: { editor.hoverInfluence = $0 })
             .equatable()
             .frame(maxWidth: .infinity)
     }
@@ -166,16 +170,16 @@ struct PresetStrip: View {
     let app: AppModel
     var body: some View {
         InspectorSection("预设", help: "一键套用整套调色（不影响裁切、片段与声音）。可把当前调色存为自己的预设。") {
-            FlowLayout(spacing: 6) {
+            FlowLayout(spacing: 4) {
                 ForEach(app.presets) { preset in
                     Button(preset.name) { app.applyPreset(preset) }
-                        .glassButton().controlSize(.small)
+                        .glassButton().controlSize(.mini)
                         .contextMenu {
                             if !preset.builtIn { Button("删除预设「\(preset.name)」") { app.deletePreset(preset) } }
                         }
                 }
                 Button { app.sheet = .savePreset } label: { Label("存为预设", systemImage: "plus") }
-                    .buttonStyle(.borderless).controlSize(.small)
+                    .buttonStyle(.borderless).controlSize(.mini)
             }
         }
     }
@@ -186,7 +190,7 @@ struct LUTControls: View {
     var editor: EditorModel { app.editor }
     var body: some View {
         let lut = editor.selectedLUT
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Menu {
                     Button("无") { editor.selectLUT(nil) }

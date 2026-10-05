@@ -94,6 +94,10 @@ final class AppModel {
         didSet { if let data = try? JSONEncoder().encode(exportSettings) { UserDefaults.standard.set(data, forKey: "guangji.export") } }
     }
 
+    /// What this user knows and wants to learn; drives the coach.
+    var learner = LearnerProfile() { didSet { if learner != oldValue { scheduleLearnerSave() } } }
+    @ObservationIgnored private var learnerSave: Task<Void, Never>?
+    @ObservationIgnored private let learnerFile: URL
     @ObservationIgnored private var clipboard: (EditRecipe, CreativeLUT?)?
     @ObservationIgnored private var panelOpen = false
     @ObservationIgnored private var toastTask: Task<Void, Never>?
@@ -101,6 +105,7 @@ final class AppModel {
 
     init() {
         let root = AppPaths.dataRoot
+        learnerFile = root.appendingPathComponent("learning.json")
         drafts = DraftStore(root: root)
         library = LibraryModel(root: root)
         thumbnails = ThumbnailStore(drafts: drafts)
@@ -114,6 +119,12 @@ final class AppModel {
         }
         presets = drafts.presets()
         lutLibrary = drafts.importedLUTs()
+        if let data = try? Data(contentsOf: learnerFile), let profile = try? JSONDecoder().decode(LearnerProfile.self, from: data) {
+            learner = profile
+        }
+        editor.onConceptsUsed = { [weak self] concepts in
+            for concept in concepts { self?.learner.update(concept) { $0.used += 1 } }
+        }
         editor.onNotice = { [weak self] notice in self?.alert = AppAlert(title: notice.title, message: notice.message) }
         editor.onRecipeSaved = { [weak self] url in self?.thumbnails.invalidate(url.standardizedFileURL.path) }
         exports.onFinish = { [weak self] job in self?.exportFinished(job) }
@@ -693,6 +704,64 @@ final class AppModel {
         panel.allowedContentTypes = [.audio]
         present(panel) { [weak self] urls in
             if let url = urls.first { self?.editor.musicURL = url }
+        }
+    }
+
+    // MARK: Learning
+
+    private func scheduleLearnerSave() {
+        learnerSave?.cancel()
+        let profile = learner, file = learnerFile
+        learnerSave = Task.detached(priority: .utility) {
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? JSONEncoder().encode(profile).write(to: file, options: .atomic)
+        }
+    }
+
+    enum CoachFeedback { case helpful, known, mute }
+
+    func feedback(_ feedback: CoachFeedback, on concept: Concept) {
+        learner.update(concept) { state in
+            switch feedback {
+            case .helpful: state.helpful += 1
+            case .known: state.known = true
+            case .mute: state.muted = true
+            }
+        }
+        switch feedback {
+        case .helpful: show("谢谢！以后会多讲「\(concept.title)」相关的内容。")
+        case .known: show("已标记为已了解：「\(concept.title)」会讲得更简短。")
+        case .mute: show("不再提示「\(concept.title)」。可在「学习」页底部恢复。")
+        }
+    }
+
+    func unmuteAll() {
+        for concept in Concept.allCases where learner.state(concept).muted { learner.update(concept) { $0.muted = false } }
+    }
+
+    func markShown(_ insights: [CoachInsight]) {
+        for insight in insights { learner.update(insight.concept) { $0.shown += 1 } }
+    }
+
+    /// Applies a tip or a concept demo: edits as one undo step, plus any view actions.
+    func trySuggestion(_ suggestion: CoachSuggestion, concept: Concept) {
+        guard editor.isLoaded else { return }
+        learner.update(concept) { $0.tried += 1 }
+        editor.applySuggestion(suggestion)
+        for action in suggestion.actions {
+            switch action {
+            case .straighten: editor.autoStraighten()
+            case .importLUT: importLUT()
+            case .builtInLUT: editor.group { editor.selectLUT(.warm) }; if !editor.isVideo { editor.compareMode = .split }
+            case .showClipping: editor.showClipping = true
+            case .zoomToActual: editor.zoomToActualPixels()
+            case .cropFourFive: editor.group { editor.geometry.aspectRatio = 0.8 }
+            case .showScope(let name):
+                editor.scopeKind = ScopeKind(rawValue: name) ?? .histogram
+                inspectorTab = .color
+            }
         }
     }
 

@@ -21,28 +21,36 @@ enum ScopeKind: String, CaseIterable {
 
 struct ScopePanel: View {
     let editor: EditorModel
-    @AppStorage("scope.kind") private var kind = ScopeKind.histogram
+    var level = LearningLevel.beginner
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("示波器", selection: $kind) {
+        let kind = editor.scopeKind
+        VStack(alignment: .leading, spacing: 4) {
+            Picker("示波器", selection: Binding(get: { editor.scopeKind }, set: { editor.scopeKind = $0 })) {
                 ForEach(ScopeKind.allCases, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented).labelsHidden().controlSize(.small)
+            .pickerStyle(.segmented).labelsHidden().controlSize(.mini)
             .help(kind.help)
             ZStack {
                 RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.35))
                 content.padding(4)
             }
-            .frame(height: kind == .vectorscope ? 150 : 104)
+            .frame(height: kind == .vectorscope ? 128 : 84)
             .overlay(alignment: .topLeading) { clipBadge(shadows: true) }
             .overlay(alignment: .topTrailing) { clipBadge(shadows: false) }
+            // Plain-language reading of this diagram for this photo.
+            if let analysis = editor.scopes?.analysis {
+                Text(PhotoCoach.reading(scope: kind.rawValue, analysis, level: level))
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .help(kind.help)
+            }
         }
     }
 
     @ViewBuilder private var content: some View {
         let scopes = editor.scopes
-        switch kind {
+        switch editor.scopeKind {
         case .histogram: HistogramShape(histogram: scopes?.histogram)
         case .waveform: WaveformView(image: scopes?.waveform, sections: 1)
         case .parade: WaveformView(image: scopes?.parade, sections: 3)
@@ -167,19 +175,25 @@ struct ColorWheelControl: View, @MainActor Equatable {
     let value: WheelValue
     let onChange: (WheelValue) -> Void
     let onEditing: (Bool) -> Void
+    var onHover: (InfluenceKind?) -> Void = { _ in }
+
+    private var influence: InfluenceKind? {
+        switch wheel { case .lift: .lift; case .gamma: .midtones; case .gain: .gain; case .offset: nil }
+    }
 
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.wheel == rhs.wheel && lhs.value == rhs.value }
 
     @UIState private var dragOrigin: WheelValue?
 
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 3) {
             HStack(spacing: 3) {
-                Text(wheel.title).font(.subheadline.weight(.semibold))
-                Text(wheel.subtitle).font(.caption).foregroundStyle(.tertiary)
+                Text(wheel.title).font(.caption.weight(.semibold))
+                Text(wheel.subtitle).font(.caption2).foregroundStyle(.tertiary)
             }
             .onTapGesture(count: 2) { commit(WheelValue()) }
-            .help("双击复位此色轮")
+            .onHover { inside in if influence != nil { onHover(inside ? influence : nil) } }
+            .help("双击复位此色轮" + (influence != nil ? "；悬停查看它影响的亮度范围" : ""))
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
                 let radius = side / 2
@@ -215,6 +229,7 @@ struct ColorWheelControl: View, @MainActor Equatable {
                 .frame(maxWidth: .infinity)
             }
             .aspectRatio(1, contentMode: .fit)
+            .frame(maxWidth: 112)
             .accessibilityElement()
             .accessibilityLabel("\(wheel.title)色轮")
             .accessibilityValue(String(format: "色彩偏移 %.0f%%", (value.x * value.x + value.y * value.y).squareRoot() * 100))
@@ -261,15 +276,15 @@ struct CurveEditor: View {
     @UIState private var dragIndex: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Picker("通道", selection: $channel) {
                     ForEach(ToneCurves.Channel.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 150)
+                .pickerStyle(.segmented).labelsHidden().controlSize(.mini).frame(width: 140)
                 Spacer()
                 Button("复位通道") { onEditing(true); onChange(channel, ToneCurves.identity); onEditing(false) }
-                    .buttonStyle(.borderless).font(.callout)
+                    .buttonStyle(.borderless).font(.caption)
                     .disabled(curves[channel] == ToneCurves.identity)
             }
             GeometryReader { geometry in
@@ -280,7 +295,7 @@ struct CurveEditor: View {
                         .onChanged { event in drag(event, size: size) }
                         .onEnded { _ in if dragIndex != nil { onEditing(false) }; dragIndex = nil })
             }
-            .aspectRatio(1.25, contentMode: .fit)
+            .aspectRatio(1.45, contentMode: .fit)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.3)))
             Text("点按曲线添加控制点，拖出框外删除。").font(.caption).foregroundStyle(.tertiary)
         }
@@ -395,18 +410,18 @@ struct HSLPanel: View {
     var body: some View {
         let hsl = editor.hsl
         let band = HueBand(rawValue: bandIndex) ?? .red
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 0) {
                 ForEach(HueBand.allCases, id: \.self) { item in
                     let changed = HSLAdjustments.Component.allCases.contains { hsl[item, $0] != 0 }
                     Button { bandIndex = item.rawValue } label: {
                         Circle().fill(Self.swatches[item.rawValue])
-                            .frame(width: 18, height: 18)
+                            .frame(width: 15, height: 15)
                             .overlay(Circle().strokeBorder(Color.white, lineWidth: item == band ? 2 : 0))
                             .overlay(alignment: .bottom) {
-                                if changed { Circle().fill(Color.white).frame(width: 4, height: 4).offset(y: 6) }
+                                if changed { Circle().fill(Color.white).frame(width: 3, height: 3).offset(y: 5) }
                             }
-                            .frame(maxWidth: .infinity, minHeight: 28)
+                            .frame(maxWidth: .infinity, minHeight: 22)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -417,8 +432,9 @@ struct HSLPanel: View {
             }
             ForEach(HSLAdjustments.Component.allCases, id: \.self) { component in
                 ParameterRow(title: "\(band.title) · \(component.title)", value: hsl[band, component], range: -100...100,
-                             labelWidth: 86,
-                             onChange: { editor.setHSL(band, component, $0) }, onEditing: editor.beginEditing)
+                             labelWidth: 74, influence: .hue(band),
+                             onChange: { editor.setHSL(band, component, $0) }, onEditing: editor.beginEditing,
+                             onHover: { editor.hoverInfluence = $0 })
                     .equatable()
             }
         }

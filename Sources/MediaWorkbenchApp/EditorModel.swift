@@ -74,6 +74,20 @@ final class EditorModel {
     var zoomPercent: Int?
     private(set) var frame: GradeFrame?
     private(set) var scopes: ScopeData?
+    /// Analysis of the untouched photo, to show which issues the edits have fixed.
+    private(set) var originalAnalysis: PhotoAnalysis?
+    /// Horizon angle from Vision, once requested (degrees; 0 when level).
+    private(set) var horizonTilt: Double?
+    /// Face rectangles (normalized) and the current grade measured inside them.
+    @ObservationIgnored private var faces: [CGRect]?
+    private(set) var faceAnalysis: PhotoAnalysis?
+    /// "Show me where": the hovered control's area, else a pinned one from a tip.
+    var hoverInfluence: InfluenceKind?
+    var pinnedInfluence: InfluenceKind?
+    var influence: InfluenceKind? { hoverInfluence ?? pinnedInfluence }
+    var scopeKind = ScopeKind(rawValue: UserDefaults.standard.string(forKey: "scope.kind") ?? "") ?? .histogram {
+        didSet { UserDefaults.standard.set(scopeKind.rawValue, forKey: "scope.kind") }
+    }
     private(set) var isLoadingFullResolution = false
     @ObservationIgnored weak var canvas: CanvasController?
 
@@ -91,6 +105,11 @@ final class EditorModel {
     // MARK: Collaborators
     @ObservationIgnored var onNotice: ((Notice) -> Void)?
     @ObservationIgnored var onRecipeSaved: ((URL) -> Void)?
+    /// Reports which concepts' controls the user changed (once per gesture).
+    @ObservationIgnored var onConceptsUsed: ((Set<Concept>) -> Void)?
+    @ObservationIgnored private var trackedEdits = MediaEdits()
+    @ObservationIgnored private var editingDepth = 0
+    @ObservationIgnored private var horizonTask: Task<Void, Never>?
     @ObservationIgnored let drafts: DraftStore
 
     // MARK: Private state
@@ -181,6 +200,9 @@ final class EditorModel {
         originalVolume = 1; musicURL = nil; musicVolume = 0.5
         suspended -= 1
         compareMode = .off
+        originalAnalysis = nil; horizonTilt = nil; hoverInfluence = nil; pinnedInfluence = nil
+        faces = nil; faceAnalysis = nil
+        horizonTask?.cancel(); horizonTask = nil
         url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; frame = nil; scopes = nil
         isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
@@ -242,6 +264,13 @@ final class EditorModel {
                     imageSession = renderer
                     frame = first
                     sourceIsHDR = first.sourceHeadroom > 1
+                    let untouched = first.original, headroom = first.sourceHeadroom
+                    Task {
+                        let facts = await Task.detached(priority: .utility) {
+                            ScopeAnalyzer.analyze(untouched, headroom: headroom)?.analysis
+                        }.value
+                        if session == token { originalAnalysis = facts }
+                    }
                 } else {
                     try await buildPlayer(input, token: token)
                     guard token == session else { return }
@@ -249,6 +278,7 @@ final class EditorModel {
                     loadFilmstrip(input, duration: duration, token: token)
                 }
                 history = EditHistory(snapshot); updateUndoState()
+                trackedEdits = edits
                 isLoaded = true; isLoading = false
                 draftStatus = loaded.0 == nil ? "自动保存" : "已恢复上次的编辑"
                 status = notice ?? restoreNotice ?? loaded.2.map { "旧配方未载入：\($0)" }
@@ -311,6 +341,7 @@ final class EditorModel {
         guard suspended == 0 else { return }
         revision += 1
         guard isLoaded else { return }
+        if editingDepth == 0 { reportUsage() }
         history?.record(snapshot); updateUndoState()
         scheduleDraft()
         schedulePreview()
@@ -324,7 +355,21 @@ final class EditorModel {
 
     /// Groups a continuous drag into one undo step.
     func beginEditing(_ editing: Bool) {
-        if editing { history?.beginGroup() } else { history?.endGroup(); updateUndoState(); flushDraft() }
+        if editing {
+            editingDepth += 1
+            history?.beginGroup()
+        } else {
+            editingDepth = max(0, editingDepth - 1)
+            history?.endGroup(); updateUndoState(); flushDraft()
+            if editingDepth == 0 { reportUsage() }
+        }
+    }
+
+    private func reportUsage() {
+        let current = edits
+        let used = Concept.changed(from: trackedEdits, to: current)
+        trackedEdits = current
+        if !used.isEmpty { onConceptsUsed?(used) }
     }
 
     func undo() {
@@ -338,6 +383,7 @@ final class EditorModel {
     }
 
     private func restore(_ value: EditorSnapshot) {
+        defer { trackedEdits = edits }
         suspended += 1
         let e = value.edits
         adjustments = e.adjustments; wheels = e.wheels; curves = e.curves; hsl = e.hsl; bypass = e.bypass
@@ -421,6 +467,40 @@ final class EditorModel {
             if recipe.lut != nil || lut == nil { selectedLUT = lut; strength = recipe.strength }
         }
         status = "已应用 \(name)，可撤销。"
+    }
+
+    /// Applies a coach suggestion as one undo step and shows before/after.
+    func applySuggestion(_ suggestion: CoachSuggestion, compare: Bool = true) {
+        guard suggestion.changesEdits else { return }
+        let next = suggestion.applied(to: edits)
+        group {
+            adjustments = next.adjustments
+            hsl = next.hsl
+            curves = next.curves
+            wheels = next.wheels
+        }
+        if compare, !isVideo { compareMode = .split }
+        status = "已应用：\(suggestion.label)。左右对比查看变化，可撤销（⌘Z）。"
+    }
+
+    /// Runs horizon and face detection once per photo for the coach.
+    func requestHorizon() {
+        guard horizonTilt == nil, horizonTask == nil, !isVideo, let input = mediaURL, isLoaded else { return }
+        let token = session
+        horizonTask = Task {
+            let found = (try? await FaceDetector.faces(in: input)) ?? []
+            guard token == session else { return }
+            faces = found
+            if !found.isEmpty { markScopesDirty() }
+            let result = try? await ImageStraightener.analyze(input)
+            guard token == session else { return }
+            if let result { analysisCache = result }
+            switch result?.status {
+            case .ready: horizonTilt = result?.proposedDegrees
+            case .alreadyLevel: horizonTilt = 0
+            default: horizonTilt = 0
+            }
+        }
     }
 
     func rotate(clockwise: Bool) {
@@ -674,6 +754,19 @@ final class EditorModel {
             let original = compareMode == .original
             let image = original ? frame.original : frame.image
             let headroom = original ? frame.sourceHeadroom : frame.headroom
+            // Skin is judged inside detected faces, graded with the current edits (no geometry needed).
+            if let faces, !faces.isEmpty {
+                let extent = frame.original.extent
+                let box = faces.reduce(CGRect.null) { $0.union($1) }
+                let rect = CGRect(x: extent.minX + box.minX * extent.width, y: extent.minY + box.minY * extent.height,
+                                  width: box.width * extent.width, height: box.height * extent.height).intersection(extent)
+                let current = edits, sourceHeadroom = frame.sourceHeadroom
+                faceAnalysis = await Task.detached(priority: .utility) { () -> PhotoAnalysis? in
+                    guard !rect.isEmpty, let graded = try? ColorPipeline.grade(frame.original.cropped(to: rect), edits: current,
+                                                                              sourceHeadroom: sourceHeadroom) else { return nil }
+                    return ScopeAnalyzer.analyze(graded, headroom: current.hasGrade ? 1 : sourceHeadroom, width: 96)?.analysis
+                }.value
+            }
             return await Task.detached(priority: .utility) { ScopeAnalyzer.analyze(image, headroom: headroom) }.value
         }
         guard let item = player?.currentItem, !playing else { return nil }

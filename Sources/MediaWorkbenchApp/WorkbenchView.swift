@@ -88,7 +88,7 @@ struct EditorStage: View {
                 } else if let frame = editor.frame {
                     ImageCanvas(editor: editor, frame: frame, documentID: editor.documentID, compare: editor.compareMode,
                                 split: editor.splitPosition, clipping: editor.showClipping, grid: editor.showGrid,
-                                hdr: editor.hdrPreview)
+                                hdr: editor.hdrPreview, influence: editor.influence)
                 } else if editor.isLoading {
                     ProgressView("正在读取…").controlSize(.regular)
                 } else {
@@ -117,6 +117,7 @@ private struct CanvasHUD: View {
                 Spacer()
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 6) {
+                        if let influence = editor.influence, !editor.isVideo { label("彩色部分 = 「\(influence.title)」影响的区域") }
                         if editor.isLoadingFullResolution { label("正在载入原尺寸…") }
                         if editor.showClipping { label("溢出：红 = 高光  蓝 = 暗部") }
                     }

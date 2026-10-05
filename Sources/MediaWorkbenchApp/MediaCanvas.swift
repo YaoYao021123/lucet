@@ -17,6 +17,7 @@ struct ImageCanvas: NSViewRepresentable {
     let clipping: Bool
     let grid: Bool
     let hdr: Bool
+    var influence: InfluenceKind?
 
     func makeNSView(context: Context) -> CanvasView {
         let view = CanvasView(editor: editor)
@@ -35,6 +36,7 @@ struct ImageCanvas: NSViewRepresentable {
         view.clipping = clipping
         view.grid = grid
         view.hdr = hdr
+        view.influence = influence
         editor.canvas = view
         view.setNeedsDisplay(view.bounds)
     }
@@ -49,6 +51,7 @@ final class CanvasView: MTKView, CanvasController {
     var clipping = false
     var grid = false
     var hdr = true
+    var influence: InfluenceKind?
 
     private let queue: MTLCommandQueue?
     private let context: CIContext
@@ -301,7 +304,9 @@ final class CanvasView: MTKView, CanvasController {
             output = place(original, full: false)
         case .off, .split:
             let edited = useFull ? frame.fullImage! : frame.image
-            var shown = ColorPipeline.toneMap(edited, sourceHeadroom: frame.headroom, targetHeadroom: clipping ? 1 : target)
+            var shown = ColorPipeline.toneMap(edited, sourceHeadroom: frame.headroom,
+                                              targetHeadroom: clipping || influence != nil ? 1 : target)
+            if let influence { shown = InfluenceOverlay.visualize(shown, kind: influence) }
             if clipping, let kernel = Self.clippingKernel, let marked = kernel.apply(extent: shown.extent, arguments: [shown]) {
                 shown = marked
             }

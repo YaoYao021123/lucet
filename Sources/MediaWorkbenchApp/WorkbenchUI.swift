@@ -1,4 +1,5 @@
 import AppKit
+import MediaCore
 import SwiftUI
 
 typealias UIState<Value> = SwiftUI.State<Value>
@@ -24,13 +25,17 @@ struct ParameterRow: View, @MainActor Equatable {
     var suffix = ""
     var neutral: Double = 0
     var help: String?
-    var labelWidth: CGFloat = 62
+    var labelWidth: CGFloat = 56
+    /// Hovering the name shows where this control acts in the photo.
+    var influence: InfluenceKind?
     let onChange: (Double) -> Void
     var onEditing: (Bool) -> Void = { _ in }
+    var onHover: (InfluenceKind?) -> Void = { _ in }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.title == rhs.title && lhs.value == rhs.value && lhs.range == rhs.range && lhs.step == rhs.step
             && lhs.decimals == rhs.decimals && lhs.suffix == rhs.suffix && lhs.neutral == rhs.neutral
+            && lhs.influence == rhs.influence
     }
 
     @UIState private var position: Double?
@@ -49,7 +54,8 @@ struct ParameterRow: View, @MainActor Equatable {
                 .frame(width: labelWidth, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) { reset() }
-                .help((help.map { $0 + "\n" } ?? "") + "双击名称恢复默认")
+                .onHover { inside in if influence != nil { onHover(inside ? influence : nil) } }
+                .help((help.map { $0 + "\n" } ?? "") + (influence != nil ? "悬停名称可在画面上查看影响范围；" : "") + "双击名称恢复默认")
             slider
             HStack(spacing: 2) {
                 TextField("", value: Binding(get: { value }, set: { next in if next.isFinite { onChange(clamp(next)) } }),
@@ -58,12 +64,12 @@ struct ParameterRow: View, @MainActor Equatable {
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                     .accessibilityLabel("\(title)数值")
-                Text(suffix).font(.caption).foregroundStyle(.tertiary).frame(width: 16, alignment: .leading)
+                Text(suffix).font(.caption).foregroundStyle(.tertiary).frame(width: 13, alignment: .leading)
             }
-            .frame(width: 58)
+            .frame(width: 48)
         }
-        .font(.callout)
-        .frame(height: 22)
+        .font(.subheadline)
+        .frame(height: 18)
         .contextMenu { Button("恢复默认值") { reset() } }
         .opacity(enabled ? 1 : 0.5)
     }
@@ -83,7 +89,7 @@ struct ParameterRow: View, @MainActor Equatable {
             }
         }
         .labelsHidden()
-        .controlSize(.small)
+        .controlSize(.mini)
         .accessibilityLabel(title)
         .onChange(of: value) { _, _ in if !dragging { position = nil } }
     }
@@ -121,7 +127,7 @@ struct InspectorSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Button { withAnimation(.snappy(duration: 0.18)) { collapsed.toggle() } } label: {
                     HStack(spacing: 6) {
@@ -133,11 +139,11 @@ struct InspectorSection<Content: View>: View {
                         if let number {
                             Text("\(number)")
                                 .font(.caption2.weight(.bold)).monospacedDigit()
-                                .frame(width: 15, height: 15)
+                                .frame(width: 14, height: 14)
                                 .background(Circle().fill(isOn?.wrappedValue == false ? Color.secondary.opacity(0.25) : WorkbenchTheme.accent.opacity(0.85)))
                                 .foregroundStyle(.black.opacity(0.8))
                         }
-                        Text(title).font(.headline)
+                        Text(title).font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(isOn?.wrappedValue == false ? .secondary : .primary)
                     }
                     .contentShape(Rectangle())
@@ -164,7 +170,7 @@ struct InspectorSection<Content: View>: View {
                     .opacity(isOn?.wrappedValue == false ? 0.45 : 1)
             }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, 7)
         .overlay(alignment: .bottom) { WorkbenchTheme.hairline.frame(height: 1) }
     }
 }
@@ -174,11 +180,10 @@ struct SubHeading: View {
     var trailing: AnyView?
     var body: some View {
         HStack {
-            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
             Spacer()
             trailing
         }
-        .padding(.top, 2)
     }
 }
 
