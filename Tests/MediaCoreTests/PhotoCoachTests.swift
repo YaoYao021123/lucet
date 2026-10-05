@@ -76,6 +76,20 @@ struct PhotoCoachTests {
         #expect(tip.title.contains("偏蓝"))
     }
 
+    @Test func smallTiltsAreHedgedForShotsWithoutAHorizon() throws {
+        let small = try #require(PhotoCoach.insights(for: balanced(), edits: MediaEdits(), profile: LearnerProfile(), tilt: 1.0)
+            .first { $0.id == "tilt" })
+        #expect(small.title.hasPrefix("可能") && small.severity < 0.3 && small.observation.contains("俯拍"))
+        let clear = try #require(PhotoCoach.insights(for: balanced(), edits: MediaEdits(), profile: LearnerProfile(), tilt: -2.4)
+            .first { $0.id == "tilt" })
+        #expect(clear.title.hasPrefix("地平线倾斜") && clear.severity >= 0.5)
+        #expect(!PhotoCoach.insights(for: balanced(), edits: MediaEdits(), profile: LearnerProfile(), tilt: 0.4).contains { $0.id == "tilt" })
+        // Questions the user asks about a concept raise its rank like a chosen topic.
+        var profile = LearnerProfile(); profile.topics = []
+        profile.update(.straighten) { $0.asked = 3 }
+        #expect(profile.interest(.straighten) == 1 && profile.interest(.curves) == 0)
+    }
+
     @Test func suggestionsAddClampAndTrackUsage() {
         var edits = MediaEdits(); edits.adjustments.highlights = -90
         let suggestion = CoachSuggestion(label: "x", deltas: [.highlights: -35, .exposure: 0.3],

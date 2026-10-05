@@ -83,6 +83,8 @@ enum DebugSnapshot {
             for insight in CoachState(app: app).insights {
                 NSLog("insight %@ sev=%.2f %@ | %@", insight.id, insight.severity, insight.title, insight.suggestion?.label ?? "-")
             }
+        case "ask": app.askTutor(argument)
+        case "sheet-tutor": app.sheet = .tutorSettings
         case "jobs":
             for job in app.exports.jobs { NSLog("job %@ state=%@ detail=%@", job.title, String(describing: job.state), job.detail) }
         case "sheet":

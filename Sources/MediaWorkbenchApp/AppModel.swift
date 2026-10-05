@@ -19,6 +19,7 @@ enum ActiveSheet: Identifiable {
     case collage
     case savePreset
     case shortcuts
+    case tutorSettings
     case livePreview(LivePhotoResources)
 
     var id: String {
@@ -29,6 +30,7 @@ enum ActiveSheet: Identifiable {
         case .collage: "collage"
         case .savePreset: "preset"
         case .shortcuts: "shortcuts"
+        case .tutorSettings: "tutor"
         case .livePreview(let resources): "live-\(resources.identifier)"
         }
     }
@@ -74,6 +76,7 @@ final class AppModel {
     let thumbnails: ThumbnailStore
     let editor: EditorModel
     let exports: ExportQueue
+    let tutor = TutorModel()
 
     var mode = WorkspaceMode.browse
     var showSidebar = true
@@ -213,6 +216,7 @@ final class AppModel {
 
     func open(_ id: String) {
         guard let entry = library.entry(id) else { return }
+        if id != library.currentID { tutor.reset() }
         library.currentID = id
         if !library.selection.contains(id) || library.selection.count > 1 { library.select(id) }
         mode = .edit
@@ -763,6 +767,20 @@ final class AppModel {
                 inspectorTab = .color
             }
         }
+    }
+
+    /// Sends a question about the open photo; the answer's concepts count as interest.
+    func askTutor(_ question: String) {
+        let tips = CoachState(app: self).insights.prefix(4).map(\.title)
+        tutor.ask(question, editor: editor, profile: learner, coachTips: Array(tips)) { [weak self] answer in
+            guard let self else { return }
+            for concept in answer.concepts { self.learner.update(concept) { $0.asked += 1; $0.shown += 1 } }
+        }
+    }
+
+    func tryTutorSuggestion(_ item: TutorSuggestion) {
+        if let concept = item.concept { trySuggestion(item.suggestion, concept: concept) }
+        else { editor.applySuggestion(item.suggestion) }
     }
 
     // MARK: Keyboard (single-key shortcuts, like Lightroom / Resolve)

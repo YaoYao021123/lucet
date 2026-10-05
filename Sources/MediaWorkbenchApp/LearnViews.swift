@@ -102,6 +102,7 @@ struct LearnPanel: View {
                     }
                 }
             }
+            AskSection(app: app)
             InspectorSection("我的学习", help: "选择水平和感兴趣的方向，讲解和推荐会随之调整。") {
                 VStack(alignment: .leading, spacing: 6) {
                     if !profile.onboarded {
@@ -185,7 +186,7 @@ struct InsightCard: View {
             if !learned || showWhy {
                 Text(insight.why).font(.caption).foregroundStyle(.tertiary).fixedSize(horizontal: false, vertical: true)
             }
-            if let suggestion = insight.suggestion {
+            if let suggestion = insight.suggestion, suggestion.changesEdits {
                 Label(suggestion.label, systemImage: "wand.and.stars").font(.caption).foregroundStyle(WorkbenchTheme.accent)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -197,7 +198,7 @@ struct InsightCard: View {
                     }
                 }
                 if let suggestion = insight.suggestion {
-                    Button(suggestion.changesEdits ? "试一试" : "打开") { app.trySuggestion(suggestion, concept: insight.concept) }
+                    Button(suggestion.changesEdits ? "试一试" : suggestion.label) { app.trySuggestion(suggestion, concept: insight.concept) }
                         .help("作为一步应用，左右对比查看效果；⌘Z 撤销")
                 }
                 if learned, !showWhy {
@@ -255,6 +256,127 @@ struct ConceptRow: View {
                     .glassButton().controlSize(.mini).font(.caption)
                 }
                 .padding(.leading, 20).padding(.bottom, 4)
+            }
+        }
+    }
+}
+
+// MARK: - Ask about this photo (optional, cloud)
+
+struct AskSection: View {
+    let app: AppModel
+    var tutor: TutorModel { app.tutor }
+
+    var body: some View {
+        InspectorSection("问问这张照片", help: "用 AI 回答关于这张照片的任何问题；回答会结合画面和你的水平。只有你提问时才会发送数据。") {
+            if tutor.isReady {
+                conversation
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("想知道这张照片的任何事，都可以直接问，比如「天空为什么发灰？」「怎么调出胶片感？」。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Text("需要你自己的 Anthropic API 密钥；默认关闭，只在你提问时发送。")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                    Button("设置…") { app.sheet = .tutorSettings }.glassButton().controlSize(.small)
+                }
+            }
+        }
+    }
+
+    private var conversation: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(tutor.turns) { turn in TurnView(app: app, turn: turn) }
+            if tutor.isAsking {
+                HStack(spacing: 6) { ProgressView().controlSize(.small); Text("正在看这张照片…").font(.caption).foregroundStyle(.secondary) }
+            }
+            if tutor.turns.isEmpty {
+                FlowLayout(spacing: 4) {
+                    ForEach(quickQuestions, id: \.self) { question in
+                        Button(question) { app.askTutor(question) }
+                            .buttonStyle(.plain).font(.caption)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Capsule().fill(WorkbenchTheme.well))
+                    }
+                }
+            }
+            if tutor.turns.count < TutorModel.maxTurns {
+                HStack(alignment: .bottom, spacing: 6) {
+                    TextField("问点什么…", text: Binding(get: { tutor.draft }, set: { tutor.draft = $0 }), axis: .vertical)
+                        .lineLimit(1...4).textFieldStyle(.roundedBorder).font(.caption)
+                        .onSubmit { app.askTutor(tutor.draft) }
+                    Button { app.askTutor(tutor.draft) } label: { Image(systemName: "arrow.up.circle.fill").font(.system(size: 18)) }
+                        .buttonStyle(.plain).foregroundStyle(WorkbenchTheme.accent)
+                        .disabled(tutor.isAsking || tutor.draft.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .help("提问（⏎）")
+                }
+            } else {
+                Text("这段对话已经很长了，开始新对话可以更聚焦。").font(.caption).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
+                Text(tutor.modelTitle + " · 发送" + (tutor.settings.sendPreview ? "预览图、" : "") + "画面统计与参数")
+                    .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                Spacer(minLength: 4)
+                if !tutor.turns.isEmpty { Button("新对话", action: tutor.reset).buttonStyle(.borderless).font(.caption2) }
+                Button("设置") { app.sheet = .tutorSettings }.buttonStyle(.borderless).font(.caption2)
+            }
+        }
+    }
+
+    /// Starter questions adapted to the photo's top tip, the level and the chosen topics.
+    private var quickQuestions: [String] {
+        var list = ["这张照片最该先调什么？"]
+        if let top = CoachState(app: app).insights.first { list.append("「\(top.title)」是怎么回事？") }
+        let profile = app.learner
+        if profile.topics.contains(.portrait) { list.append("肤色怎么调得更自然？") }
+        if profile.topics.contains(.landscape) { list.append("天空怎么更有层次？") }
+        if profile.topics.contains(.cinematic) { list.append("怎么调出电影感？") }
+        switch profile.level {
+        case .beginner: list.append("直方图怎么看？")
+        case .intermediate: list.append("这张适合用曲线吗？")
+        case .advanced: list.append("从示波器看，这张还有什么问题？")
+        }
+        return Array(list.prefix(4))
+    }
+}
+
+private struct TurnView: View {
+    let app: AppModel
+    let turn: TutorTurn
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Spacer(minLength: 24)
+                Text(turn.question).font(.caption)
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background(WorkbenchTheme.accent.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .help(turn.sentPreview ? "已附带当时的预览图" : "未附带预览图")
+            }
+            if let answer = turn.answer {
+                Text(answer.answer).font(.caption).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                ForEach(Array(answer.suggestions.enumerated()), id: \.offset) { _, item in
+                    HStack(spacing: 6) {
+                        Label(item.label, systemImage: "wand.and.stars").font(.caption).foregroundStyle(WorkbenchTheme.accent)
+                        Spacer(minLength: 4)
+                        Button("试一试") { app.tryTutorSuggestion(item) }.glassButton().controlSize(.mini).font(.caption)
+                            .help("作为一步应用，左右对比查看效果；⌘Z 撤销")
+                    }
+                }
+                if !answer.followUps.isEmpty {
+                    FlowLayout(spacing: 4) {
+                        ForEach(answer.followUps, id: \.self) { question in
+                            Button(question) { app.askTutor(question) }
+                                .buttonStyle(.plain).font(.caption2)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().strokeBorder(WorkbenchTheme.hairline))
+                                .disabled(app.tutor.isAsking)
+                        }
+                    }
+                }
+            } else if let error = turn.error {
+                Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

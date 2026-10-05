@@ -17,6 +17,7 @@ struct SheetContent: View {
         case .collage: CollageSheet(app: app)
         case .savePreset: SavePresetSheet(app: app)
         case .shortcuts: ShortcutsSheet(app: app)
+        case .tutorSettings: TutorSettingsSheet(tutor: app.tutor)
         case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
         }
     }
@@ -257,5 +258,64 @@ struct LivePreviewSheet: View {
         }
         .padding(22)
         .task { photo = try? await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL) }
+    }
+}
+
+// MARK: - Ask settings
+
+struct TutorSettingsSheet: View {
+    let tutor: TutorModel
+    @UIState private var keyInput = ""
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("问问这张照片 · 设置").font(.title3.weight(.semibold))
+                Text("由 Anthropic 的 Claude 模型回答关于照片的问题，讲解会结合画面、参数和你的学习水平。")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            Form {
+                Section {
+                    Toggle("启用 AI 提问", isOn: Binding(get: { tutor.settings.enabled }, set: { tutor.settings.enabled = $0 }))
+                }
+                Section("发送的内容") {
+                    Toggle("附带预览图（最长边 1024 px 的 JPEG，不含拍摄与位置信息）",
+                           isOn: Binding(get: { tutor.settings.sendPreview }, set: { tutor.settings.sendPreview = $0 }))
+                    Text("每次提问还会发送：画面统计、当前调色参数、你选择的水平与兴趣。原片不会上传；只有你点「提问」时才会发送。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Section("API 密钥") {
+                    if tutor.hasKey {
+                        HStack {
+                            Label("已保存在钥匙串中", systemImage: "key.fill")
+                            Spacer()
+                            Button("移除", role: .destructive, action: tutor.removeKey)
+                        }
+                    } else {
+                        HStack {
+                            SecureField("sk-ant-…", text: $keyInput)
+                            Button("保存") { tutor.saveKey(keyInput); keyInput = "" }
+                                .disabled(keyInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+                    }
+                    Text("在 console.anthropic.com 创建密钥。费用按你的 Anthropic 账户计费；中国大陆网络可能无法直接访问。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Section("模型") {
+                    Picker("模型", selection: Binding(get: { tutor.settings.model }, set: { tutor.settings.model = $0 })) {
+                        ForEach(ClaudePhotoTutor.models) { Text($0.title).tag($0.id) }
+                    }
+                    if let option = ClaudePhotoTutor.models.first(where: { $0.id == tutor.settings.model }) {
+                        Text(option.note).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            HStack { Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.defaultAction) }
+        }
+        .padding(22)
+        .frame(width: 520)
     }
 }

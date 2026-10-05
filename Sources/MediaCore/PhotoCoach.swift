@@ -242,9 +242,24 @@ public struct ConceptProgress: Codable, Equatable, Sendable {
     public var tried = 0
     public var used = 0
     public var helpful = 0
+    /// Questions the user asked that touched this concept: a direct signal of interest.
+    public var asked = 0
     public var known = false
     public var muted = false
     public init() {}
+
+    private enum CodingKeys: String, CodingKey { case shown, tried, used, helpful, asked, known, muted }
+    /// Missing keys default, so profiles saved by earlier versions keep loading.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        shown = try values.decodeIfPresent(Int.self, forKey: .shown) ?? 0
+        tried = try values.decodeIfPresent(Int.self, forKey: .tried) ?? 0
+        used = try values.decodeIfPresent(Int.self, forKey: .used) ?? 0
+        helpful = try values.decodeIfPresent(Int.self, forKey: .helpful) ?? 0
+        asked = try values.decodeIfPresent(Int.self, forKey: .asked) ?? 0
+        known = try values.decodeIfPresent(Bool.self, forKey: .known) ?? false
+        muted = try values.decodeIfPresent(Bool.self, forKey: .muted) ?? false
+    }
 }
 
 /// What this user knows and wants to learn. Updated by usage and feedback.
@@ -280,8 +295,10 @@ public struct LearnerProfile: Codable, Equatable, Sendable {
     public var nextConcepts: [Concept] { path.filter { !isLearned($0) && !state($0).muted } }
     public var learnedInPath: Int { path.filter(isLearned).count }
 
+    /// Chosen topics count fully; questions the user asked about a concept add up to the same weight.
     func interest(_ concept: Concept) -> Double {
-        topics.contains { $0.path.contains(concept) } ? 1 : 0
+        let chosen: Double = topics.contains { $0.path.contains(concept) } ? 1 : 0
+        return max(chosen, min(1, Double(state(concept).asked) / 3))
     }
 }
 
@@ -454,9 +471,14 @@ public enum PhotoCoach {
             }
         }
 
-        if let tilt, !isVideo, abs(tilt) > 0.4, abs(edits.degrees) < 0.05 {
-            add("tilt", .straighten, 0.5, "level", String(format: "地平线倾斜约 %.1f°", abs(tilt)),
-                "识别到的地平线不是水平的。", Concept.straighten.explanation(for: level),
+        if let tilt, !isVideo, abs(tilt) > 0.6, abs(edits.degrees) < 0.05 {
+            // Horizon detection also fires on aerial and top-down shots with no real horizon,
+            // so small angles are offered as a check, not a verdict.
+            let clear = abs(tilt) >= 1.5
+            add("tilt", .straighten, clear ? 0.5 : 0.22, "level",
+                String(format: clear ? "地平线倾斜约 %.1f°" : "可能倾斜约 %.1f°", abs(tilt)),
+                "画面中识别到的水平参考线不是水平的。如果这是俯拍或画面里没有地平线，可以忽略这条。",
+                Concept.straighten.explanation(for: level),
                 CoachSuggestion(label: "自动拉直", actions: [.straighten]))
         }
 

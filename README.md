@@ -7,7 +7,7 @@ Mac 原生应用（Swift 6 · SwiftUI · Core Image · AVFoundation），最低 
 ```sh
 bash scripts/run-workbench.sh            # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh           # 71 项测试
+bash scripts/test-workbench.sh           # 79 项测试
 bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行文件路径
 ```
 
@@ -40,7 +40,13 @@ bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行
 - 影响范围：悬停在参数名、HSL 色系或色轮上，画面只保留它影响的区域为彩色，其余变灰（类似 DaVinci 的高亮显示）。
 - 示波器解读：每个示波器下方有一句这张照片的读图说明。
 - 随用户调整：水平（入门 / 进阶 / 专业）决定讲解的深浅和建议的工具，比如发灰的照片对入门用户建议对比度、对进阶用户建议 S 曲线。「想学」的方向决定学习路径和提示的排序。反馈（有帮助 / 已了解 / 不再提示）和实际使用记录会持续调整推荐；已掌握的技巧会打勾。
-- 数据只在本机保存（`learning.json`），不联网。
+- 以上数据只在本机保存（`learning.json`），不联网。
+- 问问这张照片（可选，默认关闭）：用自然语言提问，例如「天空为什么发灰？」「怎么调出胶片感？」。
+  - 回答：由 Claude 结合这张照片的预览、统计、当前参数和你的水平与兴趣作答。回答附带可一键「试一试」的调整和追问建议；问题涉及的概念会计入兴趣，影响之后的推荐。
+  - 发送的内容：只有点「提问」时才发送，内容是最长边 1024 px、不含拍摄与位置信息的 JPEG（可在设置中关闭），加上统计与参数。原片不会上传。
+  - 密钥与模型：使用你自己的 Anthropic API 密钥，保存在钥匙串中。默认模型 Claude Opus 5.5，可改为 Sonnet 5.5 或 Haiku 4.5；按你的账户计费。
+  - 对话：追问保持同一段对话，按 Anthropic 要求只追加、不改写历史；已发送的部分会被缓存，追问更便宜。中国大陆网络可能无法直接访问。
+  - 后端：通过 `PhotoTutor` 协议可替换为其他服务商。
 
 **视频与 Live**：时间线裁切、整体移动、逐帧、入点 / 出点（I / O）、封面（C）、0.5–4× 变速（原声同步，背景音乐保持原节奏）、「适配 3 秒」；制作 Live Photo（系统配对校验）与 1–3 画面拼图 Live；实验性 HDR 高光扩展（HLG）。
 
