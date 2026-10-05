@@ -1,0 +1,125 @@
+{
+  "checked_on": "2026-10-01",
+  "scope": "官方文档、仓库 README / 源码核查，未编译候选项目或进行设备实测",
+  "sources": [
+    {
+      "title": "Picview 官方",
+      "url": "https://picview.chitaner.com/",
+      "evidence": "核实用户所指产品及简洁交互，区别于 picview.org 的同名项目。"
+    },
+    {
+      "title": "FlowVision 仓库",
+      "url": "https://github.com/netdcy/FlowVision",
+      "evidence": "README 声明图片、视频、HDR 浏览；GPL-3.0；构建涉及旧 ffmpeg-kit。"
+    },
+    {
+      "title": "SimpView 仓库",
+      "url": "https://github.com/jdpurcell/SimpView",
+      "evidence": "原生 Swift、PTP 相机浏览、MIT；macOS 15+、Apple Silicon；并非完整编辑器。"
+    },
+    {
+      "title": "MetalPetal 仓库",
+      "url": "https://github.com/MetalPetal/MetalPetal",
+      "evidence": "GPU 图片/视频处理及滤镜；核心 MIT，Examples 独立许可证。"
+    },
+    {
+      "title": "GRDB.swift",
+      "url": "https://github.com/groue/GRDB.swift",
+      "evidence": "SQLite Swift 数据层；MIT。"
+    },
+    {
+      "title": "LimitPoint LivePhoto",
+      "url": "https://github.com/LimitPoint/LivePhoto",
+      "evidence": "配对标识与封面时间元数据参考；源码 UIKit、8-bit BGRA/H.264；未发现明确开源 LICENSE，文件写 All rights reserved。"
+    },
+    {
+      "title": "MLX Swift LM",
+      "url": "https://github.com/ml-explore/mlx-swift-lm",
+      "evidence": "当前可复用的 Swift LLM/VLM 库；MIT；模型权重另核实。"
+    },
+    {
+      "title": "Apple HDR 视频",
+      "url": "https://developer.apple.com/videos/play/wwdc2022/110565/",
+      "evidence": "AVPlayer、EDR、Core Image/Metal 视频处理路径。"
+    },
+    {
+      "title": "Apple HDR 图片样例",
+      "url": "https://developer.apple.com/documentation/uikit/supporting-hdr-images-in-your-app",
+      "evidence": "样例包含 AppKit/Core Image，Mac 目标 macOS 14+。"
+    },
+    {
+      "title": "ImageCaptureCore",
+      "url": "https://developer.apple.com/documentation/imagecapturecore",
+      "evidence": "连接媒体设备发现、缩略图和下载，USB 沙盒权限要求。"
+    },
+    {
+      "title": "Apple 导入说明",
+      "url": "https://support.apple.com/en-ie/120267",
+      "evidence": "iPhone 信任/解锁、照片导入和 Image Capture 入口。"
+    },
+    {
+      "title": "PHLivePhoto 资源加载",
+      "url": "https://developer.apple.com/documentation/photos/phlivephoto/request(withresourcefileurls:placeholderimage:targetsize:contentmode:resulthandler:)",
+      "evidence": "资源对加载接口；另由本机 SDK 头文件确认 macOS 声明。"
+    },
+    {
+      "title": "Core Image 色彩 LUT",
+      "url": "https://developer.apple.com/documentation/coreimage/cicolorcubewithcolorspace",
+      "evidence": "3D LUT 数据、工作色彩空间与超范围外插。"
+    },
+    {
+      "title": "DJI Pocket 3 LUT",
+      "url": "https://www.dji.com/downloads/softwares/osmo-pocket-3-dlog-to-rec709",
+      "evidence": "官方 .cube 技术 LUT：D-Log M → Rec.709；不推定再分发许可。"
+    },
+    {
+      "title": "FFmpegKit 状态",
+      "url": "https://github.com/arthenica/ffmpeg-kit",
+      "evidence": "旧项目已退役，README 指向源码分发的官方后续。"
+    },
+    {
+      "title": "FFmpegKitNext",
+      "url": "https://github.com/arthenica/ffmpeg-kit-next",
+      "evidence": "可评估的后续构建路径，不作为 MVP 必需依赖。"
+    },
+    {
+      "title": "FFmpeg 许可说明",
+      "url": "https://ffmpeg.org/legal.html",
+      "evidence": "具体构建选项及组件影响分发许可。"
+    },
+    {
+      "title": "Adobe Lightroom 应用内学习",
+      "url": "https://helpx.adobe.com/lightroom/desktop/in-app-learning/in-app-learning.html",
+      "evidence": "官方说明桌面端 guided tutorials 与 Interactive Edits，可按工具/主题学习并保存预设；仅借鉴学习机制。"
+    },
+    {
+      "title": "Adobe Lightroom Classic 编辑工作区",
+      "url": "https://helpx.adobe.com/lightroom-classic/desktop/process-and-develop-photos/develop-module-options.html",
+      "evidence": "编辑工作区、直方图、参数与历史/快照的官方参考；本项目工作区布局为设计建议，不是精确复制。"
+    },
+    {
+      "title": "Adobe Lightroom 调整工具",
+      "url": "https://helpx.adobe.com/lightroom/desktop/edit-photos/edit-photos.html",
+      "evidence": "亮度、色彩与直方图/剪裁指示的官方参考；新增教学示例不代表本 APP 已实现。"
+    },
+    {
+      "title": "Apple 视频几何变换",
+      "url": "https://developer.apple.com/documentation/avfoundation/avvideocompositionlayerinstruction/configuration/settransform(_:at:)",
+      "checked_on": "2026-10-03",
+      "evidence": "视频合成变换能力依据；按实际目标 SDK 选择接口，尚未实现或实测。"
+    },
+    {
+      "title": "Vision 图像配准",
+      "url": "https://developer.apple.com/documentation/vision/vnhomographicimageregistrationrequest",
+      "checked_on": "2026-10-03",
+      "evidence": "估计两图之间的投影变换，可评估为运动估计组件，不是完整后期稳像引擎。"
+    },
+    {
+      "title": "AVCapture 采集稳像边界",
+      "url": "https://developer.apple.com/documentation/avfoundation/avcaptureconnection/preferredvideostabilizationmode",
+      "checked_on": "2026-10-03",
+      "evidence": "用于相机采集连接，不能直接当作已拍摄视频导入后的稳像开关。"
+    }
+  ],
+  "last_updated": "2026-10-03"
+}

@@ -1,0 +1,47 @@
+{
+  "completedAt": "2026-10-05T12:42:43.791943+08:00",
+  "workspace": "/Users/yaoyao/code/project/pic_review_edit",
+  "beforeAllocatedBytes": 3525050368,
+  "afterAllocatedBytes": 1203331072,
+  "reclaimedAllocatedBytes": 2321719296,
+  "removed": [
+    {
+      "path": ".build/out",
+      "allocatedBytes": 953860096
+    },
+    {
+      "path": ".build/native-workbench",
+      "allocatedBytes": 405594112
+    },
+    {
+      "path": ".build/clang-module-cache",
+      "allocatedBytes": 300957696
+    },
+    {
+      "path": ".build/module-cache",
+      "allocatedBytes": 643948544
+    },
+    {
+      "path": ".build/swift-module-cache",
+      "allocatedBytes": 17358848
+    }
+  ],
+  "preserved": [
+    "Sources",
+    "Tests",
+    "docs",
+    "assets",
+    "_LLM-Wiki",
+    "media-tests",
+    ".build/MediaWorkbench.app",
+    ".build/*.log",
+    ".build media fixtures and helper tools"
+  ],
+  "appSHA256": "c989d511d75b48d143df6c3b354f516f5436f852db4006a01efc4633e6a9f5a1",
+  "appIntegrity": "unchanged",
+  "mediaIntegrity": {
+    "checkedFiles": 333,
+    "algorithm": "SHA256",
+    "result": "all unchanged"
+  }
+}

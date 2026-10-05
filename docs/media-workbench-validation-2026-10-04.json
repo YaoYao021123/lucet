@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-04",
+  "environment": "local arm64 Mac; macOS 27.0.1; Swift 6.4; minimum target macOS 15",
+  "automated": {
+    "tests": 21,
+    "suites": 6,
+    "hdr_video_cases": [
+      "HEVC Main10 PQ",
+      "HEVC Main10 HLG"
+    ],
+    "status": "passed",
+    "scope": [
+      "creative sRGB LUT strength and DOMAIN normalization",
+      "float HDR pixels and gain-map HEIC reopen",
+      "SDR graded image export pixel agreement",
+      "video duration, color metadata and decoded BGM RMS",
+      "Live content identifier, timed cover metadata, PHLivePhoto validation and LUT copy",
+      "existing geometry, EXIF, metadata, Vision API and no-overwrite tests",
+      "all eight EXIF orientations on the new floating preview/export path",
+      "existing Live cover-time reload matches timed metadata"
+    ],
+    "test_runtime_seconds": 1.481
+  },
+  "native_ui": {
+    "status": "passed for synthetic fixtures",
+    "checked": [
+      "image preset LUT and intensity",
+      "cube import on video",
+      "AVPlayer playback and seeking",
+      "clip start/end and cover",
+      "source mute, BGM selection and gain",
+      "PNG, MOV, and Live export",
+      "PHLivePhotoView playback",
+      "HDR-to-SDR label on SDR display",
+      "reopen existing Live and preserve cover at 0.75s"
+    ],
+    "artifacts": {
+      "image": {
+        "path": ".build/feature-fixtures/ui-HDR-graded.png",
+        "width": 320,
+        "height": 180
+      },
+      "video": ".build/feature-fixtures/ui-graded.mov",
+      "live": ".build/feature-fixtures/ui-Live",
+      "live_recipe": {
+        "cover": 2.0833333333333335,
+        "degrees": 0,
+        "end": 2.7,
+        "identifier": "5551D926-0277-4CF7-BC5D-5603C211F38B",
+        "lut": "暖调",
+        "music": "demo-bgm.wav",
+        "musicVolume": 0.4000000059604645,
+        "originalVolume": 0,
+        "output": "SDR sRGB JPEG + Rec.709 MOV",
+        "source": "demo-video.mov",
+        "start": 0.30000000000000004,
+        "strength": 1,
+        "version": 1
+      }
+    },
+    "video_probe": {
+      "durationSeconds": 2.408333333333333,
+      "width": 320,
+      "height": 180,
+      "hasAudio": true,
+      "transferFunction": "ITU_R_709_2"
+    },
+    "reopened_live": {
+      "path": ".build/feature-fixtures-v2/demo-Live/LivePhoto.jpg",
+      "coverSeconds": 0.75,
+      "status": "recognized and paused at original cover"
+    }
+  },
+  "limits": [
+    "synthetic media only; no private media, model API or photo-library writes",
+    "display has no EDR headroom; HDR monitor visual validation pending",
+    "all exports SDR; creative LUT and video geometry editing use SDR",
+    "camera Log input conversion not inferred",
+    "existing Live remake cover extracted from motion video; original full-resolution still retained",
+    "real iPhone/Pocket/4K/Dolby Vision/RAW/import-to-iPhone compatibility not verified",
+    "no project database, draft restore, multi-selection or device import yet"
+  ]
+}

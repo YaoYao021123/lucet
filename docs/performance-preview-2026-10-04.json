@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-04",
+  "environment": "local arm64 Mac, macOS 27.0.1, Swift 6.4, Release benchmark",
+  "fixture": "synthetic 4000x3000 JPEG; 1600px preview; 40 interleaved angles",
+  "scope": "decode/render plus materialized pixels; excludes SwiftUI, display latency and the old fixed UI delay",
+  "legacy": {"median_ms": 31.629666, "p95_ms": 34.440375, "max_ms": 36.507375},
+  "cached": {"median_ms": 2.760375, "p95_ms": 3.233625, "max_ms": 3.3485},
+  "cached_load_ms": 39.813167,
+  "median_speedup": 11.458467056106509,
+  "removed_ui_delay_ms": 120,
+  "limitations": "One synthetic JPEG on one Mac. Not a UI frame-rate or real HEIC/RAW/HDR performance claim."
+}

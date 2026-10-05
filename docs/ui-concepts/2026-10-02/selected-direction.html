@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>浅色素材工作台 · 界面与保存逻辑</title>
+<style>
+:root{--ink:#242724;--muted:#70766f;--olive:#596b44;--line:#e4e7e0;--soft:#f5f6f2}*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:15px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{max-width:1180px;margin:auto;padding:48px 38px 70px}a{color:var(--olive);text-underline-offset:4px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--olive)}h1{font-size:36px;line-height:1.3;letter-spacing:-.035em;margin:12px 0 18px}h2{font-size:24px;margin:0 0 12px}p{margin:0 0 16px}.lead{max-width:760px;color:var(--muted);font-size:17px}.tabs{display:flex;gap:6px;margin:26px 0 16px}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--olive);outline-offset:4px}.tabs button{background:#fff;border:1px solid var(--line);padding:8px 18px;border-radius:7px;color:var(--muted)}.tabs button[aria-selected=true]{background:var(--soft);color:var(--olive);border-color:#bbc7af}figure{margin:0}.screen{display:block;width:100%;border:1px solid var(--line);border-radius:9px}figcaption{font-size:12px;color:var(--muted);padding:12px 0}.section{margin-top:35px;padding-top:30px;border-top:1px solid var(--line)}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.choice{padding:0 4px}.choice h3{font-size:16px;margin:0 0 9px;display:flex;align-items:center;gap:10px}.choice p{font-size:13px;color:var(--muted)}svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}.info{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:1px solid #a5ada0;border-radius:50%;background:#fff;color:var(--muted);font:14px Georgia,serif}.help{font-size:12px;padding:12px 14px;background:var(--soft);border:1px solid var(--line);border-radius:6px;margin:10px 0}.table{overflow-x:auto;border:1px solid var(--line);border-radius:9px;margin:21px 0}table{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}th,td{padding:14px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:var(--soft);font-size:12px;color:var(--muted);font-weight:600}tr:last-child td{border:0}td:first-child{font-weight:600;width:150px}.flow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:22px 0}.flow b{padding:9px 14px;background:var(--soft);border:1px solid var(--line);border-radius:6px;font-size:13px;font-weight:500}.flow span{color:#9da695}.note{border-left:3px solid #a9b798;padding:12px 17px;background:var(--soft);font-size:13px;margin:18px 0}.implementation{font-size:13px;color:var(--muted)}footer{border-top:1px solid var(--line);margin-top:35px;padding-top:18px;font-size:12px;color:var(--muted)}[hidden]{display:none!important}@media(max-width:760px){main{padding:28px 20px}.choices{grid-template-columns:1fr;gap:12px}h1{font-size:28px}.lead{font-size:15px}}@media print{.tabs{display:none}[role=tabpanel][hidden]{display:block!important}.section{break-inside:avoid}main{padding:0}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">SELECTED DIRECTION / 01 · 2026.10.02</div><h1>轻松选片，安静编辑。</h1><p class="lead">沿用第 1 版的白色与橄榄绿。图库和选择参考苹果“照片”，编辑保留大画布与右侧调色区；学习内容从小小的 i 入口展开。</p></header>
+<div class="tabs" role="tablist" aria-label="查看界面"><button id="tab-editor" role="tab" aria-selected="true" aria-controls="panel-editor" tabindex="0">编辑工作区</button><button id="tab-library" role="tab" aria-selected="false" aria-controls="panel-library" tabindex="-1">图库与多选</button></div>
+<div id="panel-editor" role="tabpanel" aria-labelledby="tab-editor"><figure><img class="screen" src="selected-editor-v2.png" alt="浅色编辑界面：大预览、右侧调色、小 i 提示入口和混合媒体选择条"><figcaption>编辑概念图 · 说明收进 i，原片对比使用工具栏图标。生成图中的个别图标、媒体标识与布局细节将在原生实现时统一；对比入口只保留一个。</figcaption></figure></div>
+<div id="panel-library" role="tabpanel" aria-labelledby="tab-library" hidden><figure><img class="screen" src="selected-library-v1.png" alt="浅色图库界面：照片、视频和 Live 混合网格，三项选择与批量调色入口"><figcaption>图库概念图 · 图片、视频和 Live 统一浏览，选中后出现批量操作。截图为视觉设计，尚未连接设备或媒体引擎。</figcaption></figure></div>
+<section class="section"><h2>交互收得更简单。</h2><div class="choices">
+<div class="choice"><h3>按需了解 <button class="info" id="info-button" aria-label="了解参数说明的展示方式" aria-expanded="false" aria-controls="info-help">i</button></h3><p>取消常驻的“为什么要做色彩还原”等说明。悬停给一句提示，点击展开术语、适用条件与当前参数解释。</p><div id="info-help" class="help" hidden>示例：高光主要影响画面较亮的区域。具体结果取决于源素材与当前配方；试调后可按住对比图标查看原片。</div></div>
+<div class="choice"><h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><rect x="8" y="8" width="13" height="13" rx="2"/></svg>原片对比</h3><p>取消“原片 / 调色”文字开关。按住图标或 M 显示原片，松开回到当前效果；无障碍标签与悬停提示保留。</p></div>
+<div class="choice"><h3><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>浏览与选择</h3><p>双击打开单项预览，Space 快速预览，Command 多选、Shift 连续选择。视频与 Live 标识轻量展示；批量调色只同步勾选参数。</p></div>
+</div><p class="implementation">对比的按住 / 松开行为参考 <a href="https://support.apple.com/guide/photos/editing-basics-pht304c2ace6/mac">Apple“照片”编辑基础</a>。网格、多选和参数保存规则是本应用的设计建议；图标为概念示意。</p></section>
+<section class="section"><h2>保存参数版本，导出成品文件。</h2><p class="lead">建议采用非破坏编辑：原件保留，调色和裁切保存成配方；版本历史像 Git 的检查点，但不需要把大图片、视频放进 Git，也不需要每次拖动都复制一份。</p>
+<div class="flow" aria-label="保存流程"><b>原始素材</b><span aria-hidden="true">＋</span><b>当前编辑配方</b><span aria-hidden="true">→</span><b>完成：记录版本</b><span aria-hidden="true">→</span><b>导出：生成新文件</b></div>
+<div class="table"><table><thead><tr><th>操作</th><th>应用保存什么</th><th>磁盘上的媒体文件</th></tr></thead><tbody>
+<tr><td>调节滑块</td><td>即时预览；自动保存草稿，支持撤销 / 重做。拖动结束记录一次操作，重启可恢复草稿。</td><td>原件不变；预览与缩略图作为可清理缓存。</td></tr>
+<tr><td>完成</td><td>以当前配方建立版本检查点，设为当前版本；无变更时不创建重复版本。</td><td>不生成新媒体；返回浏览时显示当前编辑效果。</td></tr>
+<tr><td>保留另一版</td><td>新增命名配方，例如“自然”“暖调电影”，可切换与比较。</td><td>共用同一原件，不重复复制大文件。</td></tr>
+<tr><td>恢复原片</td><td>创建无调整版本并切换到它；以前的调色版本仍可找回。</td><td>原件本来就保留，不需要覆盖写回。</td></tr>
+<tr><td>应用到所选</td><td>保存每项应用前后版本与同一批次编号；未勾选参数保持各自原值。</td><td>先更新配方和预览，按需再批量导出。</td></tr>
+<tr><td>导出 / 另存</td><td>固定要导出的配方版本、格式与输出位置。后续继续编辑不改变这次导出的任务。</td><td>新建 JPEG / HEIC、视频或 Live 资源对；需要完整原件才能渲染。</td></tr>
+</tbody></table></div>
+<div class="note">Live 图作为一个逻辑素材保存版本，照片与动态视频共用调色配方。导出时生成匹配的一对资源；不能只保存静态封面就声称完成了 Live 调色。</div>
+<p class="implementation">本地 SQLite 保存 Asset、RecipeRevision、EditBatch 和 ExportJob 的关系；配方包含曝光、白平衡、LUT / 强度、色彩处理、裁切、视频区间及封面时间。LUT 文件保存在应用管理的目录，并记录内容哈希、配方结构与渲染器版本，避免用户替换同名 LUT 后旧配方悄悄变化。</p>
+<p class="implementation">批次撤回逐项检查当前版本：仍停留在本批次结果的素材可以直接还原；已有后续编辑的素材由用户选择版本，避免覆盖新操作。相同内容的多个来源路径共用素材版本；转码或裁切后的不同原件保留各自身份。历史不代替原件备份，设备离线且没有完整工作副本时，可查历史与缓存，完整导出等待来源可用。</p>
+</section>
+<footer>本页为界面与保存规则方案，尚非已实现应用。<a href="../../mac-media-plan.html">查看整体落地方案</a> · <a href="refinement-prompts.md">查看本轮绘图提示</a></footer>
+</main>
+<script>
+const tabs=[...document.querySelectorAll('[role=tab]')];function activate(tab){for(const item of tabs){const active=item===tab;item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;document.getElementById(item.getAttribute('aria-controls')).hidden=!active}}for(const tab of tabs){tab.addEventListener('click',()=>activate(tab));tab.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();let i=tabs.indexOf(tab);if(event.key==='Home')i=0;else if(event.key==='End')i=tabs.length-1;else i=(i+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;activate(tabs[i]);tabs[i].focus()})}document.getElementById('info-button').addEventListener('click',event=>{const button=event.currentTarget;const expanded=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(expanded));document.getElementById('info-help').hidden=!expanded});
+</script>
+</body>
+</html>

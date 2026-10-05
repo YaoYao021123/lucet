@@ -1,0 +1,27 @@
+{
+  "cached": {
+    "max_ms": 9.316209,
+    "median_ms": 5.229583,
+    "p95_ms": 6.36375
+  },
+  "cached_load_ms": 63.491291,
+  "fixture": "synthetic 4000x3000 JPEG; 1600px preview; 40 interleaved angles",
+  "floating_grade": {
+    "max_ms": 18.660459,
+    "median_ms": 8.64875,
+    "p95_ms": 11.129875
+  },
+  "floating_grade_load_ms": 99.612208,
+  "floating_grade_scope": "current image engine, 1600px float bitmap + warm 17^3 LUT at 70% + rotation; CPU-visible RGBAh result; excludes Metal drawable/presentation and HDR source decoding",
+  "legacy": {
+    "max_ms": 67.117083,
+    "median_ms": 60.836334,
+    "p95_ms": 64.130541
+  },
+  "median_speedup": 11.633113768344437,
+  "removed_ui_delay_ms": 120,
+  "scope": "decode/render + materialized pixels, excludes SwiftUI/display latency",
+  "date": "2026-10-04",
+  "environment": "local arm64 Mac; macOS 27.0.1; Release",
+  "limits": "One synthetic SDR JPEG; shader warm-up included only in load time; no UI FPS, HDR source decode, real HEIC/RAW/4K or external-display performance claim."
+}

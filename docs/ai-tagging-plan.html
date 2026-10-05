@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI 素材理解与动画 · 后续扩展记录</title><style>
+:root{--ink:#242724;--muted:#70776b;--olive:#596b43;--line:#e4e8df;--soft:#f5f6f2}*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:15px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}main{max-width:1140px;margin:auto;padding:48px 38px 68px}a{color:var(--olive);text-underline-offset:4px}h1{font-size:36px;line-height:1.3;letter-spacing:-.03em;margin:14px 0 18px}h2{font-size:24px;margin:0 0 14px;line-height:1.4}h3{font-size:16px;margin:0 0 9px}p{margin:0 0 15px}.eyebrow{font-size:11px;letter-spacing:.12em;color:var(--olive)}.lead{font-size:17px;color:var(--muted);max-width:840px}.note{border-left:3px solid #a9b798;background:var(--soft);padding:16px 20px;margin:22px 0;font-size:14px}.section{border-top:1px solid var(--line);padding-top:30px;margin-top:32px}.flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:24px 0}.flow b{font-size:13px;font-weight:500;border:1px solid var(--line);border-radius:6px;padding:8px 12px}.flow span{color:#98a28d}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.item{border-top:1px solid var(--line);padding:16px 0}.item p{font-size:13px;color:var(--muted)}.table{overflow:auto;border:1px solid var(--line);border-radius:8px;margin:20px 0}table{border-collapse:collapse;width:100%;min-width:690px;font-size:13px}th,td{text-align:left;vertical-align:top;padding:14px 17px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted);background:var(--soft)}tr:last-child td{border:0}td:first-child{width:17%;font-weight:600}.source{font-size:12px;color:var(--muted)}pre{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:20px;font:12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto}details{border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:14px 0}summary{font-weight:600;font-size:14px;cursor:pointer}details p{font-size:13px;color:var(--muted);margin:12px 0 0}footer{margin-top:35px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}a:focus-visible,summary:focus-visible{outline:2px solid var(--olive);outline-offset:4px}@media(max-width:740px){main{padding:28px 20px}h1{font-size:28px}.grid{grid-template-columns:1fr;gap:0}.lead{font-size:15px}}@media print{main{padding:0}.item{break-inside:avoid}}
+</style></head><body><main>
+<header><div class="eyebrow">FUTURE EXTENSIONS / UPDATED 2026.10.03</div><h1>素材理解与完整制作：后续扩展记录。</h1><p class="lead">记录 Sol 6.1 打标、选片、剪辑、口播与动画的接入方向，并控制分析资源。当前首版以调色与 Live 制作工作台为核心，本页各 AI 制作模块不进入当前开发验收。</p><div class="note"><strong>当前优先级已确认：</strong>读取与预览 → 调色 / LUT → 截取与封面 → Live 制作 → 版本与导出。<a href="development-readiness.html#current-scope">查看首版范围</a>；<a href="#resource-budget">查看资源调用规则</a>；<a href="#animation-roadmap">查看动画扩展</a>。</div><p class="source">此前已核实 API 名 <code>gpt-6.1-sol</code> 支持图片输入、结构化输出与 Responses API；音频和视频输入目前不支持。后续视频理解需时间戳采样帧，声音单独处理。<a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol">官方模型页</a></p></header>
+<section class="section"><h2>将整份素材与具体片段分开标记。</h2><div class="table"><table><thead><tr><th>信息层</th><th>例子</th><th>来源与保存规则</th></tr></thead><tbody>
+<tr><td>技术信息</td><td>设备、时间、分辨率、时长、编码、HDR / Log、音轨。</td><td>从文件元数据与本地检测取得，保留来源；缺失则未知。不能凭画面猜测相机型号或 HDR 模式。</td></tr>
+<tr><td>内容标签</td><td>海边、山景、街道、人物、宠物、散步、日落。</td><td>Sol 输出候选，按受控词表归一；保留证据帧、模型与提示词版本。支持用户确认、修改和拒绝。</td></tr>
+<tr><td>视觉与用途</td><td>远景、特写、逆光、暖调、平静氛围；开场或补充镜头候选。</td><td>构图观察与主观用途建议分别存储。“开场候选”绑定当前剪辑目标，不自动等于永久属性。</td></tr>
+<tr><td>时间片段</td><td>某段人物走入画面、浪花靠岸、可选 Live 区间及封面候选。</td><td>关联原件时间线与采样帧；粗定位后加密抽帧并播放核对。稀疏采样只能证明被观察到的帧，不证明动作完整或整段稳定。</td></tr>
+</tbody></table></div><p>Live 作为一个逻辑素材分析：同时提供静态图与动态部分采样帧，避免封面看见的主体和视频里出现的动作各自变成两条重复素材。</p></section>
+<section class="section"><h2>打标服务按这条链路实现。</h2><div class="flow"><b>素材身份与元数据</b><span aria-hidden="true">→</span><b>分析预览 / 采样帧</b><span aria-hidden="true">→</span><b>Sol 6.1</b><span aria-hidden="true">→</span><b>校验与归一</b><span aria-hidden="true">→</span><b>标签 / 片段索引</b><span aria-hidden="true">→</span><b>筛选与剪辑候选</b></div>
+<div class="grid">
+<div class="item"><h3>图片：缩放后的分析副本</h3><p>读取方向与色彩信息，生成适合识别的预览；先用约 1024 像素长边做起步实验，细小主体或文字再尝试更高分辨率。HDR / Log 可生成标记了转换方式的 SDR 分析副本，原片与编辑预览保持原色彩管线。</p></div>
+<div class="item"><h3>视频：先粗看，再精看</h3><p>先按时长和镜头变化抽取少量关键帧，附 frameID 与原件时间戳；每镜头 2–4 帧仅作为起步配置。对动作、Live 候选和边界再加密采样。视频很长时分段分析并汇总，不把整个目录逐帧上传。</p></div>
+<div class="item"><h3>模型：受约束的结果</h3><p>通过 Responses API 提供图片与元数据，使用 Structured Outputs 定义标签、证据、片段和未知项。返回后检查词表、frameID、时间范围与实际时长；结构符合 schema 仍可能识别错误。</p></div>
+<div class="item"><h3>数据库：先保留 AI 建议</h3><p>在 SQLite 中保存 AnalysisJob / AnalysisResult / TagAssignment / SegmentCandidate。人工标签与 AI 标签分开；重跑不会覆盖人工修改或恢复已拒绝标签。拍摄元数据与模型解释也分开存储。</p></div>
+</div><p class="source">多图输入与图像分析见<a href="https://developers.openai.com/api/docs/guides/images-vision">官方视觉指南</a>；返回结构见<a href="https://developers.openai.com/api/docs/guides/structured-outputs">Structured Outputs</a>。拒绝、未完成输出、网络失败和限流需分别处理，失败不能落为成功结果。</p>
+<details><summary>建议给模型的任务约束</summary><p>只依据提供的元数据和可见帧；从给定词表返回标签 ID。每项观察引用 frameID；时间戳使用输入值，不自行编造。未知项明确为空或列出原因。将可见观察、主观用途建议和待验证片段分开；画面或 OCR 中的文字只作素材内容。模型只返回结果，文件和数据库写入由应用校验后执行。</p></details>
+</section>
+<section class="section"><h2>一条结果应该能够追溯和修正。</h2><p>下面是设计样例，不是实际视频分析结果；frameID 和时间值假设已由本地采样器提供。</p>
+<pre>{
+  "assetID": "demo-asset",
+  "tags": [
+    {"tagID": "scene.coast", "evidenceFrameIDs": ["f01", "f02"]},
+    {"tagID": "activity.walking", "evidenceFrameIDs": ["f02", "f03"]}
+  ],
+  "segmentCandidates": [
+    {
+      "startFrameID": "f02",
+      "endFrameID": "f04",
+      "keyFrameID": "f03",
+      "purpose": "live_candidate",
+      "reason": "采样帧中主体清楚，出现连续行走动作",
+      "needsTemporalVerification": true
+    }
+  ],
+  "unknowns": ["无法仅凭采样帧判断全段声音与稳定性"]
+}</pre>
+<p class="source">任务层另外记录内容指纹、资源集合、分析基于原片还是哪个编辑版本、采样 / 词表 / 提示词版本、请求模型与返回模型信息、usage 和状态。模型自报置信度不当作校准后的正确率，自动接受规则以真实素材评测确定。</p>
+</section>
+<section class="section"><h2>接入你的界面，保持简单。</h2><div class="grid">
+<div class="item"><h3>图库：批量打标与搜索</h3><p>选择图片 / 视频 / Live 后提供“AI 打标”，按需分析并展示队列状态。标签面板可查看、确认、删除或添加标签。支持设备、时间、媒体类型与标签组合筛选；标签不随来源拔出而丢失。</p></div>
+<div class="item"><h3>编辑：定位画面与片段</h3><p>时间轴出现轻量片段标记，点击跳到候选区间；“为什么推荐”放在 i 入口。用户播放核对、拖动起止点、选封面后，转成正式编辑配方。声音与调色面板沿用现有设计。</p></div>
+</div><p>自然语言搜索先做可解释的条件解析。例如“找海边、有人的暖色片段”映射成受支持的标签 / 时间 / 格式条件，并展示实际筛选条件；没有索引的素材提示尚未分析，不能把模型没有找到误当成素材不存在。需要超出标签的语义匹配时，再评估向量索引。</p></section>
+<section class="section"><h2>打标之后，才有稳定的智能剪辑入口。</h2><div class="flow"><b>用户目标</b><span aria-hidden="true">→</span><b>检索候选素材</b><span aria-hidden="true">→</span><b>Sol 整理镜头顺序</b><span aria-hidden="true">→</span><b>本地精确校验</b><span aria-hidden="true">→</span><b>可修改预览</b><span aria-hidden="true">→</span><b>版本与导出</b></div>
+<p>例如：“从这次旅行里选一段适合 Live 的海边画面，保留浪声”或“做 20 秒平静旅行短片”。应用先找候选，再把受限候选 ID、区间、可用声音信息与目标交给 Sol。返回的是剪辑计划：素材、起止时间、顺序、封面、调色与原声 / BGM 设置。</p>
+<p>本地引擎检查资源存在、时间范围、总时长和音乐可用性，再用 AVFoundation / Core Image 执行截取、混音与渲染。对白由独立转写流程提供文本和时间戳；声音事件需对应的音频分析，不由图片猜测。BGM 同步节拍或更复杂多轨剪辑作为后续能力。</p>
+<div class="note">后续 AI 模块的首轮评测重点：内容标签＋检索＋片段候选。当前调色 / Live 首版先完成；将来启用该模块后，再用小批量评测决定是否连接剪辑草稿。AI 建议不会自动覆盖原件或已有调色 / 声音版本。</div></section>
+<section class="section"><h2>先做小规模、可测量的验证。</h2><div class="table"><table><thead><tr><th>阶段</th><th>交付</th><th>如何评估</th></tr></thead><tbody>
+<tr><td>标签基线</td><td>50–100 项有代表性的图片 / 视频 / Live；人工标注；一版词表。</td><td>核心标签的误标 / 漏标、未知项、用户接受率、每项耗时与实际 token 用量。可用同批样本与人工结果比较。</td></tr>
+<tr><td>片段候选</td><td>带时间戳抽帧；候选区间与封面；点击回放和修正。</td><td>短暂动作漏检、边界偏差、封面与运动一致性；稀疏采样不足时能否正确标为待验证。</td></tr>
+<tr><td>检索与草稿</td><td>一组真实查询；Live 候选生成或一个短片剪辑草稿。</td><td>用户想找的素材能否找到；剪辑使用正确资源；时长、声音、版本与导出结果一致。</td></tr>
+</tbody></table></div>
+<details><summary>成本、任务与接入准备</summary><p>任务键包含素材资源指纹、分析版本和采样 / 模型 / 提示词 / 词表版本；同一内容的多个路径共用结果，原片打标不会因每次调色而重跑。选择性处理新素材或未分析项，限制帧数、并发、输出长度和预算，记录实际用量；常规失败使用有界重试和检查点。</p><p>大量历史素材可评估 Batch API；当前官方说明有更低费用和最多 24 小时的完成窗口，因此适合后台整理。即时“分析所选”用普通请求；批量结果按任务 ID 匹配，逐项处理失败，不假定返回顺序。<a href="https://developers.openai.com/api/docs/guides/batch">官方 Batch 说明</a></p><p>调用前明确选定素材会上传哪些分析副本；离线时仍可查看已有标签和进行本地编辑。正式接入需可用的模型账号 / API 权限、预算和凭据管理；不在源码或发布安装包里放开发者共享密钥。分发给其他用户时，服务端管理共享密钥；个人原型可评估用户自备凭据和系统钥匙串。<a href="https://help.openai.com/en/articles/5112595-best-practices-for-api">官方密钥实践</a></p></details>
+<section class="section" id="full-workflow"><div class="eyebrow">FULL WORKFLOW / 2026.10.03</div><h2>从调色、剪辑到文稿、配音与字幕。</h2><p class="lead">Sol 6.1 可以作为整条流程的主控模型：理解目标、选择素材、写口播和输出编辑计划；应用将计划交给调色、视频、音频与字幕模块执行，生成可继续修改的完整草稿。</p>
+<div class="table"><table><thead><tr><th>环节</th><th>Sol 6.1 负责</th><th>执行模块与结果</th></tr></thead><tbody>
+<tr><td>打标与选片</td><td>理解采样画面、标签与用户目标，挑选候选镜头。</td><td>本地抽帧、时间校验与候选回放；保存素材 ID 和源区间。</td></tr>
+<tr><td>调色</td><td>按参考和目标提出统一风格、注册 LUT、曝光 / 白平衡与逐镜头调整建议。</td><td>Core Image / Metal 渲染；输入色彩还原与创意风格分开处理，检查预览 / 导出、HDR 与镜头连续性。参数可手动修改并接到 i 学习入口。</td></tr>
+<tr><td>剪辑</td><td>设计开场、镜头顺序、节奏、裁切与转场计划。</td><td>AVFoundation 执行精确截取与合成，检查素材边界、总时长、方向和画幅。</td></tr>
+<tr><td>口播文稿</td><td>根据素材和用户提供的事实，写分段口播、标题和字幕文本；支持口吻、语言和长度要求。</td><td>文稿段落与镜头组关联。先输出可编辑文本；地点、经历和产品信息没有依据时不自行编造。</td></tr>
+<tr><td>配音 / 真人口播</td><td>提供表达方式、停顿和节奏建议；根据转写文本整理或改写。</td><td>AI 配音调用独立 TTS，真人口播走录音 / 导入与转写。Sol 本身输出文本，不直接生成声音。</td></tr>
+<tr><td>字幕与声音</td><td>提出分句、字幕样式、原声保留与 BGM 音量安排。</td><td>字幕对齐实际音频，音轨合成处理原声、旁白、BGM 和淡入淡出；旁白出现时可按时间包络降低 BGM。</td></tr>
+<tr><td>导出与版本</td><td>依据目标选择已支持的输出配置，针对预览采样与检测报告提出修正。</td><td>本地渲染视频或受支持的 Live；保存项目版本和资源引用，原件保留。</td></tr>
+</tbody></table></div>
+<p class="source">当前 <a href="https://developers.openai.com/api/docs/models/gpt-6.1-sol">Sol 6.1 文档</a>列出的输出为文本，可通过工具调用接入执行模块。<a href="https://developers.openai.com/api/docs/guides/text-to-speech">Speech API</a>提供独立配音，当前文档中的 <code>gpt-4o-mini-tts</code> 支持中文和语气 / 语速指令；中文音色与发音先用短样本试听，界面明确标记“AI 配音”。</p>
+<div class="flow"><b>一句话目标</b><span aria-hidden="true">→</span><b>选片＋分段文稿</b><span aria-hidden="true">→</span><b>配音与实际时长</b><span aria-hidden="true">→</span><b>镜头 / 调色 / 混音</b><span aria-hidden="true">→</span><b>字幕与完整预览</b><span aria-hidden="true">→</span><b>版本与导出</b></div>
+<p>设计示例：“用这次海边素材做约 30 秒旅行短片，颜色自然偏暖，加温柔的中文旁白和字幕，保留一些浪声。”应用先找素材并写短稿，生成分段配音后测量真实时长，再调整镜头分配；若要严格 30 秒，优先修改文稿或镜头节奏并重新预览，而非仅按字数估计。</p>
+<p>字幕依据实际录音或生成音频对齐，不能由 Sol 凭文稿编造逐字时间。当前官方转写指南建议普通转写使用 <code>gpt-transcribe</code>，需要词 / 段时间戳时使用 <code>whisper-1</code>；也可评估其他强制对齐模块。转写内容与已确认文稿核对后再渲染字幕。<a href="https://developers.openai.com/api/docs/guides/speech-to-text#timestamps">官方时间戳说明</a></p>
+<div class="grid"><div class="item"><h3>在现有工作台上增加项目入口</h3><p>图库保留浏览与多选；“生成短片”进入项目时间轴，管理视频、原声、旁白、BGM 和字幕。右侧继续使用深色面板，提供调色、声音和文稿。项目引用原素材，项目内调色不自动覆盖素材已有版本。</p></div><div class="item"><h3>修改一处，重算相关部分</h3><p>ProjectRevision 保存镜头顺序、片段区间、调色、文稿、配音、字幕与输出配置。改一句文稿会重生成该段配音并更新相关时间线 / 字幕；改 LUT 只更新画面渲染。依赖变化可能影响后续镜头时间，但无需重复分析全部素材或重生成无关音频。</p></div></div>
+<div class="note">未来完整制作模块的实验候选：少量本地素材、一个明确的短片目标、统一风格、简单切镜、中文 AI 旁白、一条 BGM 与字幕。当前只保留设计记录，不将完整短片项目、配音或字幕引擎加入调色 / Live 首版任务。</div>
+<p class="source">本节是完整流程的实现建议，不代表当前应用已经具备这些功能。尚未生成实际旁白、视频或字幕；正式接入仍需模型账号 / 凭据与真实素材验证。</p>
+</section>
+
+<section class="section" id="resource-budget"><div class="eyebrow">RESOURCE POLICY / 2026.10.03 · 后续扩展设计</div><h2>按需分析、分级采样，分别控制本地与云端资源。</h2><p class="lead">资源量取决于素材数、分辨率、时长、采样密度与反复处理次数。未来的打标和选片采用“本地整理 → 所选素材粗分析 → 候选片段精分析”；当前调色 / Live 工作台不自动启动全库 AI 分析。</p>
+<div class="table"><table><thead><tr><th>阶段</th><th>调用策略</th><th>资源限制</th></tr></thead><tbody>
+<tr><td>导入 / 浏览</td><td>本地读取元数据，优先生成可见项的缩略图；已有标签可离线读取。</td><td>不自动调用模型。手机完整资源按需下载；哈希候选先按大小等元数据筛选，再后台校验内容，不能用同名文件判定精确重复。</td></tr>
+<tr><td>粗打标</td><td>未来由用户选择素材触发；先复用缓存，每个视频少量代表帧，起步试验可设 6–12 帧，再按时长 / 镜头变化调整。</td><td>每任务设置素材数、帧数、请求数、输出长度与预计费用上限；少量帧不足以覆盖快动作或长视频，结果注明观察范围。</td></tr>
+<tr><td>候选筛选</td><td>先查标签和技术条件，缩小到当前任务需要的候选；现有索引可以确定的条件不再询问模型。</td><td>预算留给不能由索引解决的语义排序；未分析素材显示未分析，不能被解释为不存在。</td></tr>
+<tr><td>片段精分析</td><td>仅对候选区间加密抽帧，检查边界、动作与封面。</td><td>分配独立精分析额度；缺少证据时标为待核对，不自动扩大到整段 / 全库逐帧分析。</td></tr>
+<tr><td>调色 / 播放</td><td>滑块即时响应、LUT、视频 / Live 播放和声音调整由本地引擎完成。</td><td>交互使用适合当前画布的渲染分辨率；100% 检查与最终输出使用所需原件精度。分析副本与 HDR 编辑管线分开。</td></tr>
+<tr><td>导出 / 动画</td><td>本地按已确认配方 / 时间轴渲染；云端不逐帧决定参数。</td><td>限制解码 / 渲染并发，与前台预览协调 GPU；只重算依赖变化的部分，缓存不能替代源资源或色彩验证。</td></tr>
+</tbody></table></div>
+<h3>一个帧数示例，说明为何不能直接逐帧打标</h3><p>假设有 1,000 段视频，每段 60 秒、30 fps：逐帧分析对应 1,800,000 帧；每段先取 8 帧，粗分析对应 8,000 帧。两者帧数相差 225 倍，之后还要对候选追加精分析。</p><p class="source">这是设计用的算术示例，不是准确率、性能或费用实测。压缩视频随机抽帧仍可能需要解码相邻帧；图像 token 与分辨率 / 模型处理方式有关，费用不会简单等于这个倍数。</p>
+<div class="grid"><div class="item"><h3>模型调用账本</h3><p>记录请求 ID、任务阶段、帧数 / 尺寸、输入 / 输出 token、缓存用量、实际费用估算、重试数、延迟和接受率。预计费用按当前官方费率与试跑用量估算，运行时持续核对；达到预算边界停止追加分析，不自动扩大任务范围。</p></div><div class="item"><h3>本地资源账本</h3><p>单独记录手机下载量、磁盘读取量、抽帧 / 解码时间、GPU 预览耗时、内存峰值、缓存空间和导出速度。前台播放 / 拖动优先；明确导出受控执行，后台哈希 / 缩略图 / AI 采样在繁忙或设备断开时等待。</p></div></div>
+<details><summary>缓存复用与失效规则</summary><p>原片内容标签绑定素材身份、资源版本、模型、提示词、词表和采样版本；调色不会默认触发原片重打标。对“编辑结果”的分析另绑定配方版本，避免混用原片观察和效果评价。同内容的多个路径在身份核实后共用结果；完整哈希按需后台计算，避免为了缓存命中先扫描全库大视频。</p><p>分析预览、缩略图和渲染缓存设置容量上限，可按最近使用顺序回收；原件、编辑版本、人工标签与必要的 LUT / BGM / 配音资源不随缓存清理而删除。任务保留检查点，取消后不再调度未开始请求；已经发送的云端请求可能仍计费，失败重试也纳入账本。</p></details>
+<p class="source">本节为资源设计，尚未设定默认费用或硬件并发阈值。将来启用该模块时，先用小样本得到实际用量，再确定上限。后台 Batch 适用性见此前接入说明；用户当前明确执行的工作仍是调色与 Live 制作。</p>
+</section>
+<section class="section" id="animation-roadmap"><div class="eyebrow">ANIMATION / FUTURE ONLY</div><h2>把动画编排记录为后续短片能力。</h2><p>保留 Sol 编排镜头和动画的方向，放在未来项目时间轴中评估。首批候选是字幕入场 / 退场、照片轻缩放与平移、简单淡化 / 转场，以及音乐已有节奏标记上的强调；不作为当前 Live 制作的验收条件。</p>
+<div class="flow"><b>目标与候选镜头</b><span aria-hidden="true">→</span><b>Sol 输出动画计划</b><span aria-hidden="true">→</span><b>关键帧 / 时间校验</b><span aria-hidden="true">→</span><b>本地预览和渲染</b></div>
+<p>计划记录 clipID、作用对象、项目起止时间、缩放 / 位移 / 透明度关键帧与受支持的缓动曲线；单位、坐标空间和镜头边界由应用统一。动画效果由本地执行器按时间计算，Sol 只在编排或修改时调用，无需每帧请求模型，也不需要为普通关键帧动画生成新视频内容。</p><p>修改一个动画只更新相关计划与渲染依赖。验收包含预览 / 导出时间一致、字幕可读、动画不越界、连续镜头节奏和 HDR 渲染一致。口播、BGM 节拍检测与字幕对齐需各自验证；当前仅记入扩展文档，不启动实现。</p>
+</section>
+<footer>2026-10-03 更新：确认当前主线为调色与 Live 工作台，AI 打标 / 选片、完整制作与动画保留为后续扩展，补充资源预算规则。尚未运行模型分析或生成媒体。<a href="development-readiness.html">开发准备与技术验证</a> · <a href="mac-media-plan.html">整体落地方案</a></footer>
+</main></body></html>

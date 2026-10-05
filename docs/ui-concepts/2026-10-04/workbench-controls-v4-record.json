@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-04",
+  "scope": "Approved native controls applied across the main grading and Live workbench",
+  "sources": [
+    "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+    "Sources/MediaWorkbenchApp/MediaWorkbenchApp.swift",
+    "Sources/MediaWorkbenchApp/MediaTimeline.swift",
+    "Sources/MediaWorkbenchApp/NativeControlsSample.swift"
+  ],
+  "changes": [
+    "Shared native Regular glass/capsule primary action helper with macOS 15 fallback",
+    "LUT preset buttons use native glass and expose selected accessibility traits",
+    "Single-line principal title prevents subtitle clipping",
+    "HDR/grid switches Small; parameter and action text 13 pt, action symbols 16 pt",
+    "Timeline ViewThatFits preserves intrinsic control sizes and switches from one row to two rows"
+  ],
+  "build": {
+    "result": "passed",
+    "configuration": "Release",
+    "engine": "SwiftPM native, explicit macOS SDK 27.0",
+    "log": ".build/workbench-controls-rollout.log",
+    "seconds": 8.5
+  },
+  "fixture": ".build/feature-fixtures-v2/demo-video.mov (synthetic 320x180, 24 fps, 3 s)",
+  "gui_checks": [
+    "Video loaded into main window with three inspector tabs",
+    "Warm LUT click updates selected trait and enables strength slider",
+    "Drag across color to audio changes selection and panel",
+    "Audio slider drag commits 53 percent",
+    "LUT slider drag commits 69 percent",
+    "Narrow window 1002 logical px displays two tool rows with full labels",
+    "Wide window 1470 logical px displays one tool row",
+    "Next-frame button advances source time from 00:00.00 to 00:00.04",
+    "Three-second button updates cover to current position",
+    "Mute changes both timeline and inspector glyphs and volume to zero; unmute restored",
+    "Live action opens save panel; canceled without export",
+    "Geometry tab exposes angle, grid, reset and Live range controls"
+  ],
+  "screenshots": [
+    "workbench-controls-v4-color.png",
+    "workbench-controls-v4-narrow-audio.png"
+  ],
+  "limits": [
+    "No 4K/HDR frame-rate measurements",
+    "No new export regression results claimed; media pipeline unchanged",
+    "Reduce Motion/Transparency runtime preferences not changed for testing"
+  ],
+  "related_record": "native-controls-build-record.json"
+}

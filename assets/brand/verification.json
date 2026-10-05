@@ -1,0 +1,18 @@
+{
+  "releaseBuild": "passed",
+  "bundleIconKey": "AppIcon",
+  "bundleICNS": "identical to approved exported icon",
+  "bundlePNG": "identical to empty-state export",
+  "NSImageDecode": "icon and empty-state passed",
+  "iconset": "all 10 standard resolutions validated",
+  "vectors": "all SVG files parsed; no font/text dependency or external image references",
+  "ui": "native window launched; toolbar mark and empty state visually checked",
+  "uiScreenshot": "exports/workbench-brand-verified.png",
+  "limitations": [
+    "No Icon Composer .icon or system tinted/dark automatic variant support",
+    "Dock and Finder cached icon appearance not separately verified"
+  ],
+  "source": "existing approved SVG blade silhouette preserved; deterministic AppKit/CoreText exports",
+  "generatedImages": "none; vector asset adaptation and native raster export",
+  "buildLog": ".build/brand-app-build.log"
+}

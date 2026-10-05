@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-04",
+  "sample_entry": "光集 → 开发 → 原生控件样板…",
+  "sdk_version": "27.0",
+  "binary_build_version": ".build/MediaWorkbench.app/Contents/MacOS/media-workbench:\nLoad command 11\n      cmd LC_BUILD_VERSION\n  cmdsize 32\n platform MACOS\n    minos 15.0\n      sdk 27.0\n   ntools 1\n     tool LD\n  version 27037.1\n",
+  "build_engine": "SwiftPM native (temporary workaround for incorrect SDK metadata in the current Swift Build engine)",
+  "minimum_macos": "15.0",
+  "sample_source": "Sources/MediaWorkbenchApp/NativeControlsSample.swift",
+  "slider_source": "Sources/MediaWorkbenchApp/NativeParameterSlider.swift",
+  "build_log": ".build/segmented-controls-build.log",
+  "test_log": ".build/native-controls-tests.log",
+  "gui_verification": "macOS 27 原生样板已重启验证：连续角度及音量拖动、0.05 度方向键、右键复位、99 度输入限制为 10 度、禁用滑块维持 60。深浅色截图已保存。未测量帧率。",
+  "regression_tests": "Build completed; test runner did not produce test results and was interrupted after waiting. No new test pass claimed.",
+  "pending": [
+    "真实 4K/HDR 素材拖动预览的帧率测试"
+  ],
+  "interaction": "系统 SwiftUI Slider；控件内部保留连续位置；调色参数合并提交（33 ms），松手立即提交最终值；移除竞争的双击手势。",
+  "screenshots": [
+    "native-controls-dark.png",
+    "native-controls-light.png",
+    "native-controls-interaction-v3-dark.png",
+    "native-controls-interaction-v3-light.png"
+  ],
+  "concept_gallery": "mac27-native-workbench-v2.html",
+  "concept_prompt_record": "imagegen-native-v2-prompts.json",
+  "segmented_control_source": "Sources/MediaWorkbenchApp/SlidingSegmentedControl.swift",
+  "segmented_control": {
+    "implementation": "App-specific interaction using system glass material; not an unmodified native Picker",
+    "click_animation_seconds": 0.24,
+    "drag": "Continuous highlight tracking; commit panel selection on release and snap to segment",
+    "accessibility": "Selected button traits; Reduce Motion disables animation; Reduce Transparency uses solid highlight. OS preference variants implemented, not runtime tested."
+  },
+  "button_polish": {
+    "style": "System glass Regular on macOS 26+; bordered Regular fallback; native capsule/circle border shapes",
+    "label_pt": 13,
+    "action_symbol_pt": 16,
+    "tint": "Neutral ordinary buttons; warm prominent Live action"
+  },
+  "interaction_verification": "Release build passed (3.89 s). Native sample: click, adjacent segment drag, cross-two-segment drag, dark and light appearance verified. Main workbench: click to geometry panel and drag back to color panel verified. No animation frame-rate measurement or media-loaded timeline test claimed.",
+  "sources": [
+    "https://developer.apple.com/design/human-interface-guidelines/segmented-controls",
+    "https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass",
+    "https://developer.apple.com/videos/play/wwdc2025/356/"
+  ]
+}

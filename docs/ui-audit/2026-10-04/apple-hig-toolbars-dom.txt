@@ -1,0 +1,782 @@
+- link "Skip Navigation":
+  - /url: /design/human-interface-guidelines/toolbars#app-main
+- link "以中文查看":
+  - /url: /cn/design/human-interface-guidelines/toolbars
+  - text: 以中文查看
+- button "Continue viewing in English":
+- navigation "Global":
+  - list:
+    - link "Apple Developer":
+      - /url: /
+    - list:
+      - link "Get Started":
+        - /url: /get-started/
+        - generic: Get Started
+      - button "Get Started menu":
+    - list:
+      - link "Platforms":
+        - /url: /platforms/
+        - generic: Platforms
+      - button "Platforms menu":
+    - list:
+      - link "Technologies":
+        - /url: /technologies/
+        - generic: Technologies
+      - button "Technologies menu":
+    - list:
+      - link "Community":
+        - /url: /community/
+        - generic: Community
+      - button "Community menu":
+    - list:
+      - link "Documentation":
+        - /url: /documentation/
+        - generic: Documentation
+      - button "Documentation menu":
+    - list:
+      - link "Downloads":
+        - /url: /download/
+        - generic: Downloads
+      - button "Downloads menu":
+    - list:
+      - link "Support":
+        - /url: /support/
+        - generic: Support
+      - button "Support menu":
+    - button "Search":
+    - link "Sign in":
+      - /url: /login/?return=%2Fdesign%2Fhuman-interface-guidelines%2Ftoolbars
+- navigation:
+  - link "Design":
+    - /url: /design/
+  - list:
+    - link "Overview":
+      - /url: https://developer.apple.com/design/
+    - link "What’s New":
+      - /url: https://developer.apple.com/design/whats-new/
+    - link "Get Started":
+      - /url: https://developer.apple.com/design/get-started/
+    - link "Guidelines":
+      - /url: /design/human-interface-guidelines
+    - link "Resources":
+      - /url: https://developer.apple.com/design/resources/
+- navigation:
+  - generic "Documentation Navigator":
+    - button "Foundations":
+    - link "Foundations":
+      - /url: /design/human-interface-guidelines/foundations
+      - paragraph: Foundations
+    - button "Patterns":
+    - link "Patterns":
+      - /url: /design/human-interface-guidelines/patterns
+      - paragraph: Patterns
+    - button "Components" [expanded]:
+    - link "Components":
+      - /url: /design/human-interface-guidelines/components
+      - paragraph: Components
+    - button "Content":
+    - link "Content":
+      - /url: /design/human-interface-guidelines/content
+      - paragraph: Content
+    - button "Layout and organization":
+    - link "Layout and organization":
+      - /url: /design/human-interface-guidelines/layout-and-organization
+      - paragraph: Layout and organization
+    - button "Menus and actions" [expanded]:
+    - link "Menus and actions":
+      - /url: /design/human-interface-guidelines/menus-and-actions
+      - paragraph: Menus and actions
+    - link "Activity views":
+      - /url: /design/human-interface-guidelines/activity-views
+      - paragraph: Activity views
+    - link "Buttons":
+      - /url: /design/human-interface-guidelines/buttons
+      - paragraph: Buttons
+    - link "Context menus":
+      - /url: /design/human-interface-guidelines/context-menus
+      - paragraph: Context menus
+    - link "Dock menus":
+      - /url: /design/human-interface-guidelines/dock-menus
+      - paragraph: Dock menus
+    - link "Edit menus":
+      - /url: /design/human-interface-guidelines/edit-menus
+      - paragraph: Edit menus
+    - link "Home Screen quick actions":
+      - /url: /design/human-interface-guidelines/home-screen-quick-actions
+      - paragraph: Home Screen quick actions
+    - link "Menus":
+      - /url: /design/human-interface-guidelines/menus
+      - paragraph: Menus
+    - link "Ornaments":
+      - /url: /design/human-interface-guidelines/ornaments
+      - paragraph: Ornaments
+    - link "Pop-up buttons":
+      - /url: /design/human-interface-guidelines/pop-up-buttons
+      - paragraph: Pop-up buttons
+    - link "Pull-down buttons":
+      - /url: /design/human-interface-guidelines/pull-down-buttons
+      - paragraph: Pull-down buttons
+    - link "The menu bar":
+      - /url: /design/human-interface-guidelines/the-menu-bar
+      - paragraph: The menu bar
+    - link "Toolbars":
+      - /url: /design/human-interface-guidelines/toolbars
+      - paragraph: Toolbars
+    - button "Navigation and search":
+    - link "Navigation and search":
+      - /url: /design/human-interface-guidelines/navigation-and-search
+      - paragraph: Navigation and search
+    - button "Presentation":
+    - link "Presentation":
+      - /url: /design/human-interface-guidelines/presentation
+      - paragraph: Presentation
+    - button "Selection and input":
+    - link "Selection and input":
+      - /url: /design/human-interface-guidelines/selection-and-input
+      - paragraph: Selection and input
+    - button "Status":
+    - link "Status":
+      - /url: /design/human-interface-guidelines/status
+      - paragraph: Status
+    - button "System experiences":
+    - link "System experiences":
+      - /url: /design/human-interface-guidelines/system-experiences
+      - paragraph: System experiences
+    - button "Inputs":
+    - link "Inputs":
+      - /url: /design/human-interface-guidelines/inputs
+      - paragraph: Inputs
+    - button "Technologies":
+    - link "Technologies":
+      - /url: /design/human-interface-guidelines/technologies
+      - paragraph: Technologies
+  - generic: 26 items were found. Tab back to navigate through them.
+  - paragraph
+  - search:
+    - button:
+    - generic "Filter":
+      - combobox "Filter"
+  - generic: Navigator is ready
+- main:
+  - heading "Toolbars" [level=1]
+  - generic: A toolbar provides convenient access to frequently used commands, controls, navigation, and search.
+  - paragraph:
+    - img "A stylized representation of a toolbar, with a Back control on the leading edge, and Compose, Share, and the More menu on the trailing edge. The image is tinted red to subtly reflect the red in the original six-color Apple logo."
+  - paragraph: A toolbar consists of one or more sets of controls arranged horizontally along the top or bottom edge of the view, grouped into logical sections.
+  - paragraph: "Toolbars act on content in the view, facilitate navigation, and help orient people in the app. They include three types of content:"
+  - list:
+    - paragraph: The title of the current view
+    - paragraph:
+      - text: Navigation controls, like back and forward, and
+      - link "search fields":
+        - /url: /design/human-interface-guidelines/search-fields
+    - paragraph:
+      - text: Actions, or bar items, like
+      - link "buttons":
+        - /url: /design/human-interface-guidelines/buttons
+      - text: and
+      - link "menus":
+        - /url: /design/human-interface-guidelines/menus
+  - paragraph:
+    - text: In contrast to a toolbar, a
+    - link "tab bar":
+      - /url: /design/human-interface-guidelines/tab-bars
+    - text: is specifically for navigating between areas of an app.
+  - heading "Best practices in page link" [level=2]:
+    - link "Best practices in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Best-practices
+  - paragraph:
+    - strong: Choose items deliberately to avoid overcrowding.
+    - text: People need to be able to distinguish and activate each item, so you don’t want to put too many items in the toolbar. To accommodate variable view widths, define which items move to the overflow menu as the toolbar becomes narrower.
+  - complementary "note":
+    - paragraph: Note
+    - paragraph: The system automatically adds an overflow menu in macOS or iPadOS when items no longer fit. Don’t add an overflow menu manually, and avoid layouts that cause toolbar items to overflow by default.
+  - paragraph:
+    - strong: Add a More menu to contain additional actions.
+    - text: Prioritize less important actions for inclusion in the More menu. Try to include all actions in the toolbar if possible, and only add this menu if you really need it.
+  - navigation:
+    - list:
+      - link "Standard":
+        - /url: "#"
+      - link "Compact":
+        - /url: "#"
+  - paragraph:
+    - figure "The standard toolbar in macOS Notes includes a More menu with extra commands.":
+      - img "A screenshot of the Notes app on Mac, with the window wide enough for the toolbar to include all of the available toolbar items. A More menu button appears on the trailing side of the toolbar, with the menu open beneath it."
+      - generic: The standard toolbar in macOS Notes includes a More menu with extra commands.
+  - paragraph:
+    - strong: In iPadOS and macOS apps, consider letting people customize the toolbar to include their most common items.
+    - text: Toolbar customization is especially useful in apps that provide a lot of items — or that include advanced functionality that not everyone needs — and in apps that people tend to use for long periods of time. For example, it works well to make a range of editing actions available for toolbar customization, because people often use different types of editing commands based on their work style and their current project.
+  - paragraph:
+    - strong: Reduce the use of toolbar backgrounds and tinted controls.
+    - text: Any custom backgrounds and appearances you use might overlay or interfere with background effects that the system provides. Instead, use the content layer to inform the color and appearance of the toolbar, and use a
+    - link "ScrollEdgeEffectStyle":
+      - /url: /documentation/swiftui/scrolledgeeffectstyle
+      - code:
+        - text: Scroll
+        - text: Edge
+        - text: Effect
+        - text: Style
+    - text: when necessary to distinguish the toolbar area from the content area. This approach helps your app express its unique personality without distracting from content.
+  - paragraph:
+    - strong: Avoid applying a similar color to toolbar item labels and content layer backgrounds.
+    - text: If your app already has bright, colorful content in the content layer, prefer using the default monochromatic appearance of toolbars. For more guidance, see
+    - link "Liquid Glass color":
+      - /url: /design/human-interface-guidelines/color#Liquid-Glass-color
+    - text: .
+  - paragraph:
+    - strong: Prefer using standard components in a toolbar.
+    - text: By default, standard buttons, text fields, headers, and footers have corner radii that are concentric with bar corners. If you need to create a custom component, ensure that its corner radius is also concentric with the bar’s corners.
+  - paragraph:
+    - strong: Consider temporarily hiding toolbars for a distraction-free experience.
+    - text: Sometimes people appreciate a minimal interface to reduce distractions or reveal more content. If you support this, do so contextually when it makes the most sense, and offer ways to reliably restore hidden interface elements. For guidance, see
+    - link "Going full screen":
+      - /url: /design/human-interface-guidelines/going-full-screen
+    - text: . For guidance specific to visionOS, see
+    - link "Immersive experiences":
+      - /url: /design/human-interface-guidelines/immersive-experiences
+    - text: .
+  - heading "Titles in page link" [level=2]:
+    - link "Titles in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Titles
+  - paragraph:
+    - strong: Provide a useful title for each window.
+    - text: A title helps people confirm their location as they navigate your app, and differentiates between the content of multiple open windows. If titling a toolbar seems redundant, you can leave the title area empty. For example, Notes doesn’t title the current note when a single window is open, because the first line of content typically supplies sufficient context. However, when opening notes in separate windows, the system titles them with the first line of content so people can tell them apart.
+  - paragraph:
+    - strong: Don’t title windows with your app name.
+    - text: Your app’s name doesn’t provide useful information about your content hierarchy or any window or area in your app, so it doesn’t work well as a title.
+  - paragraph:
+    - strong: Write a concise title.
+    - text: Aim for a word or short phrase that distills the purpose of the window or view, and keep the title under 15 characters long so you leave enough room for other controls.
+  - heading "Navigation in page link" [level=2]:
+    - link "Navigation in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Navigation
+  - paragraph:
+    - text: A toolbar with navigation controls appears at the top of a window, helping people move through a hierarchy of content. A toolbar also often contains a
+    - link "search field":
+      - /url: /design/human-interface-guidelines/search-fields
+    - text: for quick navigation between areas or pieces of content. In iOS, a navigation-specific toolbar is sometimes called a navigation bar.
+  - paragraph:
+    - strong: Use the standard Back and Close buttons.
+    - text: People know that the standard Back button lets them retrace their steps through a hierarchy of information, and the standard Close button closes a modal view. Prefer the standard symbols for each, and don’t use a text label that says
+    - emphasis: Back
+    - text: or
+    - emphasis: Close
+    - text: . If you create a custom version of either, make sure it still looks the same, behaves as people expect, and matches the rest of your interface, and ensure you consistently implement it throughout your app or game. For guidance, see
+    - link "Icons":
+      - /url: /design/human-interface-guidelines/icons
+    - text: .
+  - paragraph:
+    - img "An illustration of a capsule-shape Back button that includes the Back symbol on the leading side, grouped with Back in text on the trailing side."
+  - paragraph:
+    - img "An X in a circle to indicate incorrect usage."
+  - paragraph:
+    - img "An illustration of the standard circular Back button that includes the standard Back symbol."
+  - paragraph:
+    - img "A checkmark in a circle to indicate correct usage."
+  - heading "Actions in page link" [level=2]:
+    - link "Actions in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Actions
+  - paragraph:
+    - strong: Provide actions that support the main tasks people perform.
+    - text: In general, prioritize the commands that people are most likely to want. These commands are often the ones people use most frequently, but in some apps it might make sense to prioritize commands that map to the highest level or most important objects people work with.
+  - paragraph:
+    - strong: Make sure the meaning of each control is clear.
+    - text: Don’t make people guess or experiment to figure out what a toolbar item does. Prefer simple, recognizable symbols for items instead of text, except for actions like
+    - emphasis: edit
+    - text: that aren’t well-represented by symbols. For guidance on symbols that represent common actions, see
+    - link "Standard icons":
+      - /url: /design/human-interface-guidelines/icons#Standard-icons
+    - text: .
+  - paragraph:
+    - img "An illustration of an item group with text button labels for Filter, Delete, and New."
+  - paragraph:
+    - img "An X in a circle to indicate incorrect usage."
+  - paragraph:
+    - img "An illustration of an item group with symbol button labels for Filter, Delete, and New."
+  - paragraph:
+    - img "A checkmark in a circle to indicate correct usage."
+  - paragraph:
+    - strong: Prefer system-provided symbols without borders.
+    - text: System-provided symbols are familiar, automatically receive appropriate coloring and vibrancy, and respond consistently to user interactions. Borders (like outlined circle symbols) aren’t necessary because the section provides a visible container, and the system defines hover and selection state appearances automatically. For guidance, see
+    - link "SF Symbols":
+      - /url: /design/human-interface-guidelines/sf-symbols
+    - text: .
+  - paragraph:
+    - img "An illustration of an item group with buttons for Filter and More. The buttons are labeled with symbols with circular borders."
+  - paragraph:
+    - img "An X in a circle to indicate incorrect usage."
+  - paragraph:
+    - img "An illustration of an item group with buttons for Filter and More. The buttons are labeled with symbols without borders."
+  - paragraph:
+    - img "A checkmark in a circle to indicate correct usage."
+  - paragraph:
+    - strong:
+      - text: Use the
+      - code: .prominent
+      - text: style for key actions such as Done or Submit.
+    - text: This separates and tints the action so there’s a clear focal point. Only specify one primary action, and put it on the trailing side of the toolbar.
+  - paragraph:
+    - img "An illustration of two toolbar items, with a Filter button on the leading side and a Done button on the trailing side. The buttons are ungrouped, and the Done button has the prominent style applied to indicate that it's the primary action."
+  - heading "Item groupings in page link" [level=2]:
+    - link "Item groupings in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Item-groupings
+  - paragraph: "You can position toolbar items in three locations: the leading edge, center area, and trailing edge of the toolbar. These areas provide familiar homes for navigation controls, window or document titles, common actions, and search."
+  - list:
+    - paragraph:
+      - strong: Leading edge.
+      - text: Elements that let people return to the previous document and show or hide a sidebar appear at the far leading edge, followed by the view title. Next to the title, the toolbar can include a document menu that contains standard and app-specific commands that affect the document as a whole, such as Duplicate, Rename, Move, and Export. To ensure that these items are always available, items on the toolbar’s leading edge aren’t customizable.
+    - paragraph:
+      - strong: Center area.
+      - text: Common, useful controls appear in the center area, and the view title can appear here if it’s not on the leading edge. In macOS and iPadOS, people can add, remove, and rearrange items here if you let them customize the toolbar, and items in this section automatically collapse into the system-managed overflow menu when the window shrinks enough in size.
+    - paragraph:
+      - strong: Trailing edge.
+      - text: The trailing edge contains important items that need to remain available, buttons that open nearby inspectors, an optional search field, and the More menu that contains additional items and supports toolbar customization. It also includes a primary action like Done when one exists. Items on the trailing edge remain visible at all window sizes.
+  - paragraph:
+    - img "A diagram of the top toolbar in the Freeform app on iPad. Callouts indicate the location of item groupings on the leading edge, center area, and trailing edge of the toolbar."
+  - paragraph: To position items in the groupings you want, pin them to the leading edge, center, or trailing edge, and insert space between buttons or other items where appropriate.
+  - paragraph:
+    - strong: Group toolbar items logically by function and frequency of use.
+    - text: For example, Keynote includes several sections that are based on functionality, including one for presentation-level commands, one for playback commands, and one for object insertion.
+  - paragraph:
+    - strong: Group navigation controls and critical actions like Done, Close, or Save in dedicated, familiar, and visually distinct sections.
+    - text: This reflects their importance and helps people discover and understand these actions.
+  - paragraph:
+    - img "An illustration of a top toolbar on iPhone, with controls for back, forward, tool selection, and the More menu grouped in a single section on the trailing edge."
+  - paragraph:
+    - img "An X in a circle to indicate incorrect usage."
+  - paragraph:
+    - img "An illustration of a top toolbar on iPhone, with controls for back and forward grouped on the leading edge, and controls for tool selection and the More menu grouped on the trailing edge."
+  - paragraph:
+    - img "A checkmark in a circle to indicate correct usage."
+  - paragraph:
+    - strong: Keep consistent groupings and placement across platforms.
+    - text: This helps people develop familiarity with your app and trust that it behaves similarly regardless of where they use it.
+  - paragraph:
+    - strong: Minimize the number of groups.
+    - text: Too many groups of controls can make a toolbar feel cluttered and confusing, even with the added space on iPad and Mac. In general, aim for a maximum of three.
+  - paragraph:
+    - strong: Keep actions with text labels separate.
+    - text: Placing an action with a text label next to an action with a symbol can create the illusion of a single action with a combined text and symbol, leading to confusion and misinterpretation. If your toolbar includes multiple text-labeled buttons, the text of those buttons may appear to run together, making the buttons indistinguishable. Add separation by inserting fixed space between the buttons. For developer guidance, see
+    - link "UIBarButtonItem.SystemItem.fixedSpace":
+      - /url: /documentation/uikit/uibarbuttonitem/systemitem/fixedspace
+      - code:
+        - text: UIBar
+        - text: Button
+        - text: Item
+        - text: .System
+        - text: Item
+        - text: .fixed
+        - text: Space
+    - text: .
+  - paragraph:
+    - img "An illustration of a top toolbar on iPhone, with an Edit control with a text label and a Share control with a symbol grouped together on the trailing edge."
+  - paragraph:
+    - img "An X in a circle to indicate incorrect usage."
+  - paragraph:
+    - img "An illustration of a top toolbar on iPhone, with an Edit control with a text label and a Share control with a symbol grouped into individual sections on the trailing edge."
+  - paragraph:
+    - img "A checkmark in a circle to indicate correct usage."
+  - heading "Platform considerations in page link" [level=2]:
+    - link "Platform considerations in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Platform-considerations
+  - paragraph:
+    - emphasis: No additional considerations for tvOS.
+  - heading "iOS in page link" [level=3]:
+    - link "iOS in page link":
+      - /url: /design/human-interface-guidelines/toolbars#iOS
+  - paragraph:
+    - strong: Prioritize only the most important items for inclusion in the main toolbar area.
+    - text: Because space is so limited, carefully consider which actions are essential to your app and include those first. Create a More menu to include additional items.
+  - paragraph:
+    - strong: Use a large title to help people stay oriented as they navigate and scroll.
+    - text: By default, a large title transitions to a standard title as people begin scrolling the content, and transitions back to large when people scroll to the top, reminding them of their current location. For developer guidance, see
+    - link "prefersLargeTitles":
+      - /url: /documentation/uikit/uinavigationbar/preferslargetitles
+      - code:
+        - text: prefers
+        - text: Large
+        - text: Titles
+    - text: .
+  - heading "iPadOS in page link" [level=3]:
+    - link "iPadOS in page link":
+      - /url: /design/human-interface-guidelines/toolbars#iPadOS
+  - paragraph:
+    - strong: Consider combining a toolbar with a tab bar.
+    - text: In iPadOS, a toolbar and a
+    - link "tab bar":
+      - /url: /design/human-interface-guidelines/tab-bars
+    - text: can coexist in the same horizontal space at the top of the view. This is particularly useful for layouts where you want to navigate between a few main app areas while keeping the full width of the window available for content. For guidance, see
+    - link "Layout":
+      - /url: /design/human-interface-guidelines/layout
+    - text: and
+    - link "Windows":
+      - /url: /design/human-interface-guidelines/windows
+    - text: .
+  - heading "macOS in page link" [level=3]:
+    - link "macOS in page link":
+      - /url: /design/human-interface-guidelines/toolbars#macOS
+  - paragraph: In a macOS app, the toolbar resides in the frame at the top of a window, either below or integrated with the title bar. Note that window titles can display inline with controls, and toolbar items don’t include a bezel.
+  - paragraph:
+    - img "A diagram of a Finder window in macOS with callouts showing the location of the toolbar and the window frame."
+  - paragraph:
+    - strong: Make every toolbar item available as a command in the menu bar.
+    - text: Because people can customize the toolbar or hide it, it can’t be the only place that presents a command. In contrast, it doesn’t make sense to provide a toolbar item for every menu item, because not all menu commands are important enough or used often enough to warrant space in the toolbar.
+  - heading "visionOS in page link" [level=3]:
+    - link "visionOS in page link":
+      - /url: /design/human-interface-guidelines/toolbars#visionOS
+  - paragraph: In visionOS, the system-provided toolbar appears along the bottom edge of a window, above the window-management controls, and in a parallel plane that’s slightly in front of the window along the z-axis.
+  - paragraph:
+    - img "A screenshot of a toolbar along the bottom of the Notes app window in visionOS."
+  - paragraph: To maintain the legibility of toolbar items as content scrolls behind them, visionOS uses a variable blur in the bar background. The variable blur anchors the bar above the scrolling content while letting the view’s glass material remain uniform and undivided.
+  - paragraph: In visionOS, you can supply either a symbol or a text label for each toolbar item. When people look at a toolbar item that contains a symbol, visionOS reveals the text label, providing additional information.
+  - paragraph:
+    - strong: Prefer using a system-provided toolbar.
+    - text: The standard toolbar has a consistent and familiar appearance and is optimized to work well with eye and hand input. In addition, the system automatically places a standard toolbar in the correct position in relation to its window.
+  - paragraph:
+    - img "A screenshot of a toolbar in visionOS."
+  - paragraph:
+    - strong: Avoid creating a vertical toolbar.
+    - text: In visionOS,
+    - link "tab bars":
+      - /url: /design/human-interface-guidelines/tab-bars
+    - text: are vertical, so presenting a vertical toolbar could confuse people.
+  - paragraph:
+    - strong: Try to prevent windows from resizing below the width of the toolbar.
+    - text: visionOS doesn’t include a menu bar where each app lists all its actions, so it’s important for the toolbar to provide reliable access to essential controls regardless of a window’s size.
+  - paragraph:
+    - strong: If your app can enter a modal state, consider offering contextually relevant toolbar controls.
+    - text: For example, a photo-editing app might enter a modal state to help people perform a multistep editing task. In this scenario, the controls in the modal editing view are different from the controls in the main window. Be sure to reinstate the window’s standard toolbar controls when the app exits the modal state.
+  - paragraph:
+    - strong: Avoid using a pull-down menu in a toolbar.
+    - text: A pull-down menu lets you offer additional actions related to a toolbar item, but can be difficult for people to discover and may clutter your interface. Because a toolbar is located at the bottom edge of a window in visionOS, a pull-down menu might obscure the standard window controls that appear below the bottom edge. For guidance, see
+    - link "Pull-down buttons":
+      - /url: /design/human-interface-guidelines/pull-down-buttons
+    - text: .
+  - heading "watchOS in page link" [level=3]:
+    - link "watchOS in page link":
+      - /url: /design/human-interface-guidelines/toolbars#watchOS
+  - paragraph: A toolbar button lets you offer important app functionality in a view that displays related content. You can place toolbar buttons in the top corners or along the bottom. If you place these buttons above scrolling content, the buttons always remain visible, as the content scrolls under them.
+  - paragraph:
+    - figure "Top toolbar buttons":
+      - img "A screenshot showing toolbar buttons in the top leading and trailing corners."
+      - generic: Top toolbar buttons
+  - paragraph:
+    - figure "Bottom toolbar buttons":
+      - img "A screenshot showing two toolbar buttons in the bottom leading and trailing corners."
+      - generic: Bottom toolbar buttons
+  - paragraph:
+    - text: For developer guidance, see
+    - link "topBarLeading":
+      - /url: /documentation/swiftui/toolbaritemplacement/topbarleading
+      - code:
+        - text: top
+        - text: Bar
+        - text: Leading
+    - text: ","
+    - link "topBarTrailing":
+      - /url: /documentation/swiftui/toolbaritemplacement/topbartrailing
+      - code:
+        - text: top
+        - text: Bar
+        - text: Trailing
+    - text: ", or"
+    - link "bottomBar":
+      - /url: /documentation/swiftui/toolbaritemplacement/bottombar
+      - code:
+        - text: bottom
+        - text: Bar
+    - text: .
+  - paragraph: You can also place a button in the scrolling view. By default, a scrolling toolbar button remains hidden until people reveal it by scrolling up. People frequently scroll to the top of a scrolling view, so discovering a toolbar button is automatic.
+  - paragraph:
+    - figure "Toolbar button hidden":
+      - img "A screenshot showing two toolbar buttons in the top leading and trailing corners. The toolbar also has a primary action button in the scroll view, but it's hidden."
+      - generic: Toolbar button hidden
+  - paragraph:
+    - figure "Toolbar button shown":
+      - img "A screenshot showing two toolbar buttons in the top leading and trailing corners. The toolbar also displays a primary action button in the scroll view."
+      - generic: Toolbar button shown
+  - paragraph:
+    - text: For developer guidance, see
+    - link "primaryAction":
+      - /url: /documentation/swiftui/toolbaritemplacement/primaryaction
+      - code:
+        - text: primary
+        - text: Action
+    - text: .
+  - paragraph:
+    - strong: Use a scrolling toolbar button for an important action that isn’t a primary app function.
+    - text: A toolbar button gives you the flexibility to offer important functionality in a view whose primary purpose is related to that functionality, but may not be the same. For example, Mail provides the essential New Message action in a toolbar button at the top of the Inbox view. The primary purpose of the Inbox is to display a scrollable list of email messages, so it makes sense to offer the closely related compose action in a toolbar button at the top of the view.
+  - heading "Resources in page link" [level=2]:
+    - link "Resources in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Resources
+  - heading "Related in page link" [level=4]:
+    - link "Related in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Related
+  - paragraph:
+    - link "Sidebars":
+      - /url: /design/human-interface-guidelines/sidebars
+  - paragraph:
+    - link "Tab bars":
+      - /url: /design/human-interface-guidelines/tab-bars
+  - paragraph:
+    - link "Layout":
+      - /url: /design/human-interface-guidelines/layout
+  - paragraph:
+    - link "Buttons":
+      - /url: /design/human-interface-guidelines/buttons
+  - paragraph:
+    - link "Search fields":
+      - /url: /design/human-interface-guidelines/search-fields
+  - paragraph:
+    - link "Apple Design Resources":
+      - /url: https://developer.apple.com/design/resources/
+  - heading "Developer documentation in page link" [level=4]:
+    - link "Developer documentation in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Developer-documentation
+  - paragraph:
+    - link "Toolbars":
+      - /url: /documentation/swiftui/toolbars
+    - text: — SwiftUI
+  - paragraph:
+    - link "UIToolbar":
+      - /url: /documentation/uikit/uitoolbar
+      - code: UIToolbar
+    - text: — UIKit
+  - paragraph:
+    - link "NSToolbar":
+      - /url: /documentation/appkit/nstoolbar
+      - code: NSToolbar
+    - text: — AppKit
+  - heading "Videos in page link" [level=4]:
+    - link "Videos in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Videos
+  - region "grid of links":
+    - link "Get to know the new design system":
+      - /url: https://developer.apple.com/videos/play/wwdc2025/356
+      - generic: Get to know the new design system
+  - heading "Change log in page link" [level=2]:
+    - link "Change log in page link":
+      - /url: /design/human-interface-guidelines/toolbars#Change-log
+  - table:
+    - rowgroup:
+      - row "Date Changes":
+        - columnheader "Date":
+          - paragraph: Date
+        - columnheader "Changes":
+          - paragraph: Changes
+    - rowgroup:
+      - row "December 16, 2025 Updated guidance for Liquid Glass.":
+        - cell "December 16, 2025":
+          - paragraph: December 16, 2025
+        - cell "Updated guidance for Liquid Glass.":
+          - paragraph: Updated guidance for Liquid Glass.
+      - row "June 9, 2025 Added guidance for grouping bar items, updated guidance for using symbols, and incorporated navigation bar guidance.":
+        - cell "June 9, 2025":
+          - paragraph: June 9, 2025
+        - cell "Added guidance for grouping bar items, updated guidance for using symbols, and incorporated navigation bar guidance.":
+          - paragraph: Added guidance for grouping bar items, updated guidance for using symbols, and incorporated navigation bar guidance.
+      - row "June 21, 2023 Updated to include guidance for visionOS.":
+        - cell "June 21, 2023":
+          - paragraph: June 21, 2023
+        - cell "Updated to include guidance for visionOS.":
+          - paragraph: Updated to include guidance for visionOS.
+      - row "June 5, 2023 Updated guidance for using toolbars in watchOS.":
+        - cell "June 5, 2023":
+          - paragraph: June 5, 2023
+        - cell "Updated guidance for using toolbars in watchOS.":
+          - paragraph: Updated guidance for using toolbars in watchOS.
+- generic: Current page is Toolbars
+- heading "Supported platforms" [level=5]
+- list:
+- list:
+  - link "Toolbars":
+    - /url: /design/human-interface-guidelines/toolbars#app-top
+  - link "Best practices":
+    - /url: /design/human-interface-guidelines/toolbars#Best-practices
+  - link "Titles":
+    - /url: /design/human-interface-guidelines/toolbars#Titles
+  - link "Navigation":
+    - /url: /design/human-interface-guidelines/toolbars#Navigation
+  - link "Actions":
+    - /url: /design/human-interface-guidelines/toolbars#Actions
+  - link "Item groupings":
+    - /url: /design/human-interface-guidelines/toolbars#Item-groupings
+  - link "Platform considerations":
+    - /url: /design/human-interface-guidelines/toolbars#Platform-considerations
+  - link "Resources":
+    - /url: /design/human-interface-guidelines/toolbars#Resources
+  - link "Change log":
+    - /url: /design/human-interface-guidelines/toolbars#Change-log
+- contentinfo:
+  - navigation:
+    - link "Apple":
+      - /url: https://www.apple.com
+      - text: 
+      - generic: Apple
+    - list:
+      - link "Developer":
+        - /url: /
+      - link "Documentation":
+        - /url: /documentation/
+    - heading "Platforms" [level=3]
+    - list:
+      - link "iOS":
+        - /url: /ios/
+      - link "iPadOS":
+        - /url: /ipados/
+      - link "macOS":
+        - /url: /macos/
+      - link "tvOS":
+        - /url: /tvos/
+      - link "visionOS":
+        - /url: /visionos/
+      - link "watchOS":
+        - /url: /watchos/
+    - heading "Tools" [level=3]
+    - list:
+      - link "Swift":
+        - /url: /swift/
+      - link "SwiftUI":
+        - /url: /swiftui/
+      - link "Swift Playground":
+        - /url: /swift-playground/
+      - link "TestFlight":
+        - /url: /testflight/
+      - link "Xcode":
+        - /url: /xcode/
+      - link "Xcode Cloud":
+        - /url: /xcode-cloud/
+      - link "SF Symbols":
+        - /url: /sf-symbols/
+    - heading "Topics & Technologies" [level=3]
+    - list:
+      - link "Accessibility":
+        - /url: /accessibility/
+      - link "Accessories":
+        - /url: /accessories/
+      - link "App Extension":
+        - /url: /app-extensions/
+      - link "App Store":
+        - /url: /app-store/
+      - link "Audio & Video":
+        - /url: /audio/
+      - link "Augmented Reality":
+        - /url: /augmented-reality/
+      - link "Design":
+        - /url: /design/
+      - link "Distribution":
+        - /url: /distribute/
+      - link "Education":
+        - /url: /education/
+      - link "Fonts":
+        - /url: /fonts/
+      - link "Games":
+        - /url: /games/
+      - link "Health & Fitness":
+        - /url: /health-fitness/
+      - link "In-App Purchase":
+        - /url: /in-app-purchase/
+      - link "Localization":
+        - /url: /localization/
+      - link "Maps & Location":
+        - /url: /maps/
+      - link "Machine Learning & AI":
+        - /url: /machine-learning/
+      - link "Open Source":
+        - /url: https://opensource.apple.com/
+      - link "Security":
+        - /url: /security/
+      - link "Safari & Web":
+        - /url: /safari/
+    - heading "Resources" [level=3]
+    - list:
+      - link "Documentation":
+        - /url: /documentation/
+      - link "Tutorials":
+        - /url: /learn/
+      - link "Downloads":
+        - /url: /download/
+      - link "Forums":
+        - /url: /forums/
+      - link "Videos":
+        - /url: /videos/
+    - heading "Support" [level=3]
+    - list:
+      - link "Support Articles":
+        - /url: /support/articles/
+      - link "Contact Us":
+        - /url: /contact/
+      - link "Bug Reporting":
+        - /url: /bug-reporting/
+      - link "System Status":
+        - /url: /system-status/
+    - heading "Account" [level=3]
+    - list:
+      - link "Apple Developer":
+        - /url: /account/
+      - link "App Store Connect":
+        - /url: https://appstoreconnect.apple.com/
+      - link "Certificates, IDs, & Profiles":
+        - /url: /account/ios/certificate/
+      - link "Feedback Assistant":
+        - /url: https://feedbackassistant.apple.com/
+    - heading "Programs" [level=3]
+    - list:
+      - link "Apple Developer Program":
+        - /url: /programs/
+      - link "Apple Developer Enterprise Program":
+        - /url: /programs/enterprise/
+      - link "App Store Small Business Program":
+        - /url: /app-store/small-business-program/
+      - link "MFi Program":
+        - /url: https://mfi.apple.com/
+      - link "News Partner Program":
+        - /url: /programs/news-partner/
+      - link "Video Partner Program":
+        - /url: /programs/video-partner/
+      - link "Security Bounty Program":
+        - /url: /security-bounty/
+      - link "Security Research Device Program":
+        - /url: /programs/security-research-device/
+    - heading "Events" [level=3]
+    - list:
+      - link "Meet with Apple":
+        - /url: /events/
+      - link "Apple Developer Centers":
+        - /url: /events/developer-centers/
+      - link "App Store Awards":
+        - /url: /app-store/app-store-awards/
+      - link "Apple Design Awards":
+        - /url: /design/awards/
+      - link "Apple Developer Academies":
+        - /url: /academies/
+      - link "WWDC":
+        - /url: /wwdc/
+  - text: To submit feedback on documentation, visit
+  - link "Feedback Assistant":
+    - /url: applefeedback://new?form_identifier=developertools.fba&answers%5B%3Aarea%5D=seedADC%3Adevpubs&answers%5B%3Adoc_type_req%5D=Technology%20Documentation&answers%5B%3Adocumentation_link_req%5D=https%3A%2F%2Fdeveloper.apple.com%2Fdesign%2Fhuman-interface-guidelines%2Ftoolbars
+  - text: .
+  - radiogroup "Select a color scheme preference":
+    - generic: Select a color scheme preference
+    - radio "Light"
+    - generic: Light
+    - radio "Dark"
+    - generic: Dark
+    - radio "Auto" [checked]
+    - generic: Auto
+  - combobox "Select the language for this page":
+    - option "English" [selected]
+    - option "简体中文"
+    - option "日本語"
+    - option "한국어"
+  - text: Copyright © 2026
+  - link "Apple Inc.":
+    - /url: https://www.apple.com
+  - text: All rights reserved.
+  - link "Terms of Use":
+    - /url: https://www.apple.com/legal/internet-services/terms/site.html
+  - link "Privacy Policy":
+    - /url: https://www.apple.com/legal/privacy/
+  - link "Agreements and Guidelines":
+    - /url: /support/terms/

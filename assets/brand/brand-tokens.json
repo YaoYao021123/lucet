@@ -1,0 +1,35 @@
+{
+  "name": "光集 / GUANGJI",
+  "mark": "four aperture blades, one warm gold blade",
+  "colors": {
+    "ink": "#33362E",
+    "goldLight": "#B6A16B",
+    "ivory": "#F2F0E8",
+    "goldDark": "#CDBA83",
+    "iconBackground": "#171915",
+    "white": "#FFFFFF",
+    "black": "#000000"
+  },
+  "typography": {
+    "interface": "macOS system / SF Pro + PingFang SC",
+    "wordmark": "PingFang SC Semibold converted to outlines",
+    "headline": "20 pt medium in app empty state",
+    "toolbar": "13 pt semibold",
+    "caption": "12 pt regular"
+  },
+  "rules": {
+    "clearSpace": "at least 16 units relative to a 128-unit mark canvas",
+    "inAppBackground": "transparent; no additional glass or plate",
+    "functionalIcons": "retain system SF Symbols",
+    "minimumSizes": {
+      "standaloneMark": 24,
+      "toolbarMark": 22,
+      "applicationIcon": 16
+    }
+  },
+  "iconFormat": {
+    "current": "ICNS fallback with 10 resolutions",
+    "layerSource": "1024 square, unmasked SVG background + ivory blades + gold blade",
+    "liquidGlass": "SVG layer sources provided; Icon Composer .icon not built"
+  }
+}

@@ -1,0 +1,265 @@
+{
+  "name": "光集主视觉资产",
+  "version": 1,
+  "date": "2026-10-05",
+  "sourceMark": "guangji-symbol.svg; four original aperture blades preserved",
+  "exporter": "scripts/generate-brand.swift / AppKit + CoreText",
+  "generatorCommand": "bash scripts/generate-brand.sh",
+  "assets": [
+    {
+      "file": "README.md",
+      "bytes": 717,
+      "sha256": "5580026f2dea3b7bd8f0a6e442b44b80551e4a267c24fe1b860b1d109b0d02d4"
+    },
+    {
+      "file": "brand-tokens.json",
+      "bytes": 1105,
+      "sha256": "1e3ab2c24972932222e6e5bc346929f7af88d9f0851b1bfdb2a8d39448f0a8e3"
+    },
+    {
+      "file": "exports/guangji-symbol-dark.png",
+      "bytes": 44190,
+      "sha256": "9b2d8a5acc3a745ff8064bb7723146e884c63964b634da665c163e464bcb1679"
+    },
+    {
+      "file": "exports/guangji-symbol-light.png",
+      "bytes": 44392,
+      "sha256": "a42eacb8f1a55bbab165d9e968788289c46eda9325acf1f7cf71253d8cefbb5b"
+    },
+    {
+      "file": "exports/guangji-symbol-mono.png",
+      "bytes": 44048,
+      "sha256": "9061c1a65151425f2fa669bf98ca6999017ff778a9a04afb03cd4d13766f80b2"
+    },
+    {
+      "file": "exports/guangji-symbol-white.png",
+      "bytes": 41157,
+      "sha256": "ffa5adfc1de03ccd0745ff05ec629a768397832d93dbde55bc26c3c94a3fe26f"
+    },
+    {
+      "file": "exports/guangji-wordmark-dark.png",
+      "bytes": 25039,
+      "sha256": "f58f1f54957521fe217bbb985619fecb677db6f0685cd591bc4ea5581d3c1a9a"
+    },
+    {
+      "file": "exports/guangji-wordmark-mono.png",
+      "bytes": 24727,
+      "sha256": "815d973a95e3322886cb72589040a3b5a230df4a64986b92df75f4c902f15b36"
+    },
+    {
+      "file": "exports/guangji-wordmark.png",
+      "bytes": 25026,
+      "sha256": "53a280aa7ad58794fb4711e9e468dc02f5e0176d68d27af85a26d8e32282119c"
+    },
+    {
+      "file": "exports/workbench-brand-verified.png",
+      "bytes": 197626,
+      "sha256": "9f876becaef36ca7cc8ba41d812ddf2ecd1c42ba31b5896ebb3b35005e4c83af"
+    },
+    {
+      "file": "guangji-symbol-dark.svg",
+      "bytes": 508,
+      "sha256": "3fdcfee379003bdc09d9029123467edfea8f74b92497d30df79ae69e06e1fca9"
+    },
+    {
+      "file": "guangji-symbol-mono.svg",
+      "bytes": 508,
+      "sha256": "52d2708c65479cd4968f186d4ca6fca6f3771082f6a306e9a17bc82caf7b70ff"
+    },
+    {
+      "file": "guangji-symbol-white.svg",
+      "bytes": 509,
+      "sha256": "51bbf9987fb8b8ae9a5ced2a4beaedd43b08947fcafda7a9922ebf0c562900da"
+    },
+    {
+      "file": "guangji-symbol.svg",
+      "bytes": 503,
+      "sha256": "32a66a86120398b2bbd3fa1829d9c6dbbdea75a0002f160bedb84fed0c137ddc"
+    },
+    {
+      "file": "guangji-wordmark-dark.svg",
+      "bytes": 4335,
+      "sha256": "27d74b3568c59dd42a4dccb8134bc3b41ed4c4ef464e58f77502c2fffcf71740"
+    },
+    {
+      "file": "guangji-wordmark-mono.svg",
+      "bytes": 4335,
+      "sha256": "7c46f55885433bd7b5b48bdf8d4678d39773739ef45219e430f5d3dc7e7e5202"
+    },
+    {
+      "file": "guangji-wordmark.svg",
+      "bytes": 4330,
+      "sha256": "8fbc438535d7acacdebfa85124fa502ee9c5cf74cfa072dd80a7241ff7efe6db"
+    },
+    {
+      "file": "icons/AppIcon.icns",
+      "bytes": 107424,
+      "sha256": "5aefe5e04330b0f381ec1ee76d42f868db6365572bf2235e491b79fac08c0933"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_128x128.png",
+      "bytes": 3511,
+      "sha256": "b50cea2236704bb57b72bfb6897759cc4d3e0a561cebcde82d3fcebd51e92d51"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_128x128@2x.png",
+      "bytes": 7660,
+      "sha256": "fc9662e58975773c1529e650a8456cb5a812de23b7e893636e2b61e66f98b701"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_16x16.png",
+      "bytes": 530,
+      "sha256": "7eaaff75275bd05164a88ce9a02d4854071a9c8911ab41208c215a7fe9673ec6"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_16x16@2x.png",
+      "bytes": 955,
+      "sha256": "c0d4e5f732da8e039d7a02de0fa05fc96524e7b162e0213bc664c7b061897259"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_256x256.png",
+      "bytes": 7660,
+      "sha256": "fc9662e58975773c1529e650a8456cb5a812de23b7e893636e2b61e66f98b701"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_256x256@2x.png",
+      "bytes": 18290,
+      "sha256": "9f6798f1ebacef927be48de9243a1396c488f6fdde75f44639dbbd29ff94595b"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_32x32.png",
+      "bytes": 955,
+      "sha256": "c0d4e5f732da8e039d7a02de0fa05fc96524e7b162e0213bc664c7b061897259"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_32x32@2x.png",
+      "bytes": 1739,
+      "sha256": "1c4958ea771fe794c77cc115d46984ca8152f9f01a857514a3fbfd2c42a9b012"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_512x512.png",
+      "bytes": 18290,
+      "sha256": "9f6798f1ebacef927be48de9243a1396c488f6fdde75f44639dbbd29ff94595b"
+    },
+    {
+      "file": "icons/AppIcon.iconset/icon_512x512@2x.png",
+      "bytes": 46955,
+      "sha256": "a5fad5a8ee1c854185f6bed777fcc1f5d48574d239517506d37721a268ebd3c8"
+    },
+    {
+      "file": "icons/guangji-app-icon-light.png",
+      "bytes": 46513,
+      "sha256": "ceba0394e9535f027893e74ff45f530248279d7167c66864c721f63dbd2e4c1e"
+    },
+    {
+      "file": "icons/guangji-app-icon.png",
+      "bytes": 46955,
+      "sha256": "a5fad5a8ee1c854185f6bed777fcc1f5d48574d239517506d37721a268ebd3c8"
+    },
+    {
+      "file": "icons/guangji-app-icon.svg",
+      "bytes": 637,
+      "sha256": "021f84f0db0aedd2752e40afa535d92ddf328c9a50c130fafc609c7ebccf0042"
+    },
+    {
+      "file": "icons/size-review.png",
+      "bytes": 16849,
+      "sha256": "cf947ec2007878cd6488f580d7562e549e5c9f23a0d643ce7b35f26cab70e5d4"
+    },
+    {
+      "file": "illustrations/empty-library-dark.png",
+      "bytes": 31744,
+      "sha256": "2165dd0391112a02220b01ddbf4ee5d0750f156a965e31e37f6ed8d76c3af425"
+    },
+    {
+      "file": "illustrations/empty-library-dark.svg",
+      "bytes": 927,
+      "sha256": "b6c6430dd1757d409d785a36baeb24bf551ec29fc50135763251f55fb16f3792"
+    },
+    {
+      "file": "illustrations/empty-library-light.png",
+      "bytes": 31619,
+      "sha256": "47beb40be378cb86cf958e6010134fc0b040b27ea1cecaf8836783a4f740e3c5"
+    },
+    {
+      "file": "illustrations/empty-library-light.svg",
+      "bytes": 928,
+      "sha256": "c5b9b3f17badb6572d8b2069bd7ffa448b49874febe8a51ddfb7189f550f79ec"
+    },
+    {
+      "file": "key-visuals/guangji-hero-dark.png",
+      "bytes": 75727,
+      "sha256": "013c5ecffd6878207fe12dd04fe6f39dd179d2ff603428af7e7f375d1d80eda5"
+    },
+    {
+      "file": "key-visuals/guangji-hero-dark.svg",
+      "bytes": 27340,
+      "sha256": "bd72b858a1788b729aaed0d9d80dfd2287eed6ab9f0da383a92aa0698de0bfb3"
+    },
+    {
+      "file": "key-visuals/guangji-hero-light.png",
+      "bytes": 75268,
+      "sha256": "de30ac2f23748e3f99128e7b4107cb5f756eddd90d6cfc5e880b0442259280b5"
+    },
+    {
+      "file": "key-visuals/guangji-hero-light.svg",
+      "bytes": 27341,
+      "sha256": "fa29d2542354fa7923fb76d3b4b5ade1c9a098e586041a9471de1ca4c98ed69e"
+    },
+    {
+      "file": "key-visuals/guangji-poster.png",
+      "bytes": 64126,
+      "sha256": "c02e307c2fd1cfaea7821472dd099f27526494c0f09b502d2a149026b7a9dd00"
+    },
+    {
+      "file": "key-visuals/guangji-poster.svg",
+      "bytes": 28871,
+      "sha256": "f7ede49a7493cc510939e3ae500b09693299702964fc257ff81c485c863f556a"
+    },
+    {
+      "file": "layers/aperture-gold.svg",
+      "bytes": 266,
+      "sha256": "792b80a3e914a9ad31c728313e2064bdce4817c6e52c906e6251c71363e2acb0"
+    },
+    {
+      "file": "layers/aperture-ivory.svg",
+      "bytes": 496,
+      "sha256": "5903a9b27f043747382fda309f3d2a7102983fd5b32172756a5d9b8555bfbd5c"
+    },
+    {
+      "file": "layers/background.svg",
+      "bytes": 185,
+      "sha256": "b216deb4a3e3e990061f01756dd0a83bdddc289850a8428e5cfc7be1bd1c594a"
+    },
+    {
+      "file": "preview.html",
+      "bytes": 10998,
+      "sha256": "d70678cc3dbf80653f74c285996fe8d9ccb6c7e5a4e29e0b5a7ae6ddc61d17c3"
+    },
+    {
+      "file": "runtime/EmptyLibrary-dark.png",
+      "bytes": 31744,
+      "sha256": "2165dd0391112a02220b01ddbf4ee5d0750f156a965e31e37f6ed8d76c3af425"
+    },
+    {
+      "file": "runtime/EmptyLibrary-light.png",
+      "bytes": 31619,
+      "sha256": "47beb40be378cb86cf958e6010134fc0b040b27ea1cecaf8836783a4f740e3c5"
+    },
+    {
+      "file": "verification.json",
+      "bytes": 897,
+      "sha256": "96139675cf505018864080223b6a0a2348644f778e1648cd514e2e7102cb418e"
+    }
+  ],
+  "fontDependency": "none in exported SVG",
+  "provenance": "adapted from existing workbench brand SVG; no third-party images or uploaded media",
+  "integration": [
+    "macOS CFBundleIconFile AppIcon",
+    "NSApplication applicationIconImage",
+    "SwiftUI BrandMark in toolbar",
+    "BrandEmptyIllustration in empty canvas"
+  ],
+  "review": "preview.html",
+  "verification": "verification.json"
+}
