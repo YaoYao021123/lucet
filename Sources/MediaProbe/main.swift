@@ -17,6 +17,10 @@ struct MediaProbe {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
             if command == "details" {
                 let motion = arguments.count == 3 ? URL(fileURLWithPath: arguments[2]).standardizedFileURL : nil
+                for file in [url] + (motion.map { [$0] } ?? []) where !FileManager.default.fileExists(atPath: file.path) {
+                    print("找不到文件：\(file.path)")
+                    exit(1)
+                }
                 print(await MediaDetails.read(url, motion: motion).text)
             } else if command == "inspect" {
                 let metadata = try await MediaInspector.inspect(url)
