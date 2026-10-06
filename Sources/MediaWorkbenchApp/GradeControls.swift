@@ -26,11 +26,10 @@ struct ScopePanel: View {
     var body: some View {
         let kind = editor.scopeKind
         VStack(alignment: .leading, spacing: 4) {
-            Picker("示波器", selection: Binding(get: { editor.scopeKind }, set: { editor.scopeKind = $0 })) {
-                ForEach(ScopeKind.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().controlSize(.mini)
-            .help(kind.help)
+            GlassSegmentedControl(options: ScopeKind.allCases, selection: Binding(get: { editor.scopeKind }, set: { editor.scopeKind = $0 }),
+                                  title: { $0.title }, size: .small, accessibilityTitle: "示波器")
+                .frame(maxWidth: 230)
+                .help(kind.help)
             ZStack {
                 RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.35))
                 content.padding(4)
@@ -278,10 +277,9 @@ struct CurveEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Picker("通道", selection: $channel) {
-                    ForEach(ToneCurves.Channel.allCases, id: \.self) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented).labelsHidden().controlSize(.mini).frame(width: 140)
+                GlassSegmentedControl(options: ToneCurves.Channel.allCases, selection: $channel, title: { $0.title },
+                                      size: .small, accessibilityTitle: "曲线通道")
+                    .frame(width: 140)
                 Spacer()
                 Button("复位通道") { onEditing(true); onChange(channel, ToneCurves.identity); onEditing(false) }
                     .buttonStyle(.borderless).font(.caption)

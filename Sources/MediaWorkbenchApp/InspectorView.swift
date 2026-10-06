@@ -17,11 +17,9 @@ struct InspectorView: View {
         let tabs = InspectorTab.allCases.filter { editor.isVideo || $0 != .audio }
         let tab = app.inspectorTab
         VStack(spacing: 0) {
-            Picker("检查器", selection: Binding(get: { tabs.contains(tab) ? tab : .color }, set: { app.inspectorTab = $0 })) {
-                ForEach(tabs, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().controlSize(.small)
-            .padding(.horizontal, 12).padding(.vertical, 7)
+            GlassSegmentedControl(options: tabs, selection: Binding(get: { tabs.contains(tab) ? tab : .color }, set: { app.inspectorTab = $0 }),
+                                  title: { $0.title }, accessibilityTitle: "检查器")
+                .padding(.horizontal, 12).padding(.vertical, 8)
             WorkbenchTheme.hairline.frame(height: 1)
             if editor.isLoaded {
                 ScrollView {
@@ -352,7 +350,7 @@ struct InfoPanel: View {
                         ForEach(1...5, id: \.self) { value in
                             Button { app.rate(entry.rating == value ? 0 : value) } label: {
                                 Image(systemName: value <= entry.rating ? "star.fill" : "star")
-                                    .foregroundStyle(value <= entry.rating ? WorkbenchTheme.accent : .secondary)
+                                    .foregroundStyle(value <= entry.rating ? WorkbenchTheme.star : .secondary)
                             }
                             .buttonStyle(.plain).help("\(value) 星（数字键 \(value)）")
                         }

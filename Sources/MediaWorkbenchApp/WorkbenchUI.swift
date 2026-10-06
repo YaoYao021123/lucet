@@ -2,10 +2,20 @@ import AppKit
 import MediaCore
 import SwiftUI
 
+/// `@State` is a macro in this SDK and Command Line Tools lack the SwiftUI macro
+/// plugin; the alias names the property wrapper directly so it builds without Xcode.
 typealias UIState<Value> = SwiftUI.State<Value>
 
 enum WorkbenchTheme {
-    static let accent = Color(red: 0.80, green: 0.71, blue: 0.48)
+    /// The accent chosen in System Settings → Appearance (blue by default), read once at
+    /// launch as a fixed sRGB color so tints like `accent.opacity(0.1)` stay translucent.
+    /// One place to change if the brand wants its own color.
+    static let accent: Color = {
+        let system = NSColor.controlAccentColor.usingColorSpace(.sRGB) ?? .systemBlue
+        return Color(red: system.redComponent, green: system.greenComponent, blue: system.blueComponent)
+    }()
+    /// Ratings stay neutral (Lightroom-style) so they never compete with the accent.
+    static let star = Color(white: 0.9)
     static let panel = Color(white: 0.115)
     static let canvas = Color(white: 0.07)
     static let well = Color.white.opacity(0.045)
@@ -141,7 +151,7 @@ struct InspectorSection<Content: View>: View {
                                 .font(.caption2.weight(.bold)).monospacedDigit()
                                 .frame(width: 14, height: 14)
                                 .background(Circle().fill(isOn?.wrappedValue == false ? Color.secondary.opacity(0.25) : WorkbenchTheme.accent.opacity(0.85)))
-                                .foregroundStyle(.black.opacity(0.8))
+                                .foregroundStyle(.white)
                         }
                         Text(title).font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(isOn?.wrappedValue == false ? .secondary : .primary)
@@ -213,7 +223,7 @@ struct RatingStars: View {
             ForEach(0..<rating, id: \.self) { _ in Image(systemName: "star.fill") }
         }
         .font(.system(size: size))
-        .foregroundStyle(WorkbenchTheme.accent)
+        .foregroundStyle(WorkbenchTheme.star)
         .accessibilityLabel("\(rating) 星")
     }
 }

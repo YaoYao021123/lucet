@@ -108,10 +108,10 @@ struct LearnPanel: View {
                     if !profile.onboarded {
                         Text("告诉我你的水平和想学什么，讲解会更适合你。").font(.caption).foregroundStyle(.secondary)
                     }
-                    Picker("水平", selection: Binding(get: { profile.level }, set: { app.learner.level = $0; app.learner.onboarded = true })) {
-                        ForEach(LearningLevel.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented).labelsHidden().controlSize(.small)
+                    GlassSegmentedControl(options: LearningLevel.allCases,
+                                          selection: Binding(get: { profile.level }, set: { app.learner.level = $0; app.learner.onboarded = true }),
+                                          title: { $0.title }, size: .small, accessibilityTitle: "学习水平")
+                        .frame(maxWidth: 200)
                     FlowLayout(spacing: 4) {
                         ForEach(LearningTopic.allCases, id: \.self) { topic in
                             let on = profile.topics.contains(topic)
@@ -121,7 +121,7 @@ struct LearnPanel: View {
                             } label: {
                                 Text(topic.title).font(.caption)
                                     .padding(.horizontal, 7).padding(.vertical, 3)
-                                    .foregroundStyle(on ? Color.black.opacity(0.85) : .primary)
+                                    .foregroundStyle(on ? Color.white : .primary)
                                     .background(Capsule().fill(on ? WorkbenchTheme.accent : WorkbenchTheme.well))
                             }
                             .buttonStyle(.plain)
