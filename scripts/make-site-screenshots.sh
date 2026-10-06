@@ -30,14 +30,16 @@ panel:presets@700;crop:0.9,30,0,1;tab:geometry;wait:3;shot:crop;tab:learn;wait:2
 run "open:$hero;wait:3;sheet:export;wait:2;shot:export;quit"
 
 jpg() { sips -s format jpeg -s formatOptions 90 "$1" --out "$2" >/dev/null 2>&1; }
-# Window shots: drop the title bar (its glass controls can't be captured) and the status bar.
-for name in browse edit crop; do
-  sips -c 1514 2940 --cropOffset 104 0 "$shots/$name.png" --out "$crops/$name.png" >/dev/null
-  jpg "$crops/$name.png" "$out/shot-$name.jpg"
-done
-sips -c 880 660 --cropOffset 0 0 "$shots/presets.png" --out "$crops/presets.png" >/dev/null; jpg "$crops/presets.png" "$out/panel-presets.jpg"
-sips -c 1040 574 --cropOffset 0 0 "$shots/learn.png" --out "$crops/learn.png" >/dev/null; jpg "$crops/learn.png" "$out/panel-learn.jpg"
-[ -f "$shots/info.png" ] && { sips -c 1330 600 --cropOffset 0 0 "$shots/info.png" --out "$crops/info.png" >/dev/null; jpg "$crops/info.png" "$out/panel-info.jpg"; }
+# Crops keep full widths and cut panels at section boundaries (a cut through a list looks broken).
+# Note: sips treats "--cropOffset 0 0" as "no offset" and crops from the CENTER, so top-aligned crops use 1 0.
+# Window shots lose the title bar (its glass controls can't be captured) and the status bar.
+sips -c 1514 2940 --cropOffset 104 0 "$shots/edit.png" --out "$crops/edit.png" >/dev/null; jpg "$crops/edit.png" "$out/shot-edit.jpg"
+# Without the sidebar the picture and the inspector can be shown larger on the page.
+sips -c 1514 2415 --cropOffset 104 525 "$shots/crop.png" --out "$crops/crop.png" >/dev/null; jpg "$crops/crop.png" "$out/shot-crop.jpg"
+sips -c 960 2415 --cropOffset 104 525 "$shots/browse.png" --out "$crops/browse.png" >/dev/null; jpg "$crops/browse.png" "$out/shot-browse.jpg"
+sips -c 880 660 --cropOffset 1 0 "$shots/presets.png" --out "$crops/presets.png" >/dev/null; jpg "$crops/presets.png" "$out/panel-presets.jpg"
+sips -c 870 660 --cropOffset 1 0 "$shots/learn.png" --out "$crops/learn.png" >/dev/null; jpg "$crops/learn.png" "$out/panel-learn.jpg"
+[ -f "$shots/info.png" ] && { sips -c 1330 660 --cropOffset 1 0 "$shots/info.png" --out "$crops/info.png" >/dev/null; jpg "$crops/info.png" "$out/panel-info.jpg"; }
 jpg "$shots/export.png" "$out/sheet-export.jpg"
 
 # The before / after pair is the engine's real 自动 result (left = before).
@@ -45,6 +47,6 @@ cmp="$work/cmp.jpg"
 swift run --quiet media-probe auto "$compare_photo" "$cmp" >/dev/null
 w=$(sips -g pixelWidth "$cmp" | awk '/pixelWidth/{print $2}'); h=$(sips -g pixelHeight "$cmp" | awk '/pixelHeight/{print $2}')
 half=$(( (w - 8) / 2 ))
-sips -c "$h" "$half" --cropOffset 0 0 "$cmp" --out "$out/before.jpg" >/dev/null
+sips -c "$h" "$half" --cropOffset 0 1 "$cmp" --out "$out/before.jpg" >/dev/null
 sips -c "$h" "$half" --cropOffset 0 $((half + 8)) "$cmp" --out "$out/after.jpg" >/dev/null
 echo "Updated website/assets (working files in $work)"

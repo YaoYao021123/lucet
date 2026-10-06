@@ -35,9 +35,8 @@
 </script>
 <style>
 :root{
-  --bg:#0d0d0e; --bg2:#151517; --text:#f2f0e8; --muted:#a8a59c; --faint:#77746c;
-  --line:rgba(255,255,255,.09); --glass:rgba(255,255,255,.055); --glass2:rgba(255,255,255,.09);
-  --radius:16px; --max:1120px;
+  --bg:#0d0d0e; --text:#f2f0e8; --muted:#a8a59c; --faint:#77746c;
+  --line:rgba(255,255,255,.12); --radius:12px; --max:1080px;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
 }
 *{box-sizing:border-box}
@@ -47,123 +46,115 @@ body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 var(--font);-
 img{max-width:100%;height:auto;display:block}
 a{color:inherit}
 .wrap{width:min(var(--max),100% - 40px);margin:0 auto}
-section{padding:96px 0}
-h1,h2,h3{line-height:1.2;margin:0;letter-spacing:-.01em}
+section{padding:104px 0}
 h1,h2,h3,.lead{text-wrap:balance}
+h1,h2,h3{line-height:1.2;margin:0;letter-spacing:-.01em}
 h1{font-size:clamp(32px,6vw,64px);font-weight:700}
 h2{font-size:clamp(26px,4vw,40px);font-weight:650}
 h3{font-size:20px;font-weight:600}
 p{margin:0}
 .eyebrow{color:var(--muted);font-size:14px;letter-spacing:.08em;margin-bottom:14px}
 .lead{color:var(--muted);font-size:clamp(17px,2vw,21px);max-width:40em}
-.muted{color:var(--muted)}
 .small{font-size:14px;color:var(--faint)}
+.center{text-align:center}
+.center .lead{margin:16px auto 0}
 
-/* nav */
+/* The page stays flat: no filled cards. Structure comes from spacing and a few thin rules. */
 nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);background:rgba(13,13,14,.72);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;gap:28px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:650;text-decoration:none;font-size:18px}
 .brand img{width:26px;height:26px}
-nav .links{display:flex;gap:22px;margin-left:auto;font-size:15px;color:var(--muted)}
+nav .links{display:flex;gap:22px;margin-left:auto;font-size:15px;color:var(--muted);align-items:center}
 nav .links a{text-decoration:none}
 nav .links a:hover{color:var(--text)}
 @media(max-width:720px){nav .links a:not(.cta){display:none}}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font:inherit;font-size:16px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:999px;font:inherit;font-size:16px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:var(--text);color:#1a1a18}
 .btn.primary:hover{background:#fff}
-.btn.glass{background:var(--glass);border-color:var(--line);color:var(--text);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.btn.glass:hover{background:var(--glass2)}
+.btn.glass{border-color:rgba(255,255,255,.3);color:var(--text)}
+.btn.glass:hover{border-color:rgba(255,255,255,.6)}
 .btn.small-btn{padding:7px 16px;font-size:14px}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--text);outline-offset:3px}
 
-/* hero */
-.hero{padding:72px 0 40px;text-align:center}
+/* screenshots: one soft edge, nothing wrapped around them */
+.window,.shot img,.compare{border-radius:var(--radius);overflow:hidden;box-shadow:0 0 0 1px var(--line),0 28px 60px -30px #000}
+.window img{width:100%}
+
+.hero{padding:76px 0 24px;text-align:center}
 .hero .lead{margin:22px auto 0}
 .hero .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:34px}
 .hero .note{margin-top:16px}
-.window{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#101011;box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03)}
-.window .bar{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;background:linear-gradient(#232325,#1b1b1d);border-bottom:1px solid var(--line)}
-.window .bar i{width:11px;height:11px;border-radius:50%;background:#3a3a3d;display:block}
-.window .bar span{margin:0 auto;font-size:12px;color:var(--faint);transform:translateX(-24px)}
-.hero .window{margin:56px auto 0;max-width:1040px;text-align:left}
+.hero .window{margin:60px auto 0;max-width:1040px}
 
-/* story */
-.story{background:var(--bg2);border-block:1px solid var(--line)}
-.story .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center;margin-top:36px}
+.story .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:72px;align-items:start;margin-top:40px}
 .story blockquote{margin:0;font-size:clamp(20px,2.4vw,26px);line-height:1.6;font-weight:500}
 .story blockquote span{color:var(--muted)}
-.gap{display:grid;gap:12px}
-.gap div{padding:18px 20px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line)}
-.gap b{display:block;margin-bottom:2px}
-.gap .us{background:var(--glass2);border-color:rgba(255,255,255,.22)}
-.gap p{font-size:15px;color:var(--muted)}
-@media(max-width:860px){.story .grid{grid-template-columns:1fr;gap:32px}}
+.gap div{padding:20px 0;border-top:1px solid var(--line)}
+.gap div:last-child{border-bottom:1px solid var(--line)}
+.gap b{display:block;margin-bottom:2px;color:var(--muted)}
+.gap p{font-size:15px;color:var(--faint)}
+.gap .us b{color:var(--text)}
+.gap .us p{color:var(--muted)}
+@media(max-width:860px){.story .grid{grid-template-columns:1fr;gap:36px}}
 
-/* feature rows */
-.feature{display:grid;grid-template-columns:1fr 1.15fr;gap:64px;align-items:center;padding:56px 0}
-.feature.reverse{grid-template-columns:1.15fr 1fr}
+.feature{display:grid;grid-template-columns:1fr 1.1fr;gap:72px;align-items:center;padding:64px 0}
+.feature.reverse{grid-template-columns:1.1fr 1fr}
 .feature.reverse .text{order:2}
+.feature.stack{grid-template-columns:1fr;gap:40px}
+.feature.stack .text{max-width:42em}
 .feature .text p{color:var(--muted);margin-top:14px}
 .feature .text ul{margin:18px 0 0;padding:0;list-style:none;color:var(--muted);font-size:16px}
-.feature .text li{padding-left:22px;position:relative;margin-top:8px}
-.feature .text li::before{content:"";position:absolute;left:2px;top:.8em;width:7px;height:7px;border-radius:50%;background:var(--text);opacity:.55}
+.feature .text li{padding-left:20px;position:relative;margin-top:8px}
+.feature .text li::before{content:"";position:absolute;left:2px;top:.85em;width:5px;height:5px;border-radius:50%;background:var(--muted)}
 .feature .kicker{font-size:14px;color:var(--faint);letter-spacing:.06em;margin-bottom:10px}
-.panel-card{display:flex;justify-content:center;padding:28px;border-radius:22px;background:var(--glass);border:1px solid var(--line)}
-.panel-card img{border-radius:10px;width:min(100%,360px);border:1px solid var(--line)}
-@media(max-width:860px){.feature,.feature.reverse{grid-template-columns:1fr;gap:28px;padding:36px 0}.feature.reverse .text{order:0}}
+.shot{display:flex;justify-content:center}
+.shot img{width:min(100%,430px)}
+@media(max-width:860px){.feature,.feature.reverse{grid-template-columns:1fr;gap:32px;padding:44px 0}.feature.reverse .text{order:0}}
 
-/* before / after */
-.compare{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);aspect-ratio:1024/576;background:#000;user-select:none;touch-action:pan-y}
+.compare{position:relative;aspect-ratio:1024/576;background:#000;user-select:none;touch-action:pan-y}
 .compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .compare .after{clip-path:inset(0 0 0 var(--pos,50%))}
 .compare .line{position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;background:#fff;box-shadow:0 0 12px rgba(0,0,0,.5);pointer-events:none}
 .compare .line::after{content:"";position:absolute;top:50%;left:50%;width:36px;height:36px;margin:-18px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid #fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.compare .tag{position:absolute;top:12px;padding:3px 12px;border-radius:999px;font-size:13px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.compare .tag{position:absolute;top:12px;padding:3px 12px;border-radius:999px;font-size:13px;background:rgba(0,0,0,.55)}
 .compare .tag.l{left:12px}.compare .tag.r{right:12px}
 .compare input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
 .compare:has(input:focus-visible){outline:2px solid var(--text);outline-offset:3px}
 
-/* cards */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:40px}
-.card{padding:22px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:36px 44px;margin-top:64px}
+.card{border-top:1px solid var(--line);padding-top:18px}
 .card h3{font-size:18px}
 .card p{color:var(--muted);font-size:15px;margin-top:8px;line-height:1.65}
-.center{text-align:center}
-.center .lead{margin:16px auto 0}
 
-/* steps */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:44px;counter-reset:s}
-.step{padding:26px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line);counter-increment:s}
-.step::before{content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--text);color:#1a1a18;font-weight:700;margin-bottom:16px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:40px;margin-top:48px;counter-reset:s}
+.step{counter-increment:s}
+.step::before{content:counter(s);display:block;font-size:44px;line-height:1;font-weight:300;color:var(--faint);margin-bottom:16px}
 .step p{color:var(--muted);margin-top:8px;font-size:15px}
 
-/* fit */
-.fit{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:40px}
-.fit>div{padding:26px;border-radius:var(--radius);border:1px solid var(--line);background:var(--glass)}
+.fit{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:44px}
+.fit>div{border-top:1px solid var(--line);padding-top:22px}
 .fit ul{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:16px}
 .fit li{margin-top:6px}
-@media(max-width:720px){.fit{grid-template-columns:1fr}}
+@media(max-width:720px){.fit{grid-template-columns:1fr;gap:36px}}
 
-/* faq */
 .faq{max-width:760px;margin:40px auto 0}
 details{border-bottom:1px solid var(--line);padding:6px 0}
+details:first-child{border-top:1px solid var(--line)}
 summary{cursor:pointer;font-weight:600;padding:16px 28px 16px 0;list-style:none;position:relative}
 summary::-webkit-details-marker{display:none}
 summary::after{content:"+";position:absolute;right:4px;top:12px;font-size:24px;color:var(--muted);transition:transform .2s}
 details[open] summary::after{transform:rotate(45deg)}
 details p{color:var(--muted);padding:0 0 18px;font-size:16px}
 details ol{color:var(--muted);padding-left:22px;margin:0 0 18px;font-size:16px}
-code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--glass2);padding:2px 7px;border-radius:6px}
-pre{background:#101011;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text)}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);opacity:.9}
+pre{margin:0 0 18px;padding:0;overflow:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
 
-/* download */
-.download{background:var(--bg2);border-top:1px solid var(--line);text-align:center}
+.download{text-align:center;border-top:1px solid var(--line)}
 .download img.icon{width:96px;height:96px;margin:0 auto 22px;border-radius:22px}
 .download .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
-.req{display:inline-flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;margin-top:22px;color:var(--muted);font-size:15px}
+.req{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;margin-top:24px;color:var(--faint);font-size:15px}
 footer{padding:40px 0 56px;border-top:1px solid var(--line);color:var(--faint);font-size:14px;line-height:1.8}
 footer .wrap{display:grid;gap:10px}
 </style>
@@ -195,7 +186,6 @@ footer .wrap{display:grid;gap:10px}
     </div>
     <p class="small note">Apple 芯片 Mac · macOS 15 或更高 · 中文界面</p>
     <div class="window">
-      <div class="bar"><i></i><i></i><i></i><span>光集</span></div>
       <img src="assets/shot-edit.jpg" width="2940" height="1514" alt="光集的编辑界面：左侧是素材库，中间是一张无人机拍摄的秋日林地，右侧是预设缩略图和六个简单滑块">
     </div>
   </div>
@@ -263,17 +253,16 @@ footer .wrap{display:grid;gap:10px}
           <li>把一张照片的调色复制给一整批，曝光默认不跟着改</li>
         </ul>
       </div>
-      <div class="panel-card"><img src="assets/panel-presets.jpg" width="660" height="880" alt="光集右侧面板：五个预设的缩略图和六个简单滑块" loading="lazy"></div>
+      <div class="shot"><img src="assets/panel-presets.jpg" width="660" height="880" alt="光集右侧面板：五个预设的缩略图和六个简单滑块" loading="lazy"></div>
     </div>
 
-    <div class="feature">
+    <div class="feature stack">
       <div class="text">
         <p class="kicker">拖动裁剪</p>
         <h3>在照片上直接拖，就像在「照片」App 里一样</h3>
         <p>打开「构图」，整张照片会显示出来，裁剪框直接在画面上：拖动框移动，拖四个角缩放，画幅比例自动保持。拉直、旋转、镜像也都在这里，地平线歪了还会提醒你。</p>
       </div>
       <div class="window">
-        <div class="bar"><i></i><i></i><i></i><span>构图</span></div>
         <img src="assets/shot-crop.jpg" width="2940" height="1514" alt="在画面上拖动裁剪框，把一张航拍照片裁成正方形" loading="lazy">
       </div>
     </div>
@@ -289,7 +278,7 @@ footer .wrap{display:grid;gap:10px}
           <li>学习记录只保存在你的 Mac 上</li>
         </ul>
       </div>
-      <div class="panel-card"><img src="assets/panel-learn.jpg" width="574" height="1040" alt="光集的学习面板：针对这张照片的提示、问问这张照片、学习水平选择" loading="lazy"></div>
+      <div class="shot"><img src="assets/panel-learn.jpg" width="574" height="1040" alt="光集的学习面板：针对这张照片的提示、问问这张照片、学习水平选择" loading="lazy"></div>
     </div>
 
     <div class="feature">
@@ -304,12 +293,12 @@ footer .wrap{display:grid;gap:10px}
           <li>原片从不被修改，导出的永远是一份新副本</li>
         </ul>
       </div>
-      <div class="panel-card"><img src="assets/sheet-export.jpg" width="960" height="1010" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸选项" loading="lazy" style="width:min(100%,440px)"></div>
+      <div class="shot"><img src="assets/sheet-export.jpg" width="960" height="1010" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸选项" loading="lazy" style="width:min(100%,440px)"></div>
     </div>
   </div>
 </section>
 
-<section id="dji" style="background:var(--bg2);border-block:1px solid var(--line)">
+<section id="dji">
   <div class="wrap">
     <div class="feature reverse" style="padding:0">
       <div class="text">
@@ -323,7 +312,7 @@ footer .wrap{display:grid;gap:10px}
         </ul>
         <p class="small" style="margin-top:16px">还在计划中：D-Log 素材自动套用转换 LUT（现在需要你自己导入对应的 LUT）。</p>
       </div>
-      <div class="panel-card"><img src="assets/panel-info.jpg" width="600" height="1330" alt="信息面板：一段 DJI 视频的编码、帧率、码率、色彩空间和位深" loading="lazy"></div>
+      <div class="shot"><img src="assets/panel-info.jpg" width="600" height="1330" alt="信息面板：一段 DJI 视频的编码、帧率、码率、色彩空间和位深" loading="lazy"></div>
     </div>
   </div>
 </section>
@@ -341,7 +330,6 @@ footer .wrap{display:grid;gap:10px}
     </div>
 
     <div class="window" style="margin-top:56px">
-      <div class="bar"><i></i><i></i><i></i><span>素材库</span></div>
       <img src="assets/shot-browse.jpg" width="2940" height="1514" alt="光集的素材库：无人机照片、拼图 Live、Live Photo 和一段 DJI 视频的缩略图网格" loading="lazy">
     </div>
 
@@ -354,7 +342,7 @@ footer .wrap{display:grid;gap:10px}
   </div>
 </section>
 
-<section style="background:var(--bg2);border-block:1px solid var(--line)">
+<section>
   <div class="wrap">
     <div class="center">
       <p class="eyebrow">适合谁</p>
@@ -391,7 +379,7 @@ footer .wrap{display:grid;gap:10px}
   </div>
 </section>
 
-<section id="faq" style="background:var(--bg2);border-block:1px solid var(--line)">
+<section id="faq">
   <div class="wrap">
     <div class="center"><p class="eyebrow">常见问题</p><h2>你可能想问</h2></div>
     <div class="faq">
