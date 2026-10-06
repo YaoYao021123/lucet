@@ -37,6 +37,8 @@ final class ExportQueue {
     @ObservationIgnored private var runningTask: Task<Void, Never>?
     @ObservationIgnored private var runningID: UUID?
     @ObservationIgnored var onFinish: ((Job) -> Void)?
+    /// Called once when the queue next has nothing waiting or running (used to quit after exports).
+    @ObservationIgnored var onIdle: (() -> Void)?
 
     var activeCount: Int { jobs.filter(\.isActive).count }
     var runningJob: Job? { jobs.first { $0.state == .running } }
@@ -53,6 +55,20 @@ final class ExportQueue {
         if runningID == id { runningTask?.cancel(); return }
         pending.removeAll { $0.0 == id }
         update(id) { $0.state = .cancelled; $0.progress = nil }
+    }
+
+    /// Stops everything; the running export removes its unfinished file before reporting.
+    func cancelAll() {
+        for (id, _) in pending { update(id) { $0.state = .cancelled; $0.progress = nil } }
+        pending.removeAll()
+        runningTask?.cancel()
+        notifyIfIdle()
+    }
+
+    private func notifyIfIdle() {
+        guard runningTask == nil, pending.isEmpty, let idle = onIdle else { return }
+        onIdle = nil
+        idle()
     }
 
     func clearFinished() {
@@ -96,6 +112,7 @@ final class ExportQueue {
             self.runningTask = nil
             self.runningID = nil
             self.startNext()
+            self.notifyIfIdle()
         }
     }
 

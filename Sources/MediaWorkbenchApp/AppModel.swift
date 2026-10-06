@@ -107,6 +107,9 @@ final class AppModel {
     @ObservationIgnored private var terminationObserver: NSObjectProtocol?
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
 
+    /// The single app model, for the app delegate (quit confirmation).
+    nonisolated(unsafe) static weak var current: AppModel?
+
     init() {
         let root = AppPaths.dataRoot
         learnerFile = root.appendingPathComponent("learning.json")
@@ -139,6 +142,7 @@ final class AppModel {
             MainActor.assumeIsolated { Task { await self?.library.checkMissing() } }
         }
         exports.onFinish = { [weak self] job in self?.exportFinished(job) }
+        Self.current = self
         terminationObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                                      object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {

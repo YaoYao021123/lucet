@@ -4,6 +4,7 @@ import SwiftUI
 
 @main
 struct MediaWorkbenchApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @UIState private var app = AppModel()
 
     init() {
@@ -23,6 +24,32 @@ struct MediaWorkbenchApp: App {
         .defaultSize(width: 1440, height: 900)
         .windowToolbarStyle(.unified)
         .commands { WorkbenchCommands(app: app) }
+    }
+}
+
+/// Quitting mid-export would lose the export and leave a hidden unfinished file next to it.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        MainActor.assumeIsolated {
+            guard let app = AppModel.current, app.exports.activeCount > 0, DebugSnapshot.directory == nil else { return .terminateNow }
+            let count = app.exports.activeCount
+            let alert = NSAlert()
+            alert.messageText = "还有 \(count) 个导出没有完成"
+            alert.informativeText = "现在退出会中断导出。可以等它们完成后自动退出，你的原片不受影响。"
+            alert.addButton(withTitle: "完成后退出")
+            alert.addButton(withTitle: "继续使用")
+            alert.addButton(withTitle: "停止导出并退出")
+            switch alert.runModal() {
+            case .alertFirstButtonReturn:
+                app.exports.onIdle = { NSApp.terminate(nil) }
+                app.show("导出完成后光集会自动退出。", actions: [.init(title: "不退出") { app.exports.onIdle = nil }], seconds: 8)
+            case .alertThirdButtonReturn:
+                app.exports.onIdle = { NSApp.terminate(nil) }
+                app.exports.cancelAll()
+            default: break
+            }
+            return .terminateCancel
+        }
     }
 }
 
