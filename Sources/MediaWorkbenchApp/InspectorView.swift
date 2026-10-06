@@ -253,20 +253,104 @@ struct WheelGrid: View {
 
 struct PresetStrip: View {
     let app: AppModel
+    var editor: EditorModel { app.editor }
+    @UIState private var previews: [UUID: CGImage] = [:]
+    @UIState private var original: CGImage?
+
     var body: some View {
         InspectorSection("预设", help: "一键套用整套调色（不影响裁切、片段与声音）。可把当前调色存为自己的预设。") {
-            FlowLayout(spacing: 4) {
-                ForEach(app.presets) { preset in
-                    Button(preset.name) { app.applyPreset(preset) }
-                        .glassButton().controlSize(.mini)
-                        .contextMenu {
-                            if !preset.builtIn { Button("删除预设「\(preset.name)」") { app.deletePreset(preset) } }
+            if let frame = editor.frame {
+                // Each look shown on this photo, so choosing is seeing (Lightroom / Photos style).
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 64, maximum: 90), spacing: 6)], spacing: 8) {
+                    tile("原图", image: original, selected: !editor.edits.hasGrade) {
+                        editor.applyLook(EditRecipe(), lut: nil, name: "原图")
+                    }
+                    ForEach(app.presets) { preset in
+                        tile(preset.name, image: previews[preset.id], selected: matches(preset)) { app.applyPreset(preset) }
+                            .contextMenu {
+                                if !preset.builtIn { Button("删除预设「\(preset.name)」") { app.deletePreset(preset) } }
+                            }
+                    }
+                    Button { app.sheet = .savePreset } label: {
+                        VStack(spacing: 4) {
+                            RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3]))
+                                .overlay(Image(systemName: "plus").foregroundStyle(.secondary))
+                                .aspectRatio(4 / 3, contentMode: .fit)
+                            Text("存为预设").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                         }
+                    }
+                    .buttonStyle(.plain).help("把当前调色存为自己的预设")
                 }
-                Button { app.sheet = .savePreset } label: { Label("存为预设", systemImage: "plus") }
-                    .buttonStyle(.borderless).controlSize(.mini)
+                .task(id: renderKey(frame)) { await render(frame) }
+            } else {
+                FlowLayout(spacing: 4) {
+                    ForEach(app.presets) { preset in
+                        Button(preset.name) { app.applyPreset(preset) }.glassButton().controlSize(.mini)
+                    }
+                    Button { app.sheet = .savePreset } label: { Label("存为预设", systemImage: "plus") }
+                        .buttonStyle(.borderless).controlSize(.mini)
+                }
             }
         }
+    }
+
+    private func tile(_ name: String, image: CGImage?, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                // The tile's shape is fixed first; the picture fills it and is clipped.
+                WorkbenchTheme.well
+                    .aspectRatio(4 / 3, contentMode: .fit)
+                    .overlay {
+                        if let image { Image(decorative: image, scale: 1).resizable().aspectRatio(contentMode: .fill) }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(selected ? Color.white.opacity(0.9) : .clear, lineWidth: 1.5))
+                Text(name).font(.caption2).foregroundStyle(selected ? .primary : .secondary).lineLimit(1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("套用「\(name)」（可撤销）")
+    }
+
+    private func matches(_ preset: GradePreset) -> Bool {
+        let r = preset.recipe, e = editor.edits
+        return r.adjustments == e.adjustments && r.wheels == e.wheels && r.curves == e.curves && r.hsl == e.hsl
+            && (r.lut == nil) == (e.lut == nil)
+    }
+
+    private func renderKey(_ frame: GradeFrame) -> String {
+        let g = editor.geometry
+        return "\(editor.documentID)|\(app.presets.map(\.id))|\(editor.degrees)|\(g.quarterTurns)\(g.mirrored)\(g.aspectRatio)\(g.cropScale)\(g.horizontal)\(g.vertical)"
+    }
+
+    private func render(_ frame: GradeFrame) async {
+        let source = frame.original, headroom = frame.sourceHeadroom
+        let presets = app.presets, drafts = app.drafts
+        let shape = MediaEdits(degrees: editor.degrees, geometry: editor.geometry)
+        let result = await Task.detached(priority: .utility) { () -> (CGImage?, [UUID: CGImage]) in
+            let scale = min(1, 160 / max(source.extent.width, source.extent.height))
+            let small = source.transformed(by: .init(scaleX: scale, y: scale))
+            func draw(_ edits: MediaEdits) -> CGImage? {
+                guard let graded = try? ColorPipeline.grade(small, edits: edits, sourceHeadroom: headroom),
+                      let shaped = try? ColorPipeline.geometry(graded, edits: shape) else { return nil }
+                let output = edits.hasGrade ? shaped : ColorPipeline.toneMap(shaped, sourceHeadroom: headroom)
+                return ColorPipeline.shared.createCGImage(output, from: output.extent.integral, format: .RGBA8, colorSpace: ColorPipeline.outputSpace)
+            }
+            var images: [UUID: CGImage] = [:]
+            for preset in presets {
+                if Task.isCancelled { break }
+                let r = preset.recipe
+                let lut = r.lut.flatMap { try? drafts.loadLUT($0) }
+                let edits = MediaEdits(lut: lut, strength: r.strength, adjustments: r.adjustments, wheels: r.wheels,
+                                       curves: r.curves, hsl: r.hsl, bypass: r.bypass)
+                images[preset.id] = draw(edits)
+            }
+            return (draw(MediaEdits()), images)
+        }.value
+        guard !Task.isCancelled else { return }
+        original = result.0
+        previews = result.1
     }
 }
 
