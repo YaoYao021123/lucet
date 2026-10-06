@@ -25,6 +25,24 @@ struct PhotoCoachTests {
         #expect(ev > 0.5 && ev <= 1.5)
     }
 
+    @Test func highKeyAndNightPhotosAreNotCalledBadExposure() {
+        // A latte on a white table: bright mid-tones but real blacks and no clipping.
+        var highKey = balanced(); highKey.p1 = 0.02; highKey.p5 = 0.05; highKey.p50 = 0.81; highKey.p95 = 0.89; highKey.p99 = 0.9
+        // A night street: dark overall, but lamps are bright.
+        var night = balanced(); night.p50 = 0.15; night.p95 = 0.85
+        for a in [highKey, night] {
+            let ids = PhotoCoach.insights(for: a, edits: MediaEdits(), profile: LearnerProfile()).map(\.id)
+            #expect(!ids.contains("overexposed") && !ids.contains("underexposed"))
+        }
+    }
+
+    @Test func washedOutPhotoSuggestsModestNegativeExposure() throws {
+        var a = balanced(); a.p1 = 0.3; a.p5 = 0.38; a.p50 = 0.82; a.p95 = 0.95
+        let tip = try #require(PhotoCoach.insights(for: a, edits: MediaEdits(), profile: LearnerProfile()).first { $0.id == "overexposed" })
+        let ev = try #require(tip.suggestion?.deltas[.exposure])
+        #expect(ev < 0 && ev >= -1.0)
+    }
+
     @Test func clippedHighlightsTeachRecoveryOrLoss() throws {
         var a = balanced(); a.clippedHighlights = 0.03; a.brightCenter = [0.5, 0.15]
         let tips = PhotoCoach.insights(for: a, edits: MediaEdits(), profile: LearnerProfile())

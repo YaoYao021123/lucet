@@ -6,7 +6,7 @@ struct MediaProbe {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         guard let command = arguments.first,
-              ((["inspect", "lut", "straighten", "details"].contains(command) && arguments.count == 2)
+              ((["inspect", "lut", "straighten", "details", "analyze"].contains(command) && arguments.count == 2)
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
@@ -15,7 +15,18 @@ struct MediaProbe {
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "details" {
+            if command == "analyze" {
+                // Developer check for the coach: statistics and tips for one photo, as the app computes them.
+                let session = try ImageGradeSession(url: url, maximumDimension: 1024)
+                let frame = try await session.frame(edits: MediaEdits())
+                guard let a = ScopeAnalyzer.analyze(frame.image, headroom: frame.headroom)?.analysis else { exit(4) }
+                print(String(format: "p1 %.2f p5 %.2f p50 %.2f p95 %.2f p99 %.2f mean %.2f clipH %.3f clipS %.3f sat %.2f bright %.2f dark %.2f neutral %.2f rgb %@",
+                             a.p1, a.p5, a.p50, a.p95, a.p99, a.meanLuma, a.clippedHighlights, a.clippedShadows, a.meanSaturation,
+                             a.brightFraction, a.darkFraction, a.neutralFraction, a.neutralRGB.map { String(format: "%.3f", $0) }.joined(separator: "/")))
+                for insight in PhotoCoach.insights(for: a, edits: MediaEdits(), profile: LearnerProfile()) {
+                    print("· \(insight.title)  \(insight.suggestion?.label ?? "")")
+                }
+            } else if command == "details" {
                 let motion = arguments.count == 3 ? URL(fileURLWithPath: arguments[2]).standardizedFileURL : nil
                 for file in [url] + (motion.map { [$0] } ?? []) where !FileManager.default.fileExists(atPath: file.path) {
                     print("找不到文件：\(file.path)")

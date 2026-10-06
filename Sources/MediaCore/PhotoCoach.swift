@@ -388,15 +388,22 @@ public enum PhotoCoach {
                 influence: .shadows, clipping: true)
         }
 
-        if !log, a.p50 < 0.28, a.clippedHighlights < 0.003 {
-            let ev = min(1.5, max(0.2, (log2(pow(0.42 / max(0.05, a.p50), 2.2)) * 20).rounded() / 20))
+        // A dark mid-tone alone is not underexposure: night scenes and silhouettes have bright
+        // parts too (P95). Only a frame with nothing bright is dark overall, and the suggested
+        // exposure stops before the brightest tones would clip.
+        if !log, a.p50 < 0.28, a.p95 < 0.7, a.clippedHighlights < 0.003 {
+            let headroom = log2(pow(0.95 / max(0.05, a.p95), 2.2))
+            let ev = min(1.5, headroom, max(0.2, (log2(pow(0.42 / max(0.05, a.p50), 2.2)) * 20).rounded() / 20))
             add("underexposed", .exposure, 0.35 + (0.28 - a.p50) * 2.5, "sun.min", "整体偏暗",
                 "中间亮度只有 \(pct(a.p50))，大部分像素集中在直方图左侧\(numbers)。",
                 level == .beginner ? "曝光会让整张照片一起变亮。如果只是阴影太暗而天空正常，改用阴影更合适。"
                     : "曝光是线性的乘法；亮部还有余量时用曝光，亮部已经接近溢出时用阴影或曲线提亮暗部。",
                 CoachSuggestion(label: String(format: "曝光 +%.2f EV", ev), deltas: [.exposure: ev]))
-        } else if a.p50 > 0.7 {
-            let ev = min(1.5, max(0.2, (log2(pow(a.p50 / 0.5, 2.2)) * 20).rounded() / 20))
+        } else if a.p50 > 0.7, a.p5 > 0.25 || a.clippedHighlights > 0.02 {
+            // High-key photos (white backgrounds, snow, bright skies) are bright on purpose and still
+            // have real blacks (low P5). Only a washed-out frame or one losing its highlights is
+            // overexposed, and the fix aims for bright-but-natural rather than middle grey.
+            let ev = min(1.0, max(0.2, (log2(pow(a.p50 / 0.6, 2.2)) * 20).rounded() / 20))
             add("overexposed", .exposure, 0.3 + (a.p50 - 0.7) * 2, "sun.max", "整体偏亮",
                 "中间亮度达到 \(pct(a.p50))，画面显得发白\(numbers)。",
                 "降低曝光会让所有亮度一起下降；如果只是天空太亮，改用高光更合适。",
