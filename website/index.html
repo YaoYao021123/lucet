@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>光集 · Mac 上最简单的照片与视频调色</title>
+<meta name="description" content="光集是一款 Mac 调色工具：一键自动、六个滑块、预设一眼挑，DJI 和 iPhone 拍的照片、视频、Live Photo 都能调，调完直接存进「照片」。不用先学摄影。">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d0d0e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="光集 · Mac 上最简单的照片与视频调色">
+<meta property="og:description" content="一键自动、六个滑块、预设一眼挑。给 DJI 和 iPhone 拍摄者的 Mac 调色工具，不用先学摄影。">
+<!-- Link previews need absolute URLs; this assumes GitHub Pages at yaoyao021123.github.io/pic_review_edit. Update if the site moves. -->
+<meta property="og:image" content="https://yaoyao021123.github.io/pic_review_edit/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/app-icon.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"光集","alternateName":"Guangji",
+ "applicationCategory":"PhotographyApplication","operatingSystem":"macOS 15 or later (Apple silicon)",
+ "inLanguage":"zh-CN","description":"Mac 上的照片、视频与 Live Photo 调色工具，面向没有摄影基础的用户。"}
+</script>
+<style>
+:root{
+  --bg:#0d0d0e; --bg2:#151517; --text:#f2f0e8; --muted:#a8a59c; --faint:#77746c;
+  --line:rgba(255,255,255,.09); --glass:rgba(255,255,255,.055); --glass2:rgba(255,255,255,.09);
+  --radius:16px; --max:1120px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 var(--font);-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+.wrap{width:min(var(--max),100% - 40px);margin:0 auto}
+section{padding:96px 0}
+h1,h2,h3{line-height:1.2;margin:0;letter-spacing:-.01em}
+h1,h2,h3,.lead{text-wrap:balance}
+h1{font-size:clamp(32px,6vw,64px);font-weight:700}
+h2{font-size:clamp(26px,4vw,40px);font-weight:650}
+h3{font-size:20px;font-weight:600}
+p{margin:0}
+.eyebrow{color:var(--muted);font-size:14px;letter-spacing:.08em;margin-bottom:14px}
+.lead{color:var(--muted);font-size:clamp(17px,2vw,21px);max-width:40em}
+.muted{color:var(--muted)}
+.small{font-size:14px;color:var(--faint)}
+
+/* nav */
+nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);background:rgba(13,13,14,.72);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:28px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;text-decoration:none;font-size:18px}
+.brand img{width:26px;height:26px}
+nav .links{display:flex;gap:22px;margin-left:auto;font-size:15px;color:var(--muted)}
+nav .links a{text-decoration:none}
+nav .links a:hover{color:var(--text)}
+@media(max-width:720px){nav .links a:not(.cta){display:none}}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font:inherit;font-size:16px;font-weight:600;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--text);color:#1a1a18}
+.btn.primary:hover{background:#fff}
+.btn.glass{background:var(--glass);border-color:var(--line);color:var(--text);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.btn.glass:hover{background:var(--glass2)}
+.btn.small-btn{padding:7px 16px;font-size:14px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+
+/* hero */
+.hero{padding:72px 0 40px;text-align:center}
+.hero .lead{margin:22px auto 0}
+.hero .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:34px}
+.hero .note{margin-top:16px}
+.window{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#101011;box-shadow:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.03)}
+.window .bar{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;background:linear-gradient(#232325,#1b1b1d);border-bottom:1px solid var(--line)}
+.window .bar i{width:11px;height:11px;border-radius:50%;background:#3a3a3d;display:block}
+.window .bar span{margin:0 auto;font-size:12px;color:var(--faint);transform:translateX(-24px)}
+.hero .window{margin:56px auto 0;max-width:1040px;text-align:left}
+
+/* story */
+.story{background:var(--bg2);border-block:1px solid var(--line)}
+.story .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center;margin-top:36px}
+.story blockquote{margin:0;font-size:clamp(20px,2.4vw,26px);line-height:1.6;font-weight:500}
+.story blockquote span{color:var(--muted)}
+.gap{display:grid;gap:12px}
+.gap div{padding:18px 20px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line)}
+.gap b{display:block;margin-bottom:2px}
+.gap .us{background:var(--glass2);border-color:rgba(255,255,255,.22)}
+.gap p{font-size:15px;color:var(--muted)}
+@media(max-width:860px){.story .grid{grid-template-columns:1fr;gap:32px}}
+
+/* feature rows */
+.feature{display:grid;grid-template-columns:1fr 1.15fr;gap:64px;align-items:center;padding:56px 0}
+.feature.reverse{grid-template-columns:1.15fr 1fr}
+.feature.reverse .text{order:2}
+.feature .text p{color:var(--muted);margin-top:14px}
+.feature .text ul{margin:18px 0 0;padding:0;list-style:none;color:var(--muted);font-size:16px}
+.feature .text li{padding-left:22px;position:relative;margin-top:8px}
+.feature .text li::before{content:"";position:absolute;left:2px;top:.8em;width:7px;height:7px;border-radius:50%;background:var(--text);opacity:.55}
+.feature .kicker{font-size:14px;color:var(--faint);letter-spacing:.06em;margin-bottom:10px}
+.panel-card{display:flex;justify-content:center;padding:28px;border-radius:22px;background:var(--glass);border:1px solid var(--line)}
+.panel-card img{border-radius:10px;width:min(100%,360px);border:1px solid var(--line)}
+@media(max-width:860px){.feature,.feature.reverse{grid-template-columns:1fr;gap:28px;padding:36px 0}.feature.reverse .text{order:0}}
+
+/* before / after */
+.compare{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);aspect-ratio:1024/576;background:#000;user-select:none;touch-action:pan-y}
+.compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.compare .after{clip-path:inset(0 0 0 var(--pos,50%))}
+.compare .line{position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;background:#fff;box-shadow:0 0 12px rgba(0,0,0,.5);pointer-events:none}
+.compare .line::after{content:"";position:absolute;top:50%;left:50%;width:36px;height:36px;margin:-18px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid #fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.compare .tag{position:absolute;top:12px;padding:3px 12px;border-radius:999px;font-size:13px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.compare .tag.l{left:12px}.compare .tag.r{right:12px}
+.compare input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
+.compare:has(input:focus-visible){outline:2px solid var(--text);outline-offset:3px}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:40px}
+.card{padding:22px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line)}
+.card h3{font-size:18px}
+.card p{color:var(--muted);font-size:15px;margin-top:8px;line-height:1.65}
+.center{text-align:center}
+.center .lead{margin:16px auto 0}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:44px;counter-reset:s}
+.step{padding:26px;border-radius:var(--radius);background:var(--glass);border:1px solid var(--line);counter-increment:s}
+.step::before{content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--text);color:#1a1a18;font-weight:700;margin-bottom:16px}
+.step p{color:var(--muted);margin-top:8px;font-size:15px}
+
+/* fit */
+.fit{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:40px}
+.fit>div{padding:26px;border-radius:var(--radius);border:1px solid var(--line);background:var(--glass)}
+.fit ul{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:16px}
+.fit li{margin-top:6px}
+@media(max-width:720px){.fit{grid-template-columns:1fr}}
+
+/* faq */
+.faq{max-width:760px;margin:40px auto 0}
+details{border-bottom:1px solid var(--line);padding:6px 0}
+summary{cursor:pointer;font-weight:600;padding:16px 28px 16px 0;list-style:none;position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:4px;top:12px;font-size:24px;color:var(--muted);transition:transform .2s}
+details[open] summary::after{transform:rotate(45deg)}
+details p{color:var(--muted);padding:0 0 18px;font-size:16px}
+details ol{color:var(--muted);padding-left:22px;margin:0 0 18px;font-size:16px}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--glass2);padding:2px 7px;border-radius:6px}
+pre{background:#101011;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text)}
+
+/* download */
+.download{background:var(--bg2);border-top:1px solid var(--line);text-align:center}
+.download img.icon{width:96px;height:96px;margin:0 auto 22px;border-radius:22px}
+.download .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+.req{display:inline-flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;margin-top:22px;color:var(--muted);font-size:15px}
+footer{padding:40px 0 56px;border-top:1px solid var(--line);color:var(--faint);font-size:14px;line-height:1.8}
+footer .wrap{display:grid;gap:10px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="assets/guangji-symbol-dark.svg" alt="" width="26" height="26">光集</a>
+    <div class="links">
+      <a href="#why">为什么做</a>
+      <a href="#features">功能</a>
+      <a href="#dji">DJI 素材</a>
+      <a href="#faq">常见问题</a>
+      <a class="btn primary small-btn cta" href="#download">下载</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">给 DJI 和 iPhone 拍摄者的 Mac 调色工具</p>
+    <h1>在 Mac 上把照片调好看，<br>不用先学摄影。</h1>
+    <p class="lead">一键自动，六个滑块，预设一眼挑，调完直接存进「照片」。照片、视频、Live Photo 都能调；想深入的时候，再展开完整的专业工具。</p>
+    <div class="actions">
+      <a class="btn primary" href="#download">下载 Mac 版</a>
+      <a class="btn glass" href="#features">看看能做什么</a>
+    </div>
+    <p class="small note">Apple 芯片 Mac · macOS 15 或更高 · 中文界面</p>
+    <div class="window">
+      <div class="bar"><i></i><i></i><i></i><span>光集</span></div>
+      <img src="assets/shot-edit.jpg" width="2940" height="1514" alt="光集的编辑界面：左侧是素材库，中间是一张无人机拍摄的秋日林地，右侧是预设缩略图和六个简单滑块">
+    </div>
+  </div>
+</section>
+
+<section class="story" id="why">
+  <div class="wrap">
+    <p class="eyebrow">为什么做光集</p>
+    <h2>手机上能调，Mac 上却没有顺手的工具。</h2>
+    <div class="grid">
+      <blockquote>
+        我用 DJI 拍素材，想调一下颜色和色调，才发现 DJI Mimo 只有手机版<span>（iOS 和 Android，截至 2026 年 10 月）</span>。想在大屏幕上调，只能回到手机上。
+        <br><br>
+        Lightroom、Photoshop 当然什么都能做，但打开的第一眼，就是几十个看不懂的滑块。
+        <br><br>
+        <span>光集想做中间那一块：在 Mac 上，简单得像手机 App；想学的时候，也有人在旁边讲。</span>
+      </blockquote>
+      <div class="gap">
+        <div><b>手机里的调色 App</b><p>上手快，但屏幕小，素材还要先传到手机上。</p></div>
+        <div><b>专业软件</b><p>功能强大，也意味着第一次打开就要面对几十个参数。</p></div>
+        <div class="us"><b>光集</b><p>在 Mac 的大屏幕上，用「自动」和六个滑块开始；需要时展开完整工具，并且边调边学。</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">功能</p>
+      <h2>简单开始，需要时再深入</h2>
+      <p class="lead">默认只给你最常用的几样。其余的工具都在，只是先收起来。</p>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <p class="kicker">一键自动</p>
+        <h3>点一下「自动」，先得到一张看得过去的</h3>
+        <p>光集看这张照片本身的明暗和颜色，再替你调好曝光、影调、白平衡和色彩。它很克制：</p>
+        <ul>
+          <li>白底、雪景这类本来就明亮的照片，保持明亮，不会被压灰</li>
+          <li>夜景保持夜景，日落保留暖色，不会把氛围调没</li>
+          <li>不满意？按 ⌘Z 撤销，或按 <code>\</code> 看原图</li>
+        </ul>
+      </div>
+      <div>
+        <div class="compare" id="compare" style="--pos:50%">
+          <img src="assets/before.jpg" width="1024" height="576" alt="自动调整前的秋日山坡" loading="lazy">
+          <img class="after" src="assets/after.jpg" width="1024" height="576" alt="自动调整后的秋日山坡" loading="lazy">
+          <span class="tag l">原图</span><span class="tag r">自动后</span>
+          <div class="line"></div>
+          <input type="range" min="0" max="100" value="50" aria-label="拖动对比自动调整前后">
+        </div>
+        <p class="small" style="margin-top:12px">拖动对比。这是光集自动调整的真实结果，没有额外修图。</p>
+      </div>
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">六个滑块 · 预设缩略图</p>
+        <h3>挑风格，是看出来的，不是试出来的</h3>
+        <p>每个预设都直接用你这张照片预览。点一下就套用，不喜欢就撤销。简单模式只有六个滑块：亮度、对比度、亮部、暗部、冷暖、鲜艳度，每个都配了一句人话解释。</p>
+        <ul>
+          <li>把你调好的样子存成自己的预设，下次一键用到别的照片上</li>
+          <li>把一张照片的调色复制给一整批，曝光默认不跟着改</li>
+        </ul>
+      </div>
+      <div class="panel-card"><img src="assets/panel-presets.jpg" width="660" height="880" alt="光集右侧面板：五个预设的缩略图和六个简单滑块" loading="lazy"></div>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <p class="kicker">拖动裁剪</p>
+        <h3>在照片上直接拖，就像在「照片」App 里一样</h3>
+        <p>打开「构图」，整张照片会显示出来，裁剪框直接在画面上：拖动框移动，拖四个角缩放，画幅比例自动保持。拉直、旋转、镜像也都在这里，地平线歪了还会提醒你。</p>
+      </div>
+      <div class="window">
+        <div class="bar"><i></i><i></i><i></i><span>构图</span></div>
+        <img src="assets/shot-crop.jpg" width="2940" height="1514" alt="在画面上拖动裁剪框，把一张航拍照片裁成正方形" loading="lazy">
+      </div>
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">边调边学</p>
+        <h3>不是教程，而是讲你手上这一张</h3>
+        <p>光集会读这张照片，指出真正的问题：哪里过曝了、哪里偏色、地平线歪了多少度，并给一个可以一键试用的调整。悬停在滑块名上，画面会只高亮它影响的区域。</p>
+        <ul>
+          <li>可以选「入门 / 进阶 / 专业」，讲解的深浅会跟着变</li>
+          <li>想问什么，直接问：「天空为什么发灰？」（可选，需要你自己的 AI 密钥，默认关闭）</li>
+          <li>学习记录只保存在你的 Mac 上</li>
+        </ul>
+      </div>
+      <div class="panel-card"><img src="assets/panel-learn.jpg" width="574" height="1040" alt="光集的学习面板：针对这张照片的提示、问问这张照片、学习水平选择" loading="lazy"></div>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <p class="kicker">存进「照片」· Live Photo</p>
+        <h3>调完，一步回到你的 iPhone</h3>
+        <p>导出时默认直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。把一段视频剪成 3 秒以内，还能做成真正的 Live Photo。想要文件也行，或者直接用系统共享发给朋友。</p>
+        <ul>
+          <li>JPEG / HEIC / PNG，可缩小到社交平台常用尺寸</li>
+          <li>默认保留拍摄时间、相机信息，移除位置信息</li>
+          <li>导出在后台进行，你可以接着调下一张</li>
+          <li>原片从不被修改，导出的永远是一份新副本</li>
+        </ul>
+      </div>
+      <div class="panel-card"><img src="assets/sheet-export.jpg" width="960" height="1010" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸选项" loading="lazy" style="width:min(100%,440px)"></div>
+    </div>
+  </div>
+</section>
+
+<section id="dji" style="background:var(--bg2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="feature reverse" style="padding:0">
+      <div class="text">
+        <p class="kicker">为 DJI 素材准备</p>
+        <h3>拍完就能调，也能看清你的素材</h3>
+        <p>光集能直接打开 DJI 无人机和相机导出的 MP4、MOV。右侧「信息」页会列出编码（如 HEVC Main 10）、位深、码率、帧率、色彩空间和拍摄设备，不用再去别的软件里查。</p>
+        <ul>
+          <li>导入 DJI 官方的 <code>.cube</code> 风格 LUT，已用 Pocket 3 的 Spring / Winter Pro 实测</li>
+          <li>视频可以裁切、变速（0.5–4 倍），也可以截取 3 秒做成 Live Photo</li>
+          <li>10 位 HEVC 素材正常打开；HDR 视频可预览，高光扩展为实验功能</li>
+        </ul>
+        <p class="small" style="margin-top:16px">还在计划中：D-Log 素材自动套用转换 LUT（现在需要你自己导入对应的 LUT）。</p>
+      </div>
+      <div class="panel-card"><img src="assets/panel-info.jpg" width="600" height="1330" alt="信息面板：一段 DJI 视频的编码、帧率、码率、色彩空间和位深" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">三步上手</p>
+      <h2>导入、点自动、存起来</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>导入</h3><p>把照片或视频文件夹拖进窗口。同名的照片和视频会自动合成一个 Live Photo。可以打星、选用、排除，先挑出好的。</p></div>
+      <div class="step"><h3>调色</h3><p>按 <code>A</code> 自动，再挑一个预设，用六个滑块微调。想看原图，按 <code>\</code>。</p></div>
+      <div class="step"><h3>存起来</h3><p>存到「照片」，或共享给朋友。之后再回来，所有调整都还在，也可以随时撤销。</p></div>
+    </div>
+
+    <div class="window" style="margin-top:56px">
+      <div class="bar"><i></i><i></i><i></i><span>素材库</span></div>
+      <img src="assets/shot-browse.jpg" width="2940" height="1514" alt="光集的素材库：无人机照片、拼图 Live、Live Photo 和一段 DJI 视频的缩略图网格" loading="lazy">
+    </div>
+
+    <div class="cards">
+      <div class="card"><h3>浏览与整理</h3><p>缩略图网格显示已调色的样子。评级 0–5、选用与排除、按类型和评级筛选、搜索文件名。</p></div>
+      <div class="card"><h3>完整模式</h3><p>示波器（直方图、波形、分量、矢量）、色轮、曲线、HSL 色彩混合、风格 LUT，处理顺序固定且每一步都能单独开关对比。</p></div>
+      <div class="card"><h3>拼图 Live</h3><p>把多段 3 秒视频拼成一张 Live Photo，每个画面各自调色。</p></div>
+      <div class="card"><h3>撤销与版本</h3><p>随时撤销、重做，还可以给一张照片存多个命名版本，随时回到某一个。</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--bg2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">适合谁</p>
+      <h2>先说清楚，省得你白下载</h2>
+    </div>
+    <div class="fit">
+      <div>
+        <h3>适合你，如果</h3>
+        <ul>
+          <li>用 DJI 或 iPhone 拍，想在 Mac 上快速调好再分享</li>
+          <li>觉得 Lightroom、Photoshop 太复杂，只想调亮度、颜色、裁一裁</li>
+          <li>想顺便弄明白「高光」「阴影」到底在调什么</li>
+          <li>喜欢原片不被动、随时能撤销的工具</li>
+        </ul>
+      </div>
+      <div>
+        <h3>暂时不适合，如果</h3>
+        <ul>
+          <li>你需要多轨道视频剪辑、转场、字幕</li>
+          <li>你要做 RAW 深度冲洗或商业级批量修图</li>
+          <li>你用的是 Intel 芯片的 Mac 或低于 macOS 15 的系统</li>
+          <li>你需要英文界面（目前只有中文）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center">
+    <p class="eyebrow">隐私</p>
+    <h2>你的照片，只在你的 Mac 上</h2>
+    <p class="lead">光集没有账号，没有统计，不上传任何照片。唯一会联网的是可选的「问问这张照片」：默认关闭，你填入自己的密钥后，只有在你点「提问」时才会发送一张缩小的预览（可以关掉）和调整参数，不含拍摄地点。</p>
+  </div>
+</section>
+
+<section id="faq" style="background:var(--bg2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="center"><p class="eyebrow">常见问题</p><h2>你可能想问</h2></div>
+    <div class="faq">
+      <details><summary>会改动我的原片吗？</summary><p>不会。所有调整都保存成一份很小的配方文件，导出时才生成新的副本。你的原片、原文件名和位置都不会变。如果在 Finder 里移动或重命名了原片，光集会提示「找不到原文件」，指给它新位置就行，调整都会保留。</p></details>
+      <details><summary>需要什么电脑？</summary><p>Apple 芯片（M 系列）的 Mac，系统 macOS 15 或更高。在 macOS 26 上会使用「液态玻璃」界面。</p></details>
+      <details><summary>支持哪些素材？</summary><p>照片：JPEG、HEIC、PNG、TIFF、WebP、DNG，以及常见相机的 RAW 文件（实验性）。视频：MP4、MOV 等（以 macOS 能解码的为准）。同名的 HEIC/JPG 加 MOV 会自动识别成 Live Photo。</p></details>
+      <details><summary>能直接存到 iPhone 吗？</summary><p>导出时选「保存到 「照片」」，开启 iCloud 照片后，会同步到你的 iPhone。Live Photo 会作为真正的 Live Photo 保存。</p></details>
+      <details><summary>打开时提示“无法验证开发者”怎么办？</summary><p>目前的版本还没有经过 Apple 公证，所以第一次打开会被系统拦下。这是正常的，可以这样放行：</p>
+        <ol>
+          <li>把「光集」拖进「应用程序」，双击打开，看到提示后点「完成」</li>
+          <li>打开「系统设置 › 隐私与安全性」，滚动到最下面</li>
+          <li>找到「光集」，点「仍要打开」，再确认一次</li>
+        </ol>
+        <p>只需要做这一次。你也可以从源码自己构建，见下方「下载」。</p></details>
+      <details><summary>要钱吗？</summary><p>目前是早期版本，下载试用不收费。</p></details>
+      <details><summary>「问问这张照片」是什么？要付费吗？</summary><p>这是可选功能：你可以用自然语言提问，比如「怎么调出胶片感？」，由 Claude 结合这张照片回答，并给出可以一键试用的调整。它需要你自己的 Anthropic API 密钥（保存在 Mac 的钥匙串里），费用由你的账户承担，默认关闭。中国大陆网络可能无法直接访问。不开启它，光集的其他功能完全不受影响。</p></details>
+      <details><summary>和 DJI 官方有关系吗？</summary><p>没有。光集是独立开发的软件，不是 DJI 的产品，也没有得到 DJI 的授权或认可。DJI、Mimo 等名称是各自所有者的商标，这里只用来说明光集可以打开哪些素材。</p></details>
+      <details><summary>我发现了问题，或者想要某个功能</summary><p>欢迎到 GitHub 的 Issues 里告诉我们，附上一张截图会很有帮助。</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="download" id="download">
+  <div class="wrap">
+    <img class="icon" src="assets/app-icon.png" width="96" height="96" alt="光集图标">
+    <h2>把光，收进画面。</h2>
+    <p class="lead">免费试用早期版本。</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/YaoYao021123/pic_review_edit/releases/latest">下载光集（GitHub）</a>
+      <a class="btn glass" href="https://github.com/YaoYao021123/pic_review_edit">查看源码</a>
+    </div>
+    <div class="req"><span>Apple 芯片 Mac</span><span>macOS 15 或更高</span><span>中文界面</span><span>首次打开需手动放行，见上方常见问题</span></div>
+    <div class="faq" style="text-align:left;margin-top:44px">
+      <details><summary>想自己从源码构建？</summary>
+        <p>需要安装 Xcode 命令行工具（<code>xcode-select --install</code>）。</p>
+<pre>git clone https://github.com/YaoYao021123/pic_review_edit.git
+cd pic_review_edit
+bash scripts/run-workbench.sh</pre>
+      </details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>光集 · 照片、视频与 Live Photo 调色</div>
+    <div>光集是独立开发的软件，与 DJI、Apple、Adobe 没有关联，也未获得它们的认可。DJI、Mimo、iPhone、Live Photo、Lightroom、Photoshop 等名称属于各自的所有者。</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var box=document.getElementById('compare'); if(!box) return;
+  var input=box.querySelector('input');
+  function set(){ box.style.setProperty('--pos', input.value+'%'); }
+  input.addEventListener('input', set); set();
+  // A gentle hint on first view: sweep once so people know it can be dragged.
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  var done=false;
+  new IntersectionObserver(function(es,obs){
+    if(done||!es[0].isIntersecting) return; done=true; obs.disconnect();
+    var t0=null;
+    function frame(t){ t0=t0||t; var p=(t-t0)/1400; if(p>=1){ input.value=50; set(); return; }
+      input.value=50+Math.sin(p*Math.PI*2)*30; set(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  },{threshold:.6}).observe(box);
+})();
+</script>
+</body>
+</html>
