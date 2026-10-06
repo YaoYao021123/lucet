@@ -77,6 +77,7 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "panels": app.showSidebar = argument != "off"; app.showInspector = argument != "off"
         case "colormode": app.colorMode = ColorMode(rawValue: argument) ?? .simple
         case "relocate":
             let parts = argument.split(separator: "|").map(String.init)

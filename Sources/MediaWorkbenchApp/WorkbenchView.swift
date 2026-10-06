@@ -65,7 +65,7 @@ struct WorkbenchView: View {
         if app.mode == .edit, let index = app.library.visibleIndex(of: app.library.currentID) {
             return "\(index + 1) / \(app.library.visible.count)"
         }
-        return app.library.entries.isEmpty ? "调色与 Live" : "素材库 · \(app.library.entries.count) 项"
+        return app.library.entries.isEmpty ? "照片 · 视频 · Live Photo" : "素材库 · \(app.library.entries.count) 项"
     }
 }
 
@@ -138,6 +138,20 @@ struct EditorStage: View {
                     }
                 }
                 CanvasHUD(editor: editor)
+                if !app.showSidebar, !app.showInspector {
+                    // Tab hides both panels; make the way back visible.
+                    VStack {
+                        HStack {
+                            Button { app.showSidebar = true; app.showInspector = true } label: {
+                                Label("显示面板（Tab）", systemImage: "sidebar.squares.leading")
+                            }
+                            .glassButton().controlSize(.small)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding(12)
+                }
             }
             if editor.isVideo, editor.isLoaded { MediaTimeline(app: app) }
         }
@@ -152,7 +166,8 @@ private struct CanvasHUD: View {
                 HStack(alignment: .top) {
                     if editor.compareMode == .split { label("原片") }
                     Spacer()
-                    label(editor.compareMode == .split ? "调整后" : editor.previewLabel)
+                    let text = editor.compareMode == .split ? "调整后" : editor.previewLabel
+                    if !text.isEmpty { label(text) }
                 }
                 Spacer()
                 HStack(alignment: .bottom) {
@@ -302,7 +317,7 @@ struct WorkbenchToolbar: ToolbarContent {
                 Button("导出当前…") { app.exportCurrent() }.disabled(!editor.isLoaded)
                 Button("共享…") { app.shareCurrent() }.disabled(!editor.isLoaded)
                 Button("导出所选…") { app.exportSelection() }.disabled(app.library.actionTargets.isEmpty)
-                if editor.isVideo { Button("制作 Live Photo…", action: app.makeLive).disabled(!editor.liveIsValid) }
+                if editor.isVideo { Button("制作 Live Photo…", action: app.makeLive) }
                 Button("拼图 Live…", action: app.openCollage)
             } label: { Label("导出", systemImage: "square.and.arrow.up") }
                 .help("导出副本，原片从不修改")

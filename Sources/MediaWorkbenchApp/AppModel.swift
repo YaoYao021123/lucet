@@ -671,7 +671,21 @@ final class AppModel {
     func makeLive() {
         guard let source = editor.url, editor.isVideo else { return }
         guard editor.liveIsValid else {
-            alert = AppAlert(title: "无法制作 Live", message: "Live 输出需为 0.5–3 秒。可缩短选取范围，或使用「适配 3 秒」提高速度。")
+            // Offer the fix instead of only explaining the rule.
+            let seconds = editor.clip.outputDuration
+            let alert = NSAlert()
+            alert.messageText = "Live Photo 最长 3 秒"
+            alert.informativeText = String(format: "现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。", seconds)
+            alert.addButton(withTitle: "选取播放头附近 3 秒")
+            alert.addButton(withTitle: "整段加速到 3 秒")
+            alert.addButton(withTitle: "取消")
+            switch alert.runModal() {
+            case .alertFirstButtonReturn: editor.selectLiveRange()
+            case .alertSecondButtonReturn: editor.fitLiveSpeed()
+            default: return
+            }
+            guard editor.liveIsValid else { return }
+            show("已调整为 \(String(format: "%.1f", editor.clip.outputDuration)) 秒，再点一次「制作 Live」即可。", seconds: 4)
             return
         }
         if exportSettings.destination == .photos {

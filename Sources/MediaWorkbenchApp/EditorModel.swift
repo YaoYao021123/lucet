@@ -170,11 +170,12 @@ final class EditorModel {
     var previewLabel: String {
         guard isLoaded else { return "" }
         if compareMode == .original { return "原片" }
-        if isVideo, hdrEffect { return "HDR 效果 · HLG" }
-        if !sourceIsHDR { return "SDR" }
-        if isVideo { return previewNeedsSDR ? "SDR 预览" : "HDR 原片" }
-        if edits.hasGrade { return "调色 · SDR" }
-        return hdrPreview && screenHeadroom > 1 ? "HDR" : "HDR → SDR"
+        // Plain words: most people only need to know when a photo is HDR and what that means here.
+        if isVideo, hdrEffect { return "HDR 高光扩展" }
+        if !sourceIsHDR { return "" }
+        if isVideo { return previewNeedsSDR ? "HDR 视频 · 调色时按普通亮度预览" : "HDR 视频" }
+        if edits.hasGrade { return "HDR 照片 · 调色后为普通亮度" }
+        return hdrPreview && screenHeadroom > 1 ? "HDR 照片" : "HDR 照片 · 这块屏幕按普通亮度显示"
     }
 
     private struct PreviewKey: Equatable {

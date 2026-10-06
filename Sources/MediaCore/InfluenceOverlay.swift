@@ -14,7 +14,7 @@ public enum InfluenceKind: Hashable, Sendable, Codable {
         case .highlights: "高光"
         case .shadows: "阴影"
         case .whites: "白色"
-        case .blacks: "黑点"
+        case .blacks: "黑色"
         case .midtones: "中间调"
         case .brilliance: "鲜明度"
         case .lift: "暗部（Lift）"

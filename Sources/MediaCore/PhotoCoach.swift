@@ -40,7 +40,7 @@ public enum Concept: String, Codable, CaseIterable, Sendable, CodingKeyRepresent
     public var title: String {
         switch self {
         case .histogram: "直方图"; case .exposure: "曝光"; case .highlights: "高光"; case .shadows: "阴影"
-        case .whitesBlacks: "白色与黑点"; case .contrast: "对比度"; case .clipping: "溢出（纯白 / 死黑）"
+        case .whitesBlacks: "白色与黑色"; case .contrast: "对比度"; case .clipping: "溢出（纯白 / 死黑）"
         case .whiteBalance: "白平衡"; case .vibrance: "自然饱和度"; case .hsl: "HSL 色彩混合"; case .sky: "让天空更有层次"
         case .skinTone: "肤色"; case .curves: "曲线"; case .colorWheels: "色轮"; case .lut: "LUT"; case .logFootage: "Log 素材"
         case .waveform: "波形图"; case .parade: "RGB 分量"; case .vectorscope: "矢量图"
@@ -55,7 +55,7 @@ public enum Concept: String, Codable, CaseIterable, Sendable, CodingKeyRepresent
         case .exposure: "曝光让整张照片同时变亮或变暗，就像拍摄时多进一点或少进一点光。+1 EV 等于光线加倍。"
         case .highlights: "高光只调整较亮的区域，比如天空和白云。往下拉能找回还没完全过曝的层次。"
         case .shadows: "阴影只调整较暗的区域。往上拉能看清背光处的细节，但也可能显出噪点。"
-        case .whitesBlacks: "白色决定最亮的地方有多白，黑点决定最暗的地方有多黑。它们设定画面的两端。"
+        case .whitesBlacks: "白色决定最亮的地方有多白，黑色决定最暗的地方有多黑。它们设定画面的两端。"
         case .contrast: "对比度拉开或收拢明暗差距。对比低显得灰、柔；对比高显得硬朗、有冲击力。"
         case .clipping: "纯白或纯黑的区域已经没有细节。开启溢出显示后，纯白显示为红色、纯黑显示为蓝色。"
         case .whiteBalance: "白平衡让白色看起来是白的。色温控制冷暖（蓝–黄），色调控制绿–洋红。"
@@ -85,9 +85,9 @@ public enum Concept: String, Codable, CaseIterable, Sendable, CodingKeyRepresent
         case .exposure: "曝光作用在线性光上，是乘法：高光会比暗部变化得更多，所以先看高光是否会溢出。"
         case .highlights: "高光权重约从亮度 45% 开始，越亮作用越强；与白色配合：先用高光压缩，再用白色定白点。"
         case .shadows: "阴影权重在亮度 60% 以下逐渐增强。抬阴影会降低整体对比，可再用对比度或曲线补回。"
-        case .whitesBlacks: "白色作用于亮度 70% 以上，黑点作用于 25% 以下；它们决定直方图两端的位置。"
+        case .whitesBlacks: "白色作用于亮度 70% 以上，黑色作用于 25% 以下；它们决定直方图两端的位置。"
         case .contrast: "对比度围绕 50% 灰拉伸亮度；曲线可以选择支点和范围，更精细。"
-        case .clipping: "超过显示白点（或低于黑点）的值被截断。原片中已经截断的数据无法通过调色恢复。"
+        case .clipping: "比屏幕能显示的最白还亮（或比最黑还暗）的部分被截断。原片中已经截断的数据无法通过调色恢复。"
         case .whiteBalance: "这里是对已渲染画面的相对校正，不是相机原始数据的开尔文值；用接近中性灰的像素判断偏色最可靠。"
         case .vibrance: "自然饱和度的增益随像素已有饱和度递减，避免已饱和颜色溢出色域。"
         case .hsl: "每个色系在相邻色系之间平滑过渡；低饱和像素受影响更小，避免灰色物体被染色。"
@@ -133,7 +133,7 @@ public enum Concept: String, Codable, CaseIterable, Sendable, CodingKeyRepresent
         case .exposure: CoachSuggestion(label: "曝光 +0.5 EV", deltas: [.exposure: 0.5])
         case .highlights: CoachSuggestion(label: "高光 -40", deltas: [.highlights: -40])
         case .shadows: CoachSuggestion(label: "阴影 +40", deltas: [.shadows: 40])
-        case .whitesBlacks: CoachSuggestion(label: "白色 +20 · 黑点 +15", deltas: [.whites: 20, .blackPoint: 15])
+        case .whitesBlacks: CoachSuggestion(label: "白色 +20 · 黑色 +15", deltas: [.whites: 20, .blackPoint: 15])
         case .contrast: CoachSuggestion(label: "对比度 +25", deltas: [.contrast: 25])
         case .clipping: CoachSuggestion(label: "显示溢出区域", actions: [.showClipping])
         case .whiteBalance: CoachSuggestion(label: "色温 +20", deltas: [.warmth: 20])
@@ -383,8 +383,8 @@ public enum PhotoCoach {
             add("shadows-clipped", .clipping, 0.3 + a.clippedShadows * 12, "moon.fill", "暗部死黑 \(pct(a.clippedShadows))",
                 "这些像素是纯黑\(place(a.darkCenter))，开启溢出显示时会标成蓝色。",
                 level == .beginner ? "完全的黑色没有细节。抬起阴影能看到更多东西；如果是剪影效果，可以保留。"
-                    : "直方图左端贴边。阴影抬起暗部，黑点负值抬起黑色端；需要剪影或高反差风格时可以保留。",
-                CoachSuggestion(label: "阴影 +30 · 黑点 -10", deltas: [.shadows: 30, .blackPoint: -10]),
+                    : "直方图左端贴边。阴影抬起暗部，黑色负值让最暗处变浅；需要剪影或高反差风格时可以保留。",
+                CoachSuggestion(label: "阴影 +30 · 黑色 -10", deltas: [.shadows: 30, .blackPoint: -10]),
                 influence: .shadows, clipping: true)
         }
 

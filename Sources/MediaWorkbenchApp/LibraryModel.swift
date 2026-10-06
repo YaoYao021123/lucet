@@ -320,7 +320,9 @@ struct BatchChange: Sendable {
 
 enum LibraryFiles {
     static let movieExtensions: Set<String> = ["mp4", "mov", "m4v", "mts", "m2ts", "avi"]
-    static let imageExtensions: Set<String> = ["jpg", "jpeg", "heic", "heif", "png", "tif", "tiff", "webp", "gif", "dng"]
+    static let imageExtensions: Set<String> = ["jpg", "jpeg", "heic", "heif", "png", "tif", "tiff", "webp", "gif", "dng",
+                                                   // Camera RAW, decoded by macOS's RAW engine.
+                                                   "cr2", "cr3", "nef", "nrw", "arw", "raf", "orf", "rw2", "pef", "srw", "3fr", "iiq"]
 
     static func isVideo(_ url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()

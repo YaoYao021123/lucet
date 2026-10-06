@@ -81,6 +81,10 @@ struct ExportOptionsSheet: View {
                             Text("长边 2048 px").tag(2048)
                             Text("长边 1080 px（社交平台）").tag(1080)
                         }
+                        if target == .current, app.editor.sourceIsHDR, app.editor.edits.hasGrade {
+                            Label("这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。",
+                                  systemImage: "sun.max").font(.caption).foregroundStyle(.secondary)
+                        }
                         Toggle("保留拍摄信息（时间、相机、镜头）", isOn: $settings.image.keepMetadata)
                         Toggle("移除位置信息", isOn: $settings.image.removeLocation).disabled(!settings.image.keepMetadata)
                     }
@@ -218,7 +222,7 @@ struct ShortcutsSheet: View {
     let app: AppModel
     private let groups: [(String, [(String, String)])] = [
         ("浏览", [("G / E", "浏览网格 / 编辑"), ("↑ ↓ ← →", "上一项 / 下一项"), ("⏎ 或 空格", "打开所选"),
-                 ("0 – 5", "评级"), ("P / X / U", "选用 / 排除 / 取消标记"), ("⌘ / ⇧ 点按", "多选"), ("Tab", "隐藏 / 显示侧栏")]),
+                 ("0 – 5", "评级"), ("P / X / U", "选用 / 排除 / 取消标记"), ("⌘ / ⇧ 点按", "多选"), ("Tab", "隐藏 / 显示两侧面板")]),
         ("编辑", [("A", "自动调整"), ("\\ 或 M", "对比原片"), ("Y", "左右分屏对比"), ("J", "显示高光 / 暗部溢出"), ("Z 或 空格", "适合窗口 ↔ 100%"),
                  ("⌘0 / ⌘1 / ⌘+ / ⌘−", "适合 / 实际像素 / 放大 / 缩小"), ("⌘Z / ⇧⌘Z", "撤销 / 重做"),
                  ("⇧⌘C / ⇧⌘V", "拷贝 / 粘贴调色设置"), ("双击参数名", "恢复默认")]),
@@ -237,7 +241,7 @@ struct ShortcutsSheet: View {
                                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
                                     ForEach(groups[index].1, id: \.0) { item in
                                         GridRow {
-                                            Text(item.0).font(.callout.monospaced())
+                                            Text(item.0).font(.callout.monospaced()).fixedSize()
                                             Text(item.1).font(.callout).foregroundStyle(.secondary).fixedSize()
                                         }
                                     }

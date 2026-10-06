@@ -92,8 +92,7 @@ private struct TransportBar: View {
                 Label("制作 Live", systemImage: "livephoto")
             }
             .primaryButton()
-            .disabled(!editor.liveIsValid)
-            .help(editor.liveIsValid ? "生成 Live Photo（在后台进行）" : "Live 输出需为 0.5–3 秒：缩短范围或提高速度")
+            .help(editor.liveIsValid ? "生成 Live Photo（在后台进行）" : "Live Photo 最长 3 秒；点按可选择如何缩短")
         }
         .controlSize(.regular)
     }

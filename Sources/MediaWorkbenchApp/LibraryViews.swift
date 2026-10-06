@@ -129,9 +129,8 @@ struct LibrarySidebar: View {
             Spacer()
             Image(systemName: "photo.on.rectangle.angled").font(.system(size: 30)).foregroundStyle(.tertiary)
             Text("还没有素材").font(.headline)
-            Text("导入一个文件夹，即可浏览、评级和调色。").font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            Button("导入文件夹…") { app.importMedia(folders: true) }.primaryButton()
-            Button("添加文件…") { app.importMedia() }.glassButton()
+            Text("导入后，照片和视频会列在这里。也可以把文件直接拖进窗口。")
+                .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Spacer()
         }
         .padding(20)

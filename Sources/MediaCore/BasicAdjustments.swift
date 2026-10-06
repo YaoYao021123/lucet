@@ -22,7 +22,7 @@ public enum AdjustmentSection: String, CaseIterable, Codable, Sendable {
     public var summary: String {
         switch self {
         case .exposure: "整体有多亮。曝光按光线倍数改变亮度，亮度更温和地调整中间调。"
-        case .tone: "明暗如何分布：对比度、高光、阴影、白色与黑点决定画面从暗到亮的层次。"
+        case .tone: "明暗如何分布：对比度、高光、阴影、白色与黑色决定画面从暗到亮的层次。"
         case .whiteBalance: "让白色看起来是白的：色温调冷暖（蓝–黄），色调调绿–洋红。"
         case .color: "颜色有多浓：自然饱和度优先增强偏灰的颜色，饱和度同等增强所有颜色。"
         case .detail: "边缘与纹理：清晰度增强大范围反差，锐度增强细小边缘，降噪抹平颗粒。"
@@ -108,7 +108,7 @@ public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identi
     public var title: String {
         switch self {
         case .exposure: "曝光"; case .brilliance: "鲜明度"; case .highlights: "高光"; case .shadows: "阴影"
-        case .brightness: "亮度"; case .contrast: "对比度"; case .whites: "白色"; case .blackPoint: "黑点"
+        case .brightness: "亮度"; case .contrast: "对比度"; case .whites: "白色"; case .blackPoint: "黑色"
         case .warmth: "色温"; case .tint: "色调"; case .saturation: "饱和度"; case .vibrance: "自然饱和度"
         case .definition: "清晰度"; case .sharpness: "锐度"; case .noiseReduction: "降噪"; case .vignette: "暗角"
         }
