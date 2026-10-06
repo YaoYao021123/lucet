@@ -77,6 +77,10 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "crop":
+            // "scale,horizontal,vertical,ratio"
+            let v = argument.split(separator: ",").compactMap { Double($0) }
+            if v.count == 4 { var g = app.editor.geometry; g.cropScale = v[0]; g.horizontal = v[1]; g.vertical = v[2]; g.aspectRatio = v[3]; app.editor.geometry = g }
         case "panels": app.showSidebar = argument != "off"; app.showInspector = argument != "off"
         case "colormode": app.colorMode = ColorMode(rawValue: argument) ?? .simple
         case "relocate":

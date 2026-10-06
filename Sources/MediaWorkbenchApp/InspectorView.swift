@@ -428,6 +428,10 @@ struct GeometryPanel: View {
     var body: some View {
         let geometry = editor.geometry
         VStack(alignment: .leading, spacing: 0) {
+            if !editor.isVideo {
+                Label("在画面上拖动方框移动裁剪，拖四个角缩放。", systemImage: "crop")
+                    .font(.caption).foregroundStyle(.secondary).padding(.top, 10)
+            }
             InspectorSection("拉直", help: "旋转后自动裁掉边缘，避免黑边。") {
                 VStack(alignment: .leading, spacing: 8) {
                     ParameterRow(title: "角度", value: editor.degrees, range: -10...10, step: 0.05, decimals: 2, suffix: "°",
@@ -470,6 +474,9 @@ struct GeometryPanel: View {
                     .toggleStyle(.switch).controlSize(.small)
             }
         }
+        .onAppear { editor.cropEditing = !editor.isVideo }
+        .onDisappear { editor.cropEditing = false }
+        .onChange(of: editor.isVideo) { _, video in editor.cropEditing = !video }
     }
 }
 

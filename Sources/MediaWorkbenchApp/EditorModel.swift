@@ -41,6 +41,18 @@ final class EditorModel {
     private(set) var captureInfo: CaptureInfo?
     /// Full metadata for the Info tab, read in the background after the media opens.
     private(set) var details: MediaDetails?
+    /// While the 构图 tab is open the canvas shows the whole straightened picture with a
+    /// draggable crop frame on top (photos only).
+    var cropEditing = false {
+        didSet {
+            guard cropEditing != oldValue else { return }
+            if cropEditing { zoomToFit() }
+            revision += 1
+            schedulePreview()
+        }
+    }
+    /// True when `frame` was rendered without the crop, so the crop frame can be drawn on it.
+    private(set) var frameIsUncropped = false
     /// Why the last open failed, shown in place of the canvas.
     private(set) var openFailure: OpenFailure?
     private(set) var isLoaded = false
@@ -278,7 +290,7 @@ final class EditorModel {
                     let first = try await renderer.frame(edits: edits)
                     guard token == session, !Task.isCancelled else { return }
                     imageSession = renderer
-                    frame = first
+                    frame = first; frameIsUncropped = false
                     sourceIsHDR = first.sourceHeadroom > 1
                     let untouched = first.original, headroom = first.sourceHeadroom
                     Task {
@@ -652,6 +664,16 @@ final class EditorModel {
 
     // MARK: Preview
 
+    /// The edits the image preview renders: the crop is left out while the crop frame is edited.
+    private var previewEdits: MediaEdits {
+        var result = edits
+        if cropEditing {
+            result.geometry.cropScale = 1; result.geometry.aspectRatio = 0
+            result.geometry.horizontal = 0; result.geometry.vertical = 0
+        }
+        return result
+    }
+
     private func schedulePreview() {
         guard isLoaded, previewTask == nil else { return }
         let token = session
@@ -660,9 +682,11 @@ final class EditorModel {
                 while token == session, !Task.isCancelled {
                     let version = revision
                     if let imageSession {
-                        let next = try await imageSession.frame(edits: edits)
+                        let uncropped = cropEditing
+                        let next = try await imageSession.frame(edits: previewEdits)
                         guard token == session, !Task.isCancelled else { return }
                         frame = next
+                        if frameIsUncropped != uncropped { frameIsUncropped = uncropped }
                     } else if player != nil, let input = mediaURL {
                         if appliedKey == previewKey {
                             updateLiveVideoPreview()

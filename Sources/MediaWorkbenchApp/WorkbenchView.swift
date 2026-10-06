@@ -127,6 +127,9 @@ struct EditorStage: View {
                     ImageCanvas(editor: editor, frame: frame, documentID: editor.documentID, compare: editor.compareMode,
                                 split: editor.splitPosition, clipping: editor.showClipping, grid: editor.showGrid,
                                 hdr: editor.hdrPreview, influence: editor.influence)
+                    if editor.cropEditing, editor.frameIsUncropped {
+                        CropOverlay(editor: editor, pixelSize: frame.fullSize)
+                    }
                 } else if editor.isLoading {
                     ProgressView("正在读取…").controlSize(.regular)
                 } else if let failure = editor.openFailure, let id = app.library.currentID {
