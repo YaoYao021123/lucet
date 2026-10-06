@@ -33,6 +33,8 @@ swift run --configuration release media-benchmark
 
 `website/` 是纯静态页面（无构建步骤、无外部依赖）。本地预览：`python3 -m http.server --directory website`。推送到 `main` 后由 `.github/workflows/pages.yml` 发布到 GitHub Pages（需在仓库 Settings › Pages 把来源设为 GitHub Actions）。
 
+社交分享预览（`<head>` 里的 `og:` / `twitter:` 标签）使用绝对地址，默认假定站点在 `https://yaoyao021123.github.io/pic_review_edit/`；换域名时请把 `website/index.html` 中该块的所有地址一起改掉。分享图是 `website/assets/og.jpg`（1200×630）。发布后可以用 opengraph.xyz 之类的预览工具检查；各平台会缓存预览，改图后可能要等一会儿或在平台的调试工具里刷新。
+
 页面里的截图由应用自带的快照模式生成：`bash scripts/make-site-screenshots.sh <示例照片文件夹> [示例视频]`。快照无法呈现 Liquid Glass 材质，想要真实玻璃效果，可以自己截一张图替换 `website/assets/shot-edit.jpg`（文件名不变即可）。示例照片会公开展示，请只用你有权公开的照片。
 
 ## 代码结构

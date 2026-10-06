@@ -7,12 +7,25 @@
 <meta name="description" content="光集是一款 Mac 调色工具：一键自动、六个滑块、预设一眼挑，DJI 和 iPhone 拍的照片、视频、Live Photo 都能调，调完直接存进「照片」。不用先学摄影。">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d0d0e">
+<!-- Social previews (WeChat, Weibo, X, Slack, iMessage…) need absolute URLs. They assume the site lives at
+     https://yaoyao021123.github.io/pic_review_edit/ ; if it moves, update every URL in this block. -->
+<link rel="canonical" href="https://yaoyao021123.github.io/pic_review_edit/">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="光集">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://yaoyao021123.github.io/pic_review_edit/">
 <meta property="og:title" content="光集 · Mac 上最简单的照片与视频调色">
-<meta property="og:description" content="一键自动、六个滑块、预设一眼挑。给 DJI 和 iPhone 拍摄者的 Mac 调色工具，不用先学摄影。">
-<!-- Link previews need absolute URLs; this assumes GitHub Pages at yaoyao021123.github.io/pic_review_edit. Update if the site moves. -->
+<meta property="og:description" content="一键自动、六个滑块、预设一眼挑，调完存进「照片」。给 DJI 和 iPhone 拍摄者的 Mac 调色工具，不用先学摄影。">
 <meta property="og:image" content="https://yaoyao021123.github.io/pic_review_edit/assets/og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="光集的图标：四片光圈叶片，旁边写着「光集，把光，收进画面。」">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="光集 · Mac 上最简单的照片与视频调色">
+<meta name="twitter:description" content="一键自动、六个滑块、预设一眼挑，调完存进「照片」。不用先学摄影。">
+<meta name="twitter:image" content="https://yaoyao021123.github.io/pic_review_edit/assets/og.jpg">
+<meta name="twitter:image:alt" content="光集的图标和口号：把光，收进画面。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/app-icon.png">
 <script type="application/ld+json">
@@ -393,8 +406,7 @@ footer .wrap{display:grid;gap:10px}
           <li>找到「光集」，点「仍要打开」，再确认一次</li>
         </ol>
         <p>只需要做这一次。你也可以从源码自己构建，见下方「下载」。</p></details>
-      <details><summary>要钱吗？</summary><p>目前是早期版本，下载试用不收费。</p></details>
-      <details><summary>「问问这张照片」是什么？要付费吗？</summary><p>这是可选功能：你可以用自然语言提问，比如「怎么调出胶片感？」，由 Claude 结合这张照片回答，并给出可以一键试用的调整。它需要你自己的 Anthropic API 密钥（保存在 Mac 的钥匙串里），费用由你的账户承担，默认关闭。中国大陆网络可能无法直接访问。不开启它，光集的其他功能完全不受影响。</p></details>
+      <details><summary>「问问这张照片」是什么？</summary><p>这是可选功能：你可以用自然语言提问，比如「怎么调出胶片感？」，由 Claude 结合这张照片回答，并给出可以一键试用的调整。它需要你自己的 Anthropic API 密钥（保存在 Mac 的钥匙串里），费用由你的账户承担，默认关闭。中国大陆网络可能无法直接访问。不开启它，光集的其他功能完全不受影响。</p></details>
       <details><summary>和 DJI 官方有关系吗？</summary><p>没有。光集是独立开发的软件，不是 DJI 的产品，也没有得到 DJI 的授权或认可。DJI、Mimo 等名称是各自所有者的商标，这里只用来说明光集可以打开哪些素材。</p></details>
       <details><summary>我发现了问题，或者想要某个功能</summary><p>欢迎到 GitHub 的 Issues 里告诉我们，附上一张截图会很有帮助。</p></details>
     </div>
@@ -405,7 +417,7 @@ footer .wrap{display:grid;gap:10px}
   <div class="wrap">
     <img class="icon" src="assets/app-icon.png" width="96" height="96" alt="光集图标">
     <h2>把光，收进画面。</h2>
-    <p class="lead">免费试用早期版本。</p>
+    <p class="lead">早期版本，欢迎试用，也欢迎告诉我们哪里不顺手。</p>
     <div class="actions">
       <a class="btn primary" href="https://github.com/YaoYao021123/pic_review_edit/releases/latest">下载光集（GitHub）</a>
       <a class="btn glass" href="https://github.com/YaoYao021123/pic_review_edit">查看源码</a>
