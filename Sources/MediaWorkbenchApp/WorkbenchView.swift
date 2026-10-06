@@ -27,7 +27,7 @@ struct WorkbenchView: View {
                     .inspectorColumnWidth(min: 300, ideal: 330, max: 440)
             }
         }
-        .tint(WorkbenchTheme.accent)
+        .tint(WorkbenchTheme.neutralTint)
         .navigationTitle(title)
         .navigationSubtitle(subtitle)
         .toolbar { WorkbenchToolbar(app: app) }
@@ -210,7 +210,7 @@ private struct ToastView: View {
             HStack(spacing: 12) {
                 Text(toast.message).font(.callout).lineLimit(2)
                 ForEach(toast.actions) { action in
-                    Button(action.title) { action.perform(); app.dismissToast() }.buttonStyle(.link).font(.callout.weight(.semibold))
+                    Button(action.title) { action.perform(); app.dismissToast() }.buttonStyle(.borderless).font(.callout.weight(.semibold))
                 }
                 Button { app.dismissToast() } label: { Image(systemName: "xmark") }.buttonStyle(.plain).foregroundStyle(.secondary)
             }

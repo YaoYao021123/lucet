@@ -7,13 +7,21 @@ import SwiftUI
 typealias UIState<Value> = SwiftUI.State<Value>
 
 enum WorkbenchTheme {
-    /// The accent chosen in System Settings → Appearance (blue by default), read once at
-    /// launch as a fixed sRGB color so tints like `accent.opacity(0.1)` stay translucent.
-    /// One place to change if the brand wants its own color.
+    /// A calm version of the System Settings accent (half the saturation, a little darker),
+    /// read once at launch. Used sparingly: the main action and "this is on" states only —
+    /// colorful chrome next to a photo biases how its colors are judged.
     static let accent: Color = {
         let system = NSColor.controlAccentColor.usingColorSpace(.sRGB) ?? .systemBlue
-        return Color(red: system.redComponent, green: system.greenComponent, blue: system.blueComponent)
+        let muted = NSColor(hue: system.hueComponent, saturation: system.saturationComponent * 0.5,
+                            brightness: system.brightnessComponent * 0.8, alpha: 1)
+        return Color(red: muted.redComponent, green: muted.greenComponent, blue: muted.blueComponent)
     }()
+    /// Neutral tints for everything that doesn't need color. `neutralTint` is the window's
+    /// default tint, so text buttons, switches and checkboxes stay gray unless a view opts in.
+    static let control = Color(white: 0.72)
+    static let neutralTint = Color(white: 0.84)
+    static let selection = Color.white.opacity(0.12)
+    static let selectionStroke = Color.white.opacity(0.4)
     /// Ratings stay neutral (Lightroom-style) so they never compete with the accent.
     static let star = Color(white: 0.9)
     static let panel = Color(white: 0.115)
@@ -100,6 +108,7 @@ struct ParameterRow: View, @MainActor Equatable {
         }
         .labelsHidden()
         .controlSize(.mini)
+        .tint(WorkbenchTheme.control)
         .accessibilityLabel(title)
         .onChange(of: value) { _, _ in if !dragging { position = nil } }
     }
@@ -150,7 +159,7 @@ struct InspectorSection<Content: View>: View {
                             Text("\(number)")
                                 .font(.caption2.weight(.bold)).monospacedDigit()
                                 .frame(width: 14, height: 14)
-                                .background(Circle().fill(isOn?.wrappedValue == false ? Color.secondary.opacity(0.25) : WorkbenchTheme.accent.opacity(0.85)))
+                                .background(Circle().fill(isOn?.wrappedValue == false ? Color.secondary.opacity(0.15) : Color.white.opacity(0.2)))
                                 .foregroundStyle(.white)
                         }
                         Text(title).font(.system(size: 12, weight: .semibold))
@@ -169,10 +178,15 @@ struct InspectorSection<Content: View>: View {
                         .accessibilityLabel("复位\(title)")
                 }
                 if let isOn {
-                    Toggle(isOn: isOn) { EmptyView() }
-                        .toggleStyle(.switch).controlSize(.mini).labelsHidden()
-                        .help(isOn.wrappedValue ? "关闭此步骤以比较效果（参数保留）" : "开启此步骤")
-                        .accessibilityLabel("\(title)开关")
+                    // Photoshop-style visibility eye instead of a row of colored switches.
+                    Button { isOn.wrappedValue.toggle() } label: {
+                        Image(systemName: isOn.wrappedValue ? "eye" : "eye.slash")
+                            .foregroundStyle(isOn.wrappedValue ? Color.primary : Color.secondary)
+                            .frame(width: 20, height: 18)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(isOn.wrappedValue ? "隐藏此步骤的效果以比较（参数保留）" : "显示此步骤的效果")
+                    .accessibilityLabel("\(title)：\(isOn.wrappedValue ? "开启" : "关闭")")
                 }
             }
             if !collapsed {

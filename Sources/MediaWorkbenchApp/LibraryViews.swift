@@ -103,8 +103,8 @@ struct LibrarySidebar: View {
                 Menu {
                     Button("添加照片或视频…") { app.importMedia() }
                     Button("导入文件夹…") { app.importMedia(folders: true) }
-                } label: { Image(systemName: "plus") }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                } label: { Image(systemName: "plus").foregroundStyle(.primary) }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().tint(.primary)
                     .help("添加素材")
             }
             HStack(spacing: 6) {
@@ -176,8 +176,8 @@ struct LibrarySidebar: View {
             Spacer()
             Menu {
                 LibraryContextMenu(app: app, entry: library.entry(library.anchorID) ?? library.visible[0])
-            } label: { Text("操作") }
-                .menuStyle(.borderlessButton).fixedSize()
+            } label: { Text("操作").foregroundStyle(.primary) }
+                .menuStyle(.borderlessButton).fixedSize().tint(.primary)
                 .disabled(library.selection.isEmpty)
         }
         .padding(.horizontal, 12).frame(height: 34)
@@ -219,10 +219,10 @@ struct SidebarRow: View {
         .padding(4)
         .background {
             RoundedRectangle(cornerRadius: 7)
-                .fill(current ? WorkbenchTheme.accent.opacity(0.22) : selected ? Color.white.opacity(0.10) : .clear)
+                .fill(current ? WorkbenchTheme.selection : selected ? Color.white.opacity(0.07) : .clear)
         }
         .overlay {
-            if current { RoundedRectangle(cornerRadius: 7).strokeBorder(WorkbenchTheme.accent.opacity(0.6), lineWidth: 1) }
+            if current { RoundedRectangle(cornerRadius: 7).strokeBorder(WorkbenchTheme.selectionStroke, lineWidth: 1) }
         }
         .opacity(entry.flag == .reject ? 0.5 : 1)
     }
@@ -307,7 +307,7 @@ struct BrowseGrid: View {
             Text(library.filter.isActive ? "筛选结果 \(library.visible.count) 项" : "全部 \(library.entries.count) 项")
                 .font(.callout).foregroundStyle(.secondary)
             if library.filter.isActive {
-                Button("清除筛选") { library.filter = LibraryFilter() }.buttonStyle(.link).font(.callout)
+                Button("清除筛选") { library.filter = LibraryFilter() }.buttonStyle(.borderless).font(.callout)
             }
             Spacer()
             Image(systemName: "square.grid.3x3").foregroundStyle(.tertiary)
@@ -362,8 +362,8 @@ struct GridCell: View {
             .padding(.horizontal, 2)
         }
         .padding(6)
-        .background(RoundedRectangle(cornerRadius: 9).fill(selected ? WorkbenchTheme.accent.opacity(0.18) : Color.white.opacity(0.03)))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(selected ? WorkbenchTheme.accent : current ? WorkbenchTheme.accent.opacity(0.4) : .clear, lineWidth: selected ? 2 : 1))
+        .background(RoundedRectangle(cornerRadius: 9).fill(selected ? WorkbenchTheme.selection : Color.white.opacity(0.03)))
+        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(selected ? Color.white.opacity(0.85) : current ? WorkbenchTheme.selectionStroke : .clear, lineWidth: selected ? 2 : 1))
         .opacity(entry.flag == .reject ? 0.45 : 1)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)

@@ -318,7 +318,7 @@ struct AudioPanel: View {
                 VStack(alignment: .leading, spacing: 8) {
                     if let music = editor.musicURL {
                         HStack {
-                            Image(systemName: "music.note").foregroundStyle(WorkbenchTheme.accent)
+                            Image(systemName: "music.note").foregroundStyle(.secondary)
                             Text(music.lastPathComponent).lineLimit(1).truncationMode(.middle)
                             Spacer()
                             IconButton(title: "移除背景音乐", icon: "xmark.circle") { editor.musicURL = nil }
@@ -382,7 +382,7 @@ struct InfoPanel: View {
                         row("色彩", editor.sourceIsHDR ? "HDR" : "SDR")
                         if editor.isLiveInput { row("类型", "Live Photo") }
                         Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                            .buttonStyle(.link).font(.callout).padding(.top, 2)
+                            .buttonStyle(.borderless).font(.callout).padding(.top, 2)
                     }
                 }
             }

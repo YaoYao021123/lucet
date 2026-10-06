@@ -17,21 +17,21 @@ struct MediaTimeline: View {
                 .padding(.horizontal, 22).frame(height: 92)
             if let music = editor.musicURL {
                 HStack(spacing: 8) {
-                    Image(systemName: "music.note").foregroundStyle(WorkbenchTheme.accent)
+                    Image(systemName: "music.note").foregroundStyle(.secondary)
                     Text(music.lastPathComponent).lineLimit(1)
                     Spacer()
                     Text("背景音乐 \(Int(editor.musicVolume * 100))%").foregroundStyle(.secondary)
                 }
                 .font(.caption).padding(.horizontal, 10).frame(height: 22)
-                .background(WorkbenchTheme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 4))
+                .background(WorkbenchTheme.well, in: RoundedRectangle(cornerRadius: 4))
                 .padding(.horizontal, 22).padding(.bottom, 6)
             }
             HStack(spacing: 14) {
                 Text("入点 \(timeLabel(editor.clipStart))  出点 \(timeLabel(editor.clipEnd))")
                 Spacer(minLength: 0)
-                Text("封面 \(timeLabel(editor.cover))").foregroundStyle(WorkbenchTheme.accent)
-                Text(String(format: "原片 %.2f 秒 → 输出 %.2f 秒", editor.clipEnd - editor.clipStart, editor.clip.outputDuration))
-                    .foregroundStyle(editor.liveIsValid ? .secondary : Color.orange)
+                Text("封面 \(timeLabel(editor.cover))").foregroundStyle(.primary)
+                Text(String(format: "原片 %.2f 秒 → 输出 %.2f 秒", editor.clipEnd - editor.clipStart, editor.clip.outputDuration)
+                     + (editor.liveIsValid ? "" : " · Live 需 0.5–3 秒"))
             }
             .font(.caption).monospacedDigit().foregroundStyle(.secondary)
             .padding(.horizontal, 22).padding(.bottom, 9)
@@ -136,7 +136,7 @@ private struct TimelineTrack: View {
                 Filmstrip(editor: editor, span: span).frame(width: width, height: 46).offset(y: 26)
                 Rectangle().fill(Color.black.opacity(0.6)).frame(width: left, height: 46).offset(y: 26).allowsHitTesting(false)
                 Rectangle().fill(Color.black.opacity(0.6)).frame(width: max(0, width - right), height: 46).offset(x: right, y: 26).allowsHitTesting(false)
-                Rectangle().strokeBorder(WorkbenchTheme.accent, lineWidth: 1.5)
+                Rectangle().strokeBorder(Color(white: 0.88), lineWidth: 1.5)
                     .frame(width: max(1, right - left), height: 46).offset(x: left, y: 26).allowsHitTesting(false)
                 Rectangle().fill(.clear).frame(width: width, height: 72).contentShape(Rectangle())
                     .gesture(DragGesture(minimumDistance: 0)
@@ -157,7 +157,7 @@ private struct TimelineTrack: View {
                 TrimHandle(isStart: false).position(x: right, y: 49)
                     .gesture(trimGesture(false, width, lower, seconds))
                     .accessibilityLabel("出点").accessibilityValue(timeLabel(end))
-                Image(systemName: "diamond.fill").font(.system(size: 10)).foregroundStyle(WorkbenchTheme.accent)
+                Image(systemName: "diamond.fill").font(.system(size: 10)).foregroundStyle(.white)
                     .frame(width: 24, height: 18).contentShape(Rectangle())
                     .position(x: x(cover, width, lower, seconds), y: 82)
                     .gesture(DragGesture(minimumDistance: 0)
@@ -256,7 +256,7 @@ private struct TrimHandle: View {
     let isStart: Bool
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 2).fill(WorkbenchTheme.accent).frame(width: 8, height: 46)
+            RoundedRectangle(cornerRadius: 2).fill(Color(white: 0.88)).frame(width: 8, height: 46)
             Capsule().fill(Color.black.opacity(0.7)).frame(width: 1.5, height: 16)
         }
         .frame(width: 22, height: 52).contentShape(Rectangle())

@@ -155,7 +155,7 @@ struct VectorscopeView: View {
                     skin.move(to: center)
                     let angle = 123.0 * .pi / 180
                     skin.addLine(to: CGPoint(x: center.x + cos(angle) * radius, y: center.y - sin(angle) * radius))
-                    context.stroke(skin, with: .color(WorkbenchTheme.accent.opacity(0.5)), lineWidth: 0.6)
+                    context.stroke(skin, with: .color(Color(red: 0.95, green: 0.72, blue: 0.55).opacity(0.5)), lineWidth: 0.6)
                 }
                 if let image { Image(decorative: image, scale: 1).resizable().interpolation(.medium) }
             }
@@ -235,7 +235,7 @@ struct ColorWheelControl: View, @MainActor Equatable {
             HStack(spacing: 4) {
                 Slider(value: Binding(get: { value.master }, set: { commit(WheelValue(x: value.x, y: value.y, master: $0), editing: true) }),
                        in: -1...1, onEditingChanged: { onEditing($0) })
-                    .controlSize(.mini).labelsHidden()
+                    .controlSize(.mini).labelsHidden().tint(WorkbenchTheme.control)
                 Text(String(format: "%+.2f", value.master)).font(.caption).monospacedDigit().foregroundStyle(.secondary)
                     .frame(width: 34, alignment: .trailing)
                     .onTapGesture(count: 2) { commit(WheelValue(x: value.x, y: value.y, master: 0)) }
@@ -338,7 +338,7 @@ struct CurveEditor: View {
         for (index, value) in points.enumerated() {
             let center = point(value, size)
             let rect = CGRect(x: center.x - 4, y: center.y - 4, width: 8, height: 8)
-            context.fill(Path(ellipseIn: rect), with: .color(index == dragIndex ? WorkbenchTheme.accent : .white))
+            context.fill(Path(ellipseIn: rect), with: .color(index == dragIndex ? .white : .white.opacity(0.75)))
         }
     }
 

@@ -36,7 +36,7 @@ struct InsightStrip: View {
         Group {
             if let top = state.insights.first, top.severity >= 0.3 {
                 HStack(spacing: 6) {
-                    Image(systemName: top.symbol).foregroundStyle(WorkbenchTheme.accent).frame(width: 16)
+                    Image(systemName: top.symbol).foregroundStyle(.secondary).frame(width: 16)
                     Button { app.inspectorTab = .learn } label: {
                         Text(top.title).font(.caption.weight(.semibold)).lineLimit(1)
                     }
@@ -53,7 +53,7 @@ struct InsightStrip: View {
                     }
                 }
                 .padding(.horizontal, 8).frame(height: 24)
-                .background(WorkbenchTheme.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 6))
+                .background(WorkbenchTheme.well, in: RoundedRectangle(cornerRadius: 6))
                 .padding(.bottom, 2)
             }
         }
@@ -121,8 +121,8 @@ struct LearnPanel: View {
                             } label: {
                                 Text(topic.title).font(.caption)
                                     .padding(.horizontal, 7).padding(.vertical, 3)
-                                    .foregroundStyle(on ? Color.white : .primary)
-                                    .background(Capsule().fill(on ? WorkbenchTheme.accent : WorkbenchTheme.well))
+                                    .foregroundStyle(on ? Color.black : .primary)
+                                    .background(Capsule().fill(on ? Color.white.opacity(0.85) : WorkbenchTheme.well))
                             }
                             .buttonStyle(.plain)
                             .accessibilityAddTraits(on ? .isSelected : [])
@@ -136,7 +136,7 @@ struct LearnPanel: View {
                 VStack(alignment: .leading, spacing: 2) {
                     let path = profile.path
                     ProgressView(value: Double(profile.learnedInPath), total: Double(max(1, path.count)))
-                        .controlSize(.small)
+                        .controlSize(.small).tint(WorkbenchTheme.control)
                     Text("已掌握 \(profile.learnedInPath) / \(path.count)").font(.caption2).foregroundStyle(.secondary)
                         .padding(.bottom, 4)
                     ForEach(path, id: \.self) { concept in
@@ -171,7 +171,7 @@ struct InsightCard: View {
         let areaOn = insight.showsClipping ? editor.showClipping : editor.pinnedInfluence == insight.influence && insight.influence != nil
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Image(systemName: insight.symbol).foregroundStyle(WorkbenchTheme.accent).frame(width: 16)
+                Image(systemName: insight.symbol).foregroundStyle(.secondary).frame(width: 16)
                 Text(insight.title).font(.subheadline.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 4)
                 Menu {
@@ -187,7 +187,7 @@ struct InsightCard: View {
                 Text(insight.why).font(.caption).foregroundStyle(.tertiary).fixedSize(horizontal: false, vertical: true)
             }
             if let suggestion = insight.suggestion, suggestion.changesEdits {
-                Label(suggestion.label, systemImage: "wand.and.stars").font(.caption).foregroundStyle(WorkbenchTheme.accent)
+                Label(suggestion.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 6) {
@@ -239,7 +239,7 @@ struct ConceptRow: View {
                     Text(concept.explanation(for: app.learner.level))
                         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     if let demo = concept.demo {
-                        Label("演示：" + demo.label, systemImage: "wand.and.stars").font(.caption).foregroundStyle(WorkbenchTheme.accent)
+                        Label("演示：" + demo.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
                     }
                     HStack(spacing: 6) {
                         if let demo = concept.demo {
@@ -305,7 +305,7 @@ struct AskSection: View {
                         .lineLimit(1...4).textFieldStyle(.roundedBorder).font(.caption)
                         .onSubmit { app.askTutor(tutor.draft) }
                     Button { app.askTutor(tutor.draft) } label: { Image(systemName: "arrow.up.circle.fill").font(.system(size: 18)) }
-                        .buttonStyle(.plain).foregroundStyle(WorkbenchTheme.accent)
+                        .buttonStyle(.plain).foregroundStyle(.primary)
                         .disabled(tutor.isAsking || tutor.draft.trimmingCharacters(in: .whitespaces).isEmpty)
                         .help("提问（⏎）")
                 }
@@ -349,7 +349,7 @@ private struct TurnView: View {
                 Spacer(minLength: 24)
                 Text(turn.question).font(.caption)
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(WorkbenchTheme.accent.opacity(0.18), in: RoundedRectangle(cornerRadius: 8))
+                    .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                     .fixedSize(horizontal: false, vertical: true)
                     .help(turn.sentPreview ? "已附带当时的预览图" : "未附带预览图")
             }
@@ -357,7 +357,7 @@ private struct TurnView: View {
                 Text(answer.answer).font(.caption).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 ForEach(Array(answer.suggestions.enumerated()), id: \.offset) { _, item in
                     HStack(spacing: 6) {
-                        Label(item.label, systemImage: "wand.and.stars").font(.caption).foregroundStyle(WorkbenchTheme.accent)
+                        Label(item.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
                         Spacer(minLength: 4)
                         Button("试一试") { app.tryTutorSuggestion(item) }.glassButton().controlSize(.mini).font(.caption)
                             .help("作为一步应用，左右对比查看效果；⌘Z 撤销")
