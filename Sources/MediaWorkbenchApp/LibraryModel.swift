@@ -29,6 +29,13 @@ struct LibraryEntry: Codable, Hashable, Identifiable, Sendable {
 
     var name: String { url.lastPathComponent }
 
+    /// The same item at a new place (moved or renamed in Finder), keeping rating, flag and date.
+    func relocated(to newURL: URL) -> LibraryEntry {
+        var entry = LibraryEntry(url: newURL, hasLiveCompanion: hasLiveCompanion)
+        entry.rating = rating; entry.flag = flag; entry.added = added
+        return entry
+    }
+
     private enum CodingKeys: String, CodingKey { case url, rating, flag, favorite, live, added }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -102,6 +109,8 @@ final class LibraryModel {
     var currentID: String?
     /// Anchor for shift-click range selection.
     @ObservationIgnored var anchorID: String?
+    /// Items whose original file is no longer where the library expects it.
+    private(set) var missing: Set<String> = []
 
     @ObservationIgnored private var positions: [String: Int] = [:]
     @ObservationIgnored private var visiblePositions: [String: Int] = [:]
@@ -153,8 +162,44 @@ final class LibraryModel {
         return ids
     }
 
+    /// Checks which originals are gone (moved, renamed, deleted or on an unplugged drive).
+    func checkMissing() async {
+        let paths = entries.map(\.id)
+        let gone = await Task.detached(priority: .utility) {
+            Set(paths.filter { !FileManager.default.fileExists(atPath: $0) })
+        }.value
+        let current = Set(entries.map(\.id))
+        let updated = gone.intersection(current)
+        if updated != missing { missing = updated }
+    }
+
+    func markMissing(_ id: String, _ isMissing: Bool) {
+        if isMissing { missing.insert(id) } else { missing.remove(id) }
+    }
+
+    /// Points an item at its new location. Returns the new id.
+    @discardableResult
+    func relink(_ id: String, to url: URL) -> String? {
+        guard let index = positions[id] else { return nil }
+        let entry = entries[index].relocated(to: url)
+        missing.remove(id)
+        if positions[entry.id] != nil {
+            // Already in the library at the new place: keep that one.
+            remove([id])
+            return entry.id
+        }
+        entries[index] = entry
+        if selection.remove(id) != nil { selection.insert(entry.id) }
+        if currentID == id { currentID = entry.id }
+        if anchorID == id { anchorID = entry.id }
+        reindex()
+        scheduleSave()
+        return entry.id
+    }
+
     func remove(_ ids: Set<String>) {
         guard !ids.isEmpty else { return }
+        missing.subtract(ids)
         entries.removeAll { ids.contains($0.id) }
         selection.subtract(ids)
         if let current = currentID, ids.contains(current) { currentID = nil }

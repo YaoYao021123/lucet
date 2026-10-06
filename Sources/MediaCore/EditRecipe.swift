@@ -170,6 +170,67 @@ public struct DraftStore: Sendable {
     }
 }
 
+extension DraftStore {
+    public enum RelocateResult: Equatable, Sendable {
+        /// Saved edits and named versions now follow the file at its new place.
+        case moved
+        /// Nothing was saved for the old place.
+        case nothingSaved
+        /// The chosen file isn't the one that was edited (different size or date); edits were left alone.
+        case differentFile
+    }
+
+    /// Carries a file's autosaved recipe and named versions to where it was moved or renamed.
+    /// The file must be the same one: equal size and modification date (a move keeps both).
+    public func relocate(from old: URL, to new: URL) throws -> RelocateResult {
+        let fm = FileManager.default
+        // Path standardization drops a "/private" prefix (/tmp, /var) only while the file exists,
+        // so a file that is gone may have been saved under either spelling.
+        let path = old.standardizedFileURL.path
+        let spellings = [path, path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : "/private" + path]
+            .map { URL(fileURLWithPath: $0) }
+        let oldURL = spellings.first { fm.fileExists(atPath: location(for: $0).path) || fm.fileExists(atPath: snapshotFolder($0).path) } ?? old
+        let oldDraft = location(for: oldURL), oldSnapshots = snapshotFolder(oldURL)
+        let record = (try? Data(contentsOf: oldDraft)).flatMap { try? JSONDecoder().decode(DraftRecord.self, from: $0) }
+        let snapshotFiles = (try? fm.contentsOfDirectory(at: oldSnapshots, includingPropertiesForKeys: nil)) ?? []
+        let snapshots = snapshotFiles.compactMap { file in
+            (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode(SavedSnapshot.self, from: $0) }
+        }
+        guard let reference = record?.source ?? snapshots.first?.record.source else { return .nothingSaved }
+        let stamp = try SourceStamp(new)
+        guard stamp.bytes == reference.bytes, abs(stamp.modified.timeIntervalSince(reference.modified)) < 1 else { return .differentFile }
+        // A Live Photo's motion file moves with its still under the same name.
+        func companion(_ old: SourceStamp?) -> SourceStamp? {
+            guard let old else { return nil }
+            let candidate = new.deletingLastPathComponent().appendingPathComponent(URL(fileURLWithPath: old.path).lastPathComponent)
+            let renamed = new.deletingPathExtension().appendingPathExtension(URL(fileURLWithPath: old.path).pathExtension)
+            return [renamed, candidate].lazy.compactMap { try? SourceStamp($0) }.first { $0.bytes == old.bytes }
+        }
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let record {
+            let target = location(for: new)
+            if !fm.fileExists(atPath: target.path) {
+                try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try encoder.encode(DraftRecord(source: stamp, companion: companion(record.companion), recipe: record.recipe,
+                                               savedAt: record.savedAt)).write(to: target, options: .atomic)
+            }
+            try? fm.removeItem(at: oldDraft)
+        }
+        if !snapshots.isEmpty {
+            let folder = snapshotFolder(new)
+            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
+            for snapshot in snapshots {
+                let moved = SavedSnapshot(id: snapshot.id, name: snapshot.name,
+                    record: DraftRecord(source: stamp, companion: companion(snapshot.record.companion),
+                                        recipe: snapshot.record.recipe, savedAt: snapshot.record.savedAt))
+                try JSONEncoder().encode(moved).write(to: folder.appendingPathComponent(snapshot.id.uuidString + ".json"), options: .atomic)
+            }
+            try? fm.removeItem(at: oldSnapshots)
+        }
+        return .moved
+    }
+}
+
 public struct EditHistory<Value: Equatable & Sendable>: Sendable {
     public private(set) var current: Value
     private var past: [Value] = []
@@ -208,7 +269,7 @@ public struct SavedSnapshot: Codable, Sendable, Identifiable {
 }
 
 extension DraftStore {
-    private func snapshotFolder(_ source: URL) -> URL { root.appendingPathComponent("snapshots").appendingPathComponent(Self.digest(source.standardizedFileURL.path)) }
+    func snapshotFolder(_ source: URL) -> URL { root.appendingPathComponent("snapshots").appendingPathComponent(Self.digest(source.standardizedFileURL.path)) }
     @discardableResult public func saveSnapshot(_ recipe: EditRecipe, name: String, source: SourceStamp,
                                                companion: SourceStamp? = nil) throws -> SavedSnapshot {
         // The same identity checks as autosave apply to named versions.

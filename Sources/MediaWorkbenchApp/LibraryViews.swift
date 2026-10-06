@@ -52,6 +52,9 @@ struct LibraryContextMenu: View {
     let app: AppModel
     let entry: LibraryEntry
     var body: some View {
+        if app.library.missing.contains(entry.id) {
+            Button("重新定位…") { app.relocate(entry.id) }
+        }
         Button("打开编辑") { app.open(entry.id) }
         Divider()
         Menu("评级") {
@@ -141,7 +144,8 @@ struct LibrarySidebar: View {
                     ForEach(library.visible) { entry in
                         SidebarRow(entry: entry, store: app.thumbnails,
                                    selected: library.selection.contains(entry.id),
-                                   current: entry.id == library.currentID)
+                                   current: entry.id == library.currentID,
+                                   missing: library.missing.contains(entry.id))
                             .id(entry.id)
                             .contentShape(Rectangle())
                             .onTapGesture { click(entry) }
@@ -190,6 +194,7 @@ struct SidebarRow: View {
     let store: ThumbnailStore
     let selected: Bool
     let current: Bool
+    var missing = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -205,6 +210,10 @@ struct SidebarRow: View {
                 }
             VStack(alignment: .leading, spacing: 3) {
                 Text(entry.name).font(.callout).lineLimit(1).truncationMode(.middle)
+                if missing {
+                    Label("找不到原文件", systemImage: "questionmark.folder")
+                        .font(.caption).foregroundStyle(.orange).labelStyle(.titleAndIcon)
+                } else {
                 HStack(spacing: 5) {
                     FlagBadge(flag: entry.flag).font(.system(size: 10))
                     if entry.rating > 0 { RatingStars(rating: entry.rating) }
@@ -213,6 +222,7 @@ struct SidebarRow: View {
                     }
                 }
                 .frame(height: 11)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -275,7 +285,8 @@ struct BrowseGrid: View {
                                 ForEach(library.visible) { entry in
                                     GridCell(entry: entry, store: app.thumbnails,
                                              selected: library.selection.contains(entry.id),
-                                             current: entry.id == library.currentID)
+                                             current: entry.id == library.currentID,
+                                             missing: library.missing.contains(entry.id))
                                         .id(entry.id)
                                         .onTapGesture {
                                             // One handler (no double-tap recognizer) keeps single clicks instant.
@@ -342,6 +353,7 @@ struct GridCell: View {
     let store: ThumbnailStore
     let selected: Bool
     let current: Bool
+    var missing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -354,6 +366,17 @@ struct GridCell: View {
                     }
                 }
                 .overlay(alignment: .topLeading) { FlagBadge(flag: entry.flag).font(.system(size: 13)).padding(6) }
+                .overlay {
+                    if missing {
+                        VStack(spacing: 4) {
+                            Image(systemName: "questionmark.folder").font(.system(size: 20)).foregroundStyle(.orange)
+                            Text("找不到原文件").font(.caption.weight(.medium))
+                            Text("右键可重新定位").font(.caption2).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                }
             HStack(spacing: 4) {
                 Text(entry.name).font(.callout).lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 2)

@@ -74,6 +74,43 @@ struct WorkbenchView: View {
     window.makeFirstResponder(nil)
 }
 
+/// Shown instead of the canvas when the open item can't be read, with the way out.
+struct OpenFailureView: View {
+    let app: AppModel
+    let id: String
+    let failure: OpenFailure
+
+    var body: some View {
+        let name = app.library.entry(id)?.name ?? ""
+        VStack(spacing: 10) {
+            Image(systemName: failure == .missing ? "questionmark.folder" : "exclamationmark.triangle")
+                .font(.system(size: 34)).foregroundStyle(.secondary)
+            switch failure {
+            case .missing:
+                Text("找不到原文件").font(.title3.weight(.semibold))
+                Text("「\(name)」可能被移动、重命名或删除了，或者它所在的移动硬盘没有连接。")
+                    .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                HStack {
+                    Button("重新定位…") { app.relocate(id) }.primaryButton()
+                    Button("从素材库移除") { app.removeFromLibrary(id) }.glassButton()
+                }
+                .padding(.top, 6)
+            case .unreadable(let detail):
+                Text("无法打开这个文件").font(.title3.weight(.semibold))
+                Text("「\(name)」可能已损坏，或者是光集暂不支持的格式。").foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Text(detail).font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center).textSelection(.enabled)
+                HStack {
+                    Button("在 Finder 中显示") { app.revealSelection() }.glassButton()
+                    Button("从素材库移除") { app.removeFromLibrary(id) }.glassButton()
+                }
+                .padding(.top, 6)
+            }
+        }
+        .frame(maxWidth: 420)
+        .padding(24)
+    }
+}
+
 /// Canvas (image or video) plus the video timeline.
 struct EditorStage: View {
     let app: AppModel
@@ -91,6 +128,8 @@ struct EditorStage: View {
                                 hdr: editor.hdrPreview, influence: editor.influence)
                 } else if editor.isLoading {
                     ProgressView("正在读取…").controlSize(.regular)
+                } else if let failure = editor.openFailure, let id = app.library.currentID {
+                    OpenFailureView(app: app, id: id, failure: failure)
                 } else {
                     VStack(spacing: 12) {
                         Image(systemName: "photo").font(.system(size: 36)).foregroundStyle(.tertiary)

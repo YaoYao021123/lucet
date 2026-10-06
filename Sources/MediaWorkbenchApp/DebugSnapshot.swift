@@ -76,6 +76,9 @@ enum DebugSnapshot {
             window.orderFront(nil)
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
+        case "relocate":
+            let parts = argument.split(separator: "|").map(String.init)
+            if parts.count == 2 { app.relocate(URL(fileURLWithPath: parts[0]).standardizedFileURL.path, to: URL(fileURLWithPath: parts[1])) }
         case "tab": app.inspectorTab = InspectorTab(rawValue: argument) ?? .color
         case "scope": UserDefaults.standard.set(argument, forKey: "scope.kind")
         case "expand": UserDefaults.standard.set(false, forKey: "section.collapsed.\(argument)")

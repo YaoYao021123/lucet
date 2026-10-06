@@ -9,6 +9,12 @@ enum CompareMode: String, Sendable {
     case off, original, split
 }
 
+enum OpenFailure: Equatable {
+    /// Moved, renamed, deleted, or on a drive that isn't connected.
+    case missing
+    case unreadable(String)
+}
+
 struct Notice: Sendable {
     var title: String
     var message: String
@@ -35,6 +41,8 @@ final class EditorModel {
     private(set) var captureInfo: CaptureInfo?
     /// Full metadata for the Info tab, read in the background after the media opens.
     private(set) var details: MediaDetails?
+    /// Why the last open failed, shown in place of the canvas.
+    private(set) var openFailure: OpenFailure?
     private(set) var isLoaded = false
     private(set) var isLoading = false
     private(set) var isLiveInput = false
@@ -106,6 +114,8 @@ final class EditorModel {
 
     // MARK: Collaborators
     @ObservationIgnored var onNotice: ((Notice) -> Void)?
+    /// Called when a file can't be opened; `missing` is true when it is no longer on disk.
+    @ObservationIgnored var onOpenFailed: ((URL, _ missing: Bool) -> Void)?
     @ObservationIgnored var onRecipeSaved: ((URL) -> Void)?
     /// Reports which concepts' controls the user changed (once per gesture).
     @ObservationIgnored var onConceptsUsed: ((Set<Concept>) -> Void)?
@@ -208,7 +218,7 @@ final class EditorModel {
         horizonTask?.cancel(); horizonTask = nil
         url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; details = nil; frame = nil; scopes = nil
         detailsTask?.cancel(); detailsTask = nil
-        isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false
+        isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false; openFailure = nil
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
         history = nil; updateUndoState()
         sourceStamp = nil; companionStamp = nil; analysisCache = nil
@@ -293,8 +303,10 @@ final class EditorModel {
             } catch {
                 guard token == session else { return }
                 isLoading = false
-                status = "打开失败"
-                onNotice?(Notice(title: "无法打开 \(selected.lastPathComponent)", message: error.localizedDescription))
+                let missing = !FileManager.default.fileExists(atPath: selected.path)
+                openFailure = missing ? .missing : .unreadable(error.localizedDescription)
+                status = missing ? "找不到原文件" : "无法打开"
+                onOpenFailed?(selected, missing)
             }
         }
     }
@@ -304,7 +316,7 @@ final class EditorModel {
         cancelWork()
         teardownPlayer()
         session = UUID()
-        url = nil; mediaURL = nil; metadata = nil; frame = nil; scopes = nil; captureInfo = nil; details = nil
+        url = nil; mediaURL = nil; metadata = nil; frame = nil; scopes = nil; captureInfo = nil; details = nil; openFailure = nil
         detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = false; status = ""; filmstrip = []
         history = nil; updateUndoState()

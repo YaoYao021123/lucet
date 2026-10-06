@@ -105,6 +105,7 @@ final class AppModel {
     @ObservationIgnored private var panelOpen = false
     @ObservationIgnored private var toastTask: Task<Void, Never>?
     @ObservationIgnored private var terminationObserver: NSObjectProtocol?
+    @ObservationIgnored private var activationObserver: NSObjectProtocol?
 
     init() {
         let root = AppPaths.dataRoot
@@ -130,6 +131,13 @@ final class AppModel {
         }
         editor.onNotice = { [weak self] notice in self?.alert = AppAlert(title: notice.title, message: notice.message) }
         editor.onRecipeSaved = { [weak self] url in self?.thumbnails.invalidate(url.standardizedFileURL.path) }
+        editor.onOpenFailed = { [weak self] url, missing in self?.library.markMissing(url.standardizedFileURL.path, missing) }
+        // Files can be moved or renamed in Finder while the app is in the background.
+        Task { [weak self] in await self?.library.checkMissing() }
+        activationObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
+                                                                    object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { Task { await self?.library.checkMissing() } }
+        }
         exports.onFinish = { [weak self] job in self?.exportFinished(job) }
         terminationObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                                      object: nil, queue: .main) { [weak self] _ in
@@ -263,6 +271,52 @@ final class AppModel {
         if let current = library.currentID, ids.contains(current) { editor.close(); mode = .browse }
         library.remove(ids)
         show("已从素材库移除 \(ids.count) 项；原文件未改动。")
+    }
+
+    func removeFromLibrary(_ id: String) {
+        library.select(id)
+        removeSelectionFromLibrary()
+    }
+
+    /// Lightroom-style "find missing file": the user points at the moved file; its rating,
+    /// edits and versions follow, and other missing items from the same folder are found too.
+    func relocate(_ id: String) {
+        guard let entry = library.entry(id) else { return }
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.image, .movie]
+        panel.message = "找到「\(entry.name)」现在的位置（它可能被移动或重命名了）"
+        panel.prompt = "选择"
+        var folder = entry.url.deletingLastPathComponent()
+        while !FileManager.default.fileExists(atPath: folder.path), folder.pathComponents.count > 1 { folder.deleteLastPathComponent() }
+        panel.directoryURL = folder
+        present(panel) { [weak self] urls in
+            if let url = urls.first { self?.relocate(id, to: url) }
+        }
+    }
+
+    func relocate(_ id: String, to url: URL) {
+        guard let entry = library.entry(id) else { return }
+        let reopen = library.currentID == id
+        let result = (try? drafts.relocate(from: entry.url, to: url)) ?? .nothingSaved
+        guard let newID = library.relink(id, to: url) else { return }
+        thumbnails.invalidate(newID)
+        // Whole folders usually move together: look for the other missing items next to the chosen file.
+        let oldFolder = entry.url.deletingLastPathComponent().standardizedFileURL.path
+        var found = 0
+        for other in library.entries where library.missing.contains(other.id)
+            && other.url.deletingLastPathComponent().standardizedFileURL.path == oldFolder {
+            let candidate = url.deletingLastPathComponent().appendingPathComponent(other.name)
+            guard FileManager.default.fileExists(atPath: candidate.path) else { continue }
+            _ = try? drafts.relocate(from: other.url, to: candidate)
+            if let moved = library.relink(other.id, to: candidate) { thumbnails.invalidate(moved); found += 1 }
+        }
+        if reopen { open(newID) }
+        var message = result == .differentFile
+            ? "已重新关联。这和之前编辑的不是同一个文件，旧的编辑没有套用。"
+            : "已找到「\(url.lastPathComponent)」\(result == .moved ? "，编辑和版本都已保留" : "")。"
+        if found > 0 { message += "同一文件夹里另外 \(found) 项也一并找回。" }
+        show(message)
     }
 
     func revealSelection() {
