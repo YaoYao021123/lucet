@@ -1,5 +1,6 @@
 import AppKit
 import MediaCore
+import SwiftUI
 
 /// Developer-only layout check. Launch with
 /// `GUANGJI_SNAPSHOT_DIR=/tmp/shots GUANGJI_SNAPSHOT_STEPS="open:/a.jpg;wait:2;shot:edit;quit"`
@@ -29,6 +30,23 @@ enum DebugSnapshot {
                         window.setContentSize(NSSize(width: values[0], height: values[1]))
                     }
                 case "quit": NSApp.terminate(nil)
+                case "panel":
+                    // The inspector isn't always presented for an accessory-policy window,
+                    // so render it in its own offscreen window: "panel:name" or "panel:name@1600".
+                    let parts = argument.split(separator: "@").map(String.init)
+                    perform("panel-open", parts.count > 1 ? parts[1] : "1400")
+                    try? await Task.sleep(for: .seconds(1.5))
+                    if let window = panelWindow, let view = window.contentView { write(view, named: parts[0]) }
+                    panelWindow?.close(); panelWindow = nil
+                case "dump":
+                    // Prints the window's view tree (class, frame) to find views a capture misses.
+                    func dump(_ view: NSView, _ depth: Int) {
+                        guard depth < Int(argument) ?? 12 else { return }
+                        print(String(repeating: "  ", count: depth) + "\(type(of: view)) \(view.frame.integral) hidden=\(view.isHidden)")
+                        view.subviews.forEach { dump($0, depth + 1) }
+                    }
+                    if let frame = workbenchWindow?.contentView?.superview { dump(frame, 0) }
+                    for child in workbenchWindow?.childWindows ?? [] { print("child window", type(of: child), child.frame) }
                 default: perform(command, argument)
                 }
                 try? await Task.sleep(for: .milliseconds(150))
@@ -45,6 +63,19 @@ enum DebugSnapshot {
             if app.library.entry(id) == nil { app.library.add([URL(fileURLWithPath: argument)]) }
             app.open(id)
         case "mode": app.mode = argument == "edit" ? .edit : .browse
+        case "panel-open":
+            let size = NSSize(width: 330, height: Double(argument) ?? 1400)
+            let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: -6000, y: 0), size: size),
+                                  styleMask: [.borderless], backing: .buffered, defer: false)
+            window.appearance = workbenchWindow?.effectiveAppearance
+            window.backgroundColor = .windowBackgroundColor
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: InspectorView(app: app)
+                .frame(width: size.width, height: size.height)
+                .background(Color(nsColor: .underPageBackgroundColor)))
+            window.orderFront(nil)
+            panelWindow = window
+        case "inspector": app.showInspector = argument != "off"
         case "tab": app.inspectorTab = InspectorTab(rawValue: argument) ?? .color
         case "scope": UserDefaults.standard.set(argument, forKey: "scope.kind")
         case "expand": UserDefaults.standard.set(false, forKey: "section.collapsed.\(argument)")
@@ -109,12 +140,16 @@ enum DebugSnapshot {
             ?? NSApp.windows.first { $0.isVisible && $0.contentView != nil }
     }
 
+    static var panelWindow: NSWindow?
+
     static func capture(named name: String) {
-        guard let directory else { return }
         let main = workbenchWindow
         guard let window = main?.attachedSheet ?? main, let content = window.contentView else { return }
-        let view = content.superview ?? content
-        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        write(content.superview ?? content, named: name)
+    }
+
+    private static func write(_ view: NSView, named name: String) {
+        guard let directory, let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: bitmap)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? bitmap.representation(using: .png, properties: [:])?.write(to: directory.appendingPathComponent(name + ".png"))

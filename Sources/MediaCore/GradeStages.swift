@@ -133,7 +133,7 @@ public struct ToneCurves: Codable, Equatable, Sendable {
     public var isIdentity: Bool {
         Channel.allCases.allSatisfy { Self.isIdentity(self[$0]) }
     }
-    static func isIdentity(_ points: [CurvePoint]) -> Bool {
+    public static func isIdentity(_ points: [CurvePoint]) -> Bool {
         points.allSatisfy { abs($0.x - $0.y) < 1e-6 }
     }
 

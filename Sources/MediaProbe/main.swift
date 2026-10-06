@@ -6,15 +6,19 @@ struct MediaProbe {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         guard let command = arguments.first,
-              ((["inspect", "lut", "straighten"].contains(command) && arguments.count == 2)
+              ((["inspect", "lut", "straighten", "details"].contains(command) && arguments.count == 2)
+                || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "inspect" {
+            if command == "details" {
+                let motion = arguments.count == 3 ? URL(fileURLWithPath: arguments[2]).standardizedFileURL : nil
+                print(await MediaDetails.read(url, motion: motion).text)
+            } else if command == "inspect" {
                 let metadata = try await MediaInspector.inspect(url)
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]

@@ -33,6 +33,8 @@ final class EditorModel {
     private(set) var mediaURL: URL?
     private(set) var metadata: MediaMetadata?
     private(set) var captureInfo: CaptureInfo?
+    /// Full metadata for the Info tab, read in the background after the media opens.
+    private(set) var details: MediaDetails?
     private(set) var isLoaded = false
     private(set) var isLoading = false
     private(set) var isLiveInput = false
@@ -121,6 +123,7 @@ final class EditorModel {
     @ObservationIgnored private var companionStamp: SourceStamp?
     @ObservationIgnored private var imageSession: ImageGradeSession?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var detailsTask: Task<Void, Never>?
     @ObservationIgnored private var previewTask: Task<Void, Never>?
     @ObservationIgnored private var scopeTask: Task<Void, Never>?
     @ObservationIgnored private var scopesDirty = false
@@ -203,7 +206,8 @@ final class EditorModel {
         originalAnalysis = nil; horizonTilt = nil; hoverInfluence = nil; pinnedInfluence = nil
         faces = nil; faceAnalysis = nil
         horizonTask?.cancel(); horizonTask = nil
-        url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; frame = nil; scopes = nil
+        url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; details = nil; frame = nil; scopes = nil
+        detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
         history = nil; updateUndoState()
@@ -242,6 +246,7 @@ final class EditorModel {
 
                 mediaURL = input; metadata = meta; captureInfo = loaded.3
                 isLiveInput = input != selected
+                loadDetails(selected, motion: isLiveInput ? input : nil, token: token)
                 sourceStamp = stamp; companionStamp = companion
                 suspended += 1
                 if meta.kind == .video {
@@ -299,10 +304,19 @@ final class EditorModel {
         cancelWork()
         teardownPlayer()
         session = UUID()
-        url = nil; mediaURL = nil; metadata = nil; frame = nil; scopes = nil; captureInfo = nil
+        url = nil; mediaURL = nil; metadata = nil; frame = nil; scopes = nil; captureInfo = nil; details = nil
+        detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = false; status = ""; filmstrip = []
         history = nil; updateUndoState()
         imageSession = nil
+    }
+
+    private func loadDetails(_ url: URL, motion: URL?, token: UUID) {
+        detailsTask = Task { [weak self] in
+            let details = await Task.detached(priority: .utility) { await MediaDetails.read(url, motion: motion) }.value
+            guard let self, token == self.session, !Task.isCancelled else { return }
+            self.details = details
+        }
     }
 
     /// Applies a stored recipe. Returns a notice when something could not be restored.
@@ -927,6 +941,50 @@ final class EditorModel {
     func toggleZoom() {
         guard let canvas else { return }
         if canvas.isZoomed { canvas.zoomToFit() } else { canvas.zoomToActualPixels() }
+    }
+}
+
+extension EditorModel {
+    /// What has been changed so far, in the Color tab's order (for the Info tab).
+    var editSummary: [MediaDetails.Row] {
+        var rows: [MediaDetails.Row] = []
+        func add(_ title: String, _ value: String) { rows.append(.init(title: title, value: value)) }
+        for section in AdjustmentSection.allCases {
+            let changed = section.parameters.filter { adjustments[$0] != 0 }
+            guard !changed.isEmpty else { continue }
+            add(section.title, changed.map { parameter in
+                let value = adjustments[parameter]
+                let amount = parameter == .exposure ? String(format: "%+.2f EV", value)
+                    : parameter.range.lowerBound == 0 ? "\(Int(value.rounded()))" : String(format: "%+d", Int(value.rounded()))
+                // "曝光 +0.40 EV" under the 曝光 heading reads as just "+0.40 EV".
+                return parameter.title == section.title ? amount : "\(parameter.title) \(amount)"
+            }.joined(separator: "，"))
+        }
+        let wheelNames = ColorWheels.Wheel.allCases.filter { !wheels[$0].isNeutral }.map(\.title)
+        if !wheelNames.isEmpty { add("色轮", wheelNames.joined(separator: "、")) }
+        let curveNames = ToneCurves.Channel.allCases.filter { !ToneCurves.isIdentity(curves[$0]) }.map(\.title)
+        if !curveNames.isEmpty { add("曲线", curveNames.joined(separator: "、")) }
+        let bands = HueBand.allCases.filter { band in HSLAdjustments.Component.allCases.contains { hsl[band, $0] != 0 } }
+        if !bands.isEmpty { add("HSL", bands.map(\.title).joined(separator: "、")) }
+        if let lut = selectedLUT { add("LUT", "\(lut.name)  \(Int((strength * 100).rounded()))%") }
+        var shape: [String] = []
+        if degrees != 0 { shape.append(String(format: "拉直 %+.1f°", degrees)) }
+        if geometry.quarterTurns != 0 { shape.append("旋转 \(geometry.quarterTurns * 90)°") }
+        if geometry.mirrored { shape.append("镜像") }
+        if geometry.aspectRatio != 0 || geometry.cropScale != 1 || geometry.horizontal != 0 || geometry.vertical != 0 { shape.append("裁剪") }
+        if !shape.isEmpty { add("几何", shape.joined(separator: "，")) }
+        if hdrEffect { add("HDR", "高光扩展") }
+        if isVideo, duration > 0 {
+            var video: [String] = []
+            if clipStart > 0.01 || clipEnd < duration - 0.01 { video.append("裁切 \(timeLabel(clipStart))–\(timeLabel(clipEnd))") }
+            if playbackSpeed != 1 { video.append(String(format: "%g× 速度", playbackSpeed)) }
+            if originalVolume != 1 { video.append("原声 \(Int((originalVolume * 100).rounded()))%") }
+            if let musicURL { video.append("音乐 \(musicURL.deletingPathExtension().lastPathComponent)") }
+            if !video.isEmpty { add("视频", video.joined(separator: "，")) }
+        }
+        let off = GradeStage.allCases.filter { bypass.contains($0) }.map(\.title)
+        if !off.isEmpty { add("已关闭", off.joined(separator: "、")) }
+        return rows
     }
 }
 

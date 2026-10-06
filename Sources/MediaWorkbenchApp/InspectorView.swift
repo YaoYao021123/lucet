@@ -360,6 +360,7 @@ struct InfoPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let url = editor.url { header(url) }
             if let entry = app.currentEntry {
                 InspectorSection("评级与标记") {
                     HStack(spacing: 2) {
@@ -383,53 +384,88 @@ struct InfoPanel: View {
                     .font(.system(size: 15))
                 }
             }
-            if let info = editor.metadata, let url = editor.url {
-                InspectorSection("文件") {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(url.lastPathComponent).font(.callout.weight(.medium)).lineLimit(2).textSelection(.enabled)
-                        row("尺寸", "\(info.displayWidth) × \(info.displayHeight)")
-                        if let bytes = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
-                            row("大小", ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file))
+            if let details = editor.details {
+                ForEach(details.groups) { group in
+                    InspectorSection(group.title) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(group.rows) { row($0.title, $0.value) }
+                            if group.title == "位置", let coordinate = details.coordinate {
+                                Button("在地图中打开") { openMap(coordinate) }
+                                    .buttonStyle(.borderless).font(.callout).padding(.top, 2)
+                                Text("导出时默认移除位置信息。").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
-                        if editor.isVideo {
-                            row("时长", timeLabel(editor.duration))
-                            row("帧率", String(format: "%.2f fps", info.nominalFrameRate ?? 0))
-                        }
-                        row("色彩", editor.sourceIsHDR ? "HDR" : "SDR")
-                        if editor.isLiveInput { row("类型", "Live Photo") }
-                        Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                            .buttonStyle(.borderless).font(.callout).padding(.top, 2)
                     }
                 }
-            }
-            if let capture = editor.captureInfo {
-                InspectorSection("拍摄信息") {
-                    VStack(alignment: .leading, spacing: 5) {
-                        if let camera = capture.camera { row("相机", camera) }
-                        if let lens = capture.lens { row("镜头", lens) }
-                        let exposure = [capture.focalLength, capture.aperture, capture.shutter, capture.iso].compactMap { $0 }
-                        if !exposure.isEmpty { row("参数", exposure.joined(separator: "  ")) }
-                        if let date = capture.captured { row("拍摄时间", date) }
-                        if capture.hasLocation { row("位置", "含 GPS（导出时默认移除）") }
-                    }
+            } else if editor.url != nil {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.small)
+                    Text("正在读取信息…").font(.callout).foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 8)
             }
-            InspectorSection("版本") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("编辑自动保存为配方，原片从不修改。快照可保存多个命名版本。").font(.callout).foregroundStyle(.secondary)
-                    Button("快照与版本…") { app.sheet = .snapshots }.glassButton()
+            InspectorSection("编辑记录") {
+                VStack(alignment: .leading, spacing: 4) {
+                    let summary = editor.editSummary
+                    if summary.isEmpty {
+                        Text("尚未编辑。").font(.callout).foregroundStyle(.secondary)
+                    } else {
+                        ForEach(summary) { row($0.title, $0.value) }
+                    }
+                    Text("编辑以配方自动保存，原片从不修改。").font(.caption).foregroundStyle(.secondary).padding(.top, 2)
+                    Button("快照与版本…") { app.sheet = .snapshots }.glassButton().padding(.top, 2)
                 }
             }
         }
     }
 
+    /// File name, a one-line summary and file actions.
+    private func header(_ url: URL) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(url.lastPathComponent)
+                .font(.system(size: 13, weight: .semibold)).lineLimit(2).textSelection(.enabled)
+            Text(subtitle(url)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            HStack(spacing: 12) {
+                Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                Button("拷贝信息") { copyInfo(url) }.disabled(editor.details == nil)
+            }
+            .buttonStyle(.borderless).font(.callout).padding(.top, 2)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func subtitle(_ url: URL) -> String {
+        var parts = [editor.isLiveInput ? "Live Photo" : editor.isVideo ? "视频" : "照片", url.pathExtension.uppercased()]
+        if let info = editor.metadata { parts.append("\(info.displayWidth) × \(info.displayHeight)") }
+        if editor.isVideo { parts.append(timeLabel(editor.duration)) }
+        if editor.sourceIsHDR { parts.append("HDR") }
+        return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
     private func row(_ title: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title).foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
-            Text(value).textSelection(.enabled)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title).foregroundStyle(.secondary).frame(width: 56, alignment: .leading)
+            Text(value).textSelection(.enabled).lineLimit(3).truncationMode(.middle).help(value)
             Spacer(minLength: 0)
         }
         .font(.callout)
+    }
+
+    private func copyInfo(_ url: URL) {
+        var text = url.lastPathComponent
+        if let details = editor.details { text += "\n\n" + details.text }
+        let summary = editor.editSummary
+        if !summary.isEmpty { text += "\n\n编辑记录\n" + summary.map { "\($0.title)：\($0.value)" }.joined(separator: "\n") }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        app.show("已拷贝信息", seconds: 2)
+    }
+
+    private func openMap(_ coordinate: (latitude: Double, longitude: Double)) {
+        var components = URLComponents(string: "maps://")!
+        let ll = "\(coordinate.latitude),\(coordinate.longitude)"
+        components.queryItems = [URLQueryItem(name: "ll", value: ll), URLQueryItem(name: "q", value: editor.url?.lastPathComponent ?? ll)]
+        if let url = components.url { NSWorkspace.shared.open(url) }
     }
 }
 

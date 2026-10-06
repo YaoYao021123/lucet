@@ -7,7 +7,7 @@ Mac 原生应用（Swift 6 · SwiftUI · Core Image · AVFoundation），最低 
 ```sh
 bash scripts/run-workbench.sh            # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh           # 81 项测试
+bash scripts/test-workbench.sh           # 84 项测试
 bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行文件路径
 ```
 
@@ -47,6 +47,16 @@ bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行
   - 密钥与模型：使用你自己的 Anthropic API 密钥，保存在钥匙串中。默认模型 Claude Opus 5.5，可改为 Sonnet 5.5 或 Haiku 4.5；按你的账户计费。
   - 对话：追问保持同一段对话，按 Anthropic 要求只追加、不改写历史；已发送的部分会被缓存，追问更便宜。中国大陆网络可能无法直接访问。
   - 后端：通过 `PhotoTutor` 协议可替换为其他服务商。
+
+**信息（检查器「信息」页）**：类似 Lightroom 的元数据面板，按组列出：
+
+- 拍摄：时间（含时区）、设备、镜头、焦距（含等效焦距）、光圈、快门、ISO、曝光补偿、曝光模式、测光、白平衡、闪光灯。
+- 视频：编码与档次（如 HEVC Main 10、H.264 High）、帧率、时长、总帧数、码率、音频格式。
+- 色彩：色彩空间或色域、传递函数（SDR / HLG / PQ）、矩阵、位深、是否带 HDR 增益图。
+- 位置：坐标与海拔，可在「地图」中打开。
+- 文件：实际格式（扩展名与内容不符时以内容为准）、像素与百万像素、大小、修改时间、所在文件夹；Live 还显示动态部分的编码与文件。
+- 编辑记录：按调色页的分组列出改过的参数、色轮、曲线、HSL、LUT、几何与视频裁切。
+- 「拷贝信息」把以上内容复制为文本。命令行也可查看：`swift run media-probe details <文件> [Live 的 .mov]`。
 
 **视频与 Live**：时间线裁切、整体移动、逐帧、入点 / 出点（I / O）、封面（C）、0.5–4× 变速（原声同步，背景音乐保持原节奏）、「适配 3 秒」；制作 Live Photo（系统配对校验）与 1–3 画面拼图 Live；实验性 HDR 高光扩展（HLG）。
 
@@ -88,7 +98,7 @@ GUANGJI_SNAPSHOT_STEPS="import:/path/to/folder;wait:3;shot:browse;open:/path/a.j
 "$(bash scripts/dev-build.sh)"
 ```
 
-脚本命令见 `DebugSnapshot.swift`。`GUANGJI_DATA_DIR` 使开发运行与正式素材库隔离；Metal、视频和 Liquid Glass 材质无法被视图缓存截取，截图只用于检查布局。
+脚本命令见 `DebugSnapshot.swift`；`panel:名称@高度` 在单独的离屏窗口中渲染检查器（在部分系统版本上，辅助模式运行时窗口内的检查器不会显示），`dump` 打印窗口的视图层级。`GUANGJI_DATA_DIR` 使开发运行与正式素材库隔离；Metal、视频和 Liquid Glass 材质无法被视图缓存截取，截图只用于检查布局。
 
 ## 已知限制
 
