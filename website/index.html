@@ -36,7 +36,7 @@
 <style>
 :root{
   --bg:#0d0d0e; --text:#f2f0e8; --muted:#a8a59c; --faint:#77746c;
-  --line:rgba(255,255,255,.12); --radius:12px; --max:1080px;
+  --line:rgba(255,255,255,.12); --line-strong:rgba(255,255,255,.22); --fill:rgba(255,255,255,.045); --radius:14px; --max:1080px;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
 }
 *{box-sizing:border-box}
@@ -91,10 +91,10 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 .story .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:72px;align-items:start;margin-top:40px}
 .story blockquote{margin:0;font-size:clamp(20px,2.4vw,26px);line-height:1.6;font-weight:500}
 .story blockquote span{color:var(--muted)}
-.gap div{padding:20px 0;border-top:1px solid var(--line)}
-.gap div:last-child{border-bottom:1px solid var(--line)}
+.gap div:not(.us){padding:20px 0;border-top:1px solid var(--line)}
 .gap b{display:block;margin-bottom:2px;color:var(--muted)}
 .gap p{font-size:15px;color:var(--faint)}
+.gap .us{margin-top:8px;padding:22px 24px;border-radius:var(--radius);background:var(--fill);border:1px solid var(--line-strong)}
 .gap .us b{color:var(--text)}
 .gap .us p{color:var(--muted)}
 @media(max-width:860px){.story .grid{grid-template-columns:1fr;gap:36px}}
@@ -123,8 +123,8 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 .compare input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0}
 .compare:has(input:focus-visible){outline:2px solid var(--text);outline-offset:3px}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:36px 44px;margin-top:64px}
-.card{border-top:1px solid var(--line);padding-top:18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:64px}
+.card{padding:24px;border-radius:var(--radius);background:var(--fill);border:1px solid var(--line)}
 .card h3{font-size:18px}
 .card p{color:var(--muted);font-size:15px;margin-top:8px;line-height:1.65}
 
@@ -133,11 +133,11 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 .step::before{content:counter(s);display:block;font-size:44px;line-height:1;font-weight:300;color:var(--faint);margin-bottom:16px}
 .step p{color:var(--muted);margin-top:8px;font-size:15px}
 
-.fit{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:44px}
-.fit>div{border-top:1px solid var(--line);padding-top:22px}
+.fit{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:44px}
+.fit>div{padding:28px;border-radius:var(--radius);background:var(--fill);border:1px solid var(--line)}
 .fit ul{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:16px}
 .fit li{margin-top:6px}
-@media(max-width:720px){.fit{grid-template-columns:1fr;gap:36px}}
+@media(max-width:720px){.fit{grid-template-columns:1fr}}
 
 .faq{max-width:760px;margin:40px auto 0}
 details{border-bottom:1px solid var(--line);padding:6px 0}
@@ -151,9 +151,11 @@ details ol{color:var(--muted);padding-left:22px;margin:0 0 18px;font-size:16px}
 code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);opacity:.9}
 pre{margin:0 0 18px;padding:0;overflow:auto;font:14px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
 
-.download{text-align:center;border-top:1px solid var(--line)}
+.download{text-align:center}
+.cta-box{padding:56px 24px 48px;border-radius:24px;background:var(--fill);border:1px solid var(--line)}
 .download img.icon{width:96px;height:96px;margin:0 auto 22px;border-radius:22px}
 .download .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+.download .faq{margin-top:36px}
 .req{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;margin-top:24px;color:var(--faint);font-size:15px}
 footer{padding:40px 0 56px;border-top:1px solid var(--line);color:var(--faint);font-size:14px;line-height:1.8}
 footer .wrap{display:grid;gap:10px}
@@ -403,7 +405,8 @@ footer .wrap{display:grid;gap:10px}
 
 <section class="download" id="download">
   <div class="wrap">
-    <img class="icon" src="assets/app-icon.png" width="96" height="96" alt="光集图标">
+    <div class="cta-box">
+      <img class="icon" src="assets/app-icon.png" width="96" height="96" alt="光集图标">
     <h2>把光，收进画面。</h2>
     <p class="lead">早期版本，欢迎试用，也欢迎告诉我们哪里不顺手。</p>
     <div class="actions">
@@ -411,7 +414,8 @@ footer .wrap{display:grid;gap:10px}
       <a class="btn glass" href="https://github.com/YaoYao021123/pic_review_edit">查看源码</a>
     </div>
     <div class="req"><span>Apple 芯片 Mac</span><span>macOS 15 或更高</span><span>中文界面</span><span>首次打开需手动放行，见上方常见问题</span></div>
-    <div class="faq" style="text-align:left;margin-top:44px">
+    </div>
+    <div class="faq" style="text-align:left">
       <details><summary>想自己从源码构建？</summary>
         <p>需要安装 Xcode 命令行工具（<code>xcode-select --install</code>）。</p>
 <pre>git clone https://github.com/YaoYao021123/pic_review_edit.git
