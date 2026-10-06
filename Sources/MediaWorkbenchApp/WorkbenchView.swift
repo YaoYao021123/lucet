@@ -300,6 +300,7 @@ struct WorkbenchToolbar: ToolbarContent {
             }
             Menu {
                 Button("导出当前…") { app.exportCurrent() }.disabled(!editor.isLoaded)
+                Button("共享…") { app.shareCurrent() }.disabled(!editor.isLoaded)
                 Button("导出所选…") { app.exportSelection() }.disabled(app.library.actionTargets.isEmpty)
                 if editor.isVideo { Button("制作 Live Photo…", action: app.makeLive).disabled(!editor.liveIsValid) }
                 Button("拼图 Live…", action: app.openCollage)

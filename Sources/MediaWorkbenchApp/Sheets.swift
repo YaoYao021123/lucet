@@ -50,6 +50,17 @@ struct ExportOptionsSheet: View {
             SheetHeader(title: target == .current ? "导出副本" : "导出 \(entries.count) 项",
                         subtitle: "导出会在后台进行，你可以继续浏览和编辑。原片从不修改。")
             Form {
+                Section {
+                    Picker("保存到", selection: $settings.destination) {
+                        ForEach(ExportDestination.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text(settings.destination == .photos
+                         ? "直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。Live 片段会存为真正的 Live Photo。"
+                         : "存为文件，可以选择位置。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if hasImages {
                     Section("照片") {
                         Picker("格式", selection: $settings.image.format) {
@@ -90,7 +101,7 @@ struct ExportOptionsSheet: View {
             HStack {
                 Spacer()
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
-                Button(target == .current ? "选择位置…" : "选择文件夹…") {
+                Button(settings.destination == .photos ? "存到「照片」" : target == .current ? "选择位置…" : "选择文件夹…") {
                     app.exportSettings = settings
                     app.confirmExport(target)
                 }

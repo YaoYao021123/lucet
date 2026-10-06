@@ -16,6 +16,7 @@ final class ExportQueue {
         var outputs: [URL]
         var live: LivePhotoResources?
         var summary: String
+        var inPhotos = false
     }
 
     struct Job: Identifiable {
@@ -26,6 +27,7 @@ final class ExportQueue {
         var progress: Double?
         var outputs: [URL] = []
         var live: LivePhotoResources?
+        var inPhotos = false
         var isActive: Bool { state == .waiting || state == .running }
     }
 
@@ -43,12 +45,14 @@ final class ExportQueue {
     var activeCount: Int { jobs.filter(\.isActive).count }
     var runningJob: Job? { jobs.first { $0.state == .running } }
 
-    func enqueue(_ title: String, work: @escaping Work) {
+    @discardableResult
+    func enqueue(_ title: String, work: @escaping Work) -> UUID {
         let job = Job(title: title)
         jobs.insert(job, at: 0)
         if jobs.count > 50 { jobs.removeLast(jobs.count - 50) }
         pending.append((job.id, work))
         startNext()
+        return job.id
     }
 
     func cancel(_ id: UUID) {
@@ -103,6 +107,7 @@ final class ExportQueue {
                 switch outcome {
                 case .success(let result):
                     job.state = .finished; job.outputs = result.outputs; job.live = result.live; job.detail = result.summary
+                    job.inPhotos = result.inPhotos
                 case .failure(let error):
                     if cancelled || error is CancellationError { job.state = .cancelled; job.detail = "已取消，原片保留" }
                     else { job.state = .failed(error.localizedDescription) }

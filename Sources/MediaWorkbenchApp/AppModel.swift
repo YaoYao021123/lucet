@@ -58,10 +58,26 @@ struct Toast: Identifiable {
     var actions: [Action] = []
 }
 
+enum ExportDestination: String, Codable, CaseIterable {
+    case photos, folder
+    var title: String { self == .photos ? "「照片」" : "文件夹" }
+}
+
 struct ExportSettings: Codable, Equatable {
     var image = ImageExportOptions()
     var codec = VideoCodecChoice.h264
     var liveOnly = false
+    /// Casual users want results in Photos (and on their phone), not in a folder.
+    var destination = ExportDestination.photos
+
+    init() {}
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        image = try values.decodeIfPresent(ImageExportOptions.self, forKey: .image) ?? .init()
+        codec = try values.decodeIfPresent(VideoCodecChoice.self, forKey: .codec) ?? .h264
+        liveOnly = try values.decodeIfPresent(Bool.self, forKey: .liveOnly) ?? false
+        destination = try values.decodeIfPresent(ExportDestination.self, forKey: .destination) ?? .photos
+    }
 }
 
 enum AppPaths {
@@ -113,6 +129,8 @@ final class AppModel {
     @ObservationIgnored private var toastTask: Task<Void, Never>?
     @ObservationIgnored private var terminationObserver: NSObjectProtocol?
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
+    /// Export jobs whose result opens the share sheet.
+    @ObservationIgnored private var shareJobs: Set<UUID> = []
 
     /// The single app model, for the app delegate (quit confirmation).
     nonisolated(unsafe) static weak var current: AppModel?
@@ -535,10 +553,63 @@ final class AppModel {
         // Let the options sheet close before presenting the next panel.
         Task {
             try? await Task.sleep(for: .milliseconds(250))
-            switch target {
-            case .current: exportCurrentNow()
-            case .selection: exportSelectionNow()
+            switch (target, exportSettings.destination) {
+            case (.current, .photos): exportCurrentStaged()
+            case (.selection, .photos): exportSelectionToPhotos()
+            case (.current, .folder): exportCurrentNow()
+            case (.selection, .folder): exportSelectionNow()
             }
+        }
+    }
+
+    /// Renders the current item into a private folder, then adds it to Photos — or, when sharing,
+    /// hands the file to the system share sheet.
+    private func exportCurrentStaged(share: Bool = false) {
+        guard let source = editor.url, let input = editor.mediaURL, editor.isLoaded else { return }
+        let settings = exportSettings
+        let edits = editor.edits, clip = editor.clip, video = editor.isVideo
+        let name = source.deletingPathExtension().lastPathComponent + "." + (video ? "mov" : settings.image.format.fileExtension)
+        let id = exports.enqueue(share ? "共享 \(name)" : "存到「照片」· \(name)") { report in
+            let folder = try PhotosSaver.stagingFolder()
+            let output = folder.appendingPathComponent(name)
+            if video {
+                try await VideoPipeline.export(input, to: output, clip: clip, edits: edits, codec: settings.codec) { report($0, nil) }
+            } else {
+                report(nil, "正在渲染…")
+                try await Task.detached(priority: .userInitiated) {
+                    try ImageExporter.export(input, to: output, edits: edits, options: settings.image)
+                }.value
+            }
+            if share { return ExportQueue.Result(outputs: [output], live: nil, summary: "已准备好共享") }
+            defer { try? FileManager.default.removeItem(at: folder) }
+            report(nil, "正在存入「照片」…")
+            try await PhotosSaver.save([video ? .video(output) : .photo(output)])
+            return ExportQueue.Result(outputs: [], live: nil, summary: "已存到「照片」", inPhotos: true)
+        }
+        if share { shareJobs.insert(id) }
+    }
+
+    func shareCurrent() {
+        guard editor.isLoaded else { return }
+        editor.flushDraft()
+        exportCurrentStaged(share: true)
+    }
+
+    private func exportSelectionToPhotos() {
+        let entries = library.actionTargets
+        guard !entries.isEmpty else { return }
+        editor.flushDraft()
+        let settings = exportSettings, store = drafts
+        exports.enqueue("存到「照片」· \(entries.count) 项") { report in
+            let folder = try PhotosSaver.stagingFolder()
+            defer { try? FileManager.default.removeItem(at: folder) }
+            let batch = folder.appendingPathComponent("export")
+            let result = try await Self.runBatchExport(entries, to: batch, settings: settings, store: store, report: report)
+            let items = PhotosSaver.items(in: batch)
+            report(nil, "正在存入「照片」…")
+            try await PhotosSaver.save(items)
+            return ExportQueue.Result(outputs: [], live: nil,
+                                      summary: result.summary.replacingOccurrences(of: "（见导出记录）", with: "") + "，已存到「照片」", inPhotos: true)
         }
     }
 
@@ -589,10 +660,33 @@ final class AppModel {
         if replacing { _ = try FileManager.default.replaceItemAt(output, withItemAt: target) }
     }
 
+    /// The system share sheet (AirDrop, Messages, Mail, WeChat…) for finished files.
+    func presentShare(_ urls: [URL]) {
+        guard !urls.isEmpty, let view = NSApp.keyWindow?.contentView ?? NSApp.mainWindow?.contentView else { return }
+        let picker = NSSharingServicePicker(items: urls)
+        let anchor = NSRect(x: view.bounds.maxX - 120, y: view.isFlipped ? 4 : view.bounds.maxY - 4, width: 1, height: 1)
+        picker.show(relativeTo: anchor, of: view, preferredEdge: view.isFlipped ? .maxY : .minY)
+    }
+
     func makeLive() {
         guard let source = editor.url, editor.isVideo else { return }
         guard editor.liveIsValid else {
             alert = AppAlert(title: "无法制作 Live", message: "Live 输出需为 0.5–3 秒。可缩短选取范围，或使用「适配 3 秒」提高速度。")
+            return
+        }
+        if exportSettings.destination == .photos {
+            guard let input = editor.mediaURL else { return }
+            let edits = editor.edits, clip = editor.clip
+            let name = source.deletingPathExtension().lastPathComponent + "-Live"
+            exports.enqueue("制作 Live · 存到「照片」") { report in
+                let folder = try PhotosSaver.stagingFolder()
+                defer { try? FileManager.default.removeItem(at: folder) }
+                let resources = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits) { report($0, nil) }
+                _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
+                report(nil, "正在存入「照片」…")
+                try await PhotosSaver.save([.live(image: resources.imageURL, video: resources.videoURL)])
+                return ExportQueue.Result(outputs: [], live: nil, summary: "已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone", inPhotos: true)
+            }
             return
         }
         let panel = NSSavePanel()
@@ -707,9 +801,15 @@ final class AppModel {
     }
 
     private func exportFinished(_ job: ExportQueue.Job) {
+        let sharing = shareJobs.remove(job.id) != nil
         switch job.state {
+        case .finished where sharing:
+            presentShare(job.outputs)
+        case .finished where job.inPhotos:
+            show("\(job.title) · \(job.detail)", actions: [.init(title: "打开「照片」") { PhotosSaver.openPhotos() }], seconds: 8)
         case .finished:
-            var actions = [Toast.Action(title: "在 Finder 中显示") { [weak self] in self?.exports.reveal(job) }]
+            var actions = [Toast.Action(title: "在 Finder 中显示") { [weak self] in self?.exports.reveal(job) },
+                           Toast.Action(title: "共享…") { [weak self] in self?.presentShare(job.live.map { [$0.imageURL] } ?? job.outputs) }]
             if let live = job.live {
                 actions.insert(Toast.Action(title: "预览 Live") { [weak self] in self?.sheet = .livePreview(live) }, at: 0)
             }

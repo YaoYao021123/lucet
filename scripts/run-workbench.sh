@@ -33,6 +33,7 @@ cat > "$workbench_app/Contents/Info.plist" <<'PLIST'
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>NSPhotoLibraryAddUsageDescription</key><string>光集把你导出的照片、视频和 Live Photo 存入「照片」，不会读取或修改你已有的照片。</string>
 </dict></plist>
 PLIST
 if [[ "${1:-}" != "--build-only" ]]; then
