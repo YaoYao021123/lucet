@@ -6,7 +6,8 @@ struct MediaProbe {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         guard let command = arguments.first,
-              ((["inspect", "lut", "straighten", "details", "analyze"].contains(command) && arguments.count == 2)
+              ((["inspect", "lut", "straighten", "details", "analyze", "auto"].contains(command) && arguments.count == 2)
+                || (command == "auto" && arguments.count == 3)
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
@@ -15,7 +16,28 @@ struct MediaProbe {
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "analyze" {
+            if command == "auto" {
+                // Developer check for 自动: the values, the statistics after, and an optional before|after JPEG.
+                let session = try ImageGradeSession(url: url, maximumDimension: 1024)
+                let plain = try await session.frame(edits: MediaEdits())
+                guard let before = ScopeAnalyzer.analyze(plain.image, headroom: plain.headroom)?.analysis else { exit(4) }
+                let auto = AutoEnhance.adjustments(for: before)
+                let changed = AdjustmentParameter.allCases.filter { auto[$0] != 0 }.map { "\($0.title) \(auto[$0])" }
+                print(changed.isEmpty ? "（无需调整）" : changed.joined(separator: "  "))
+                let edited = try await session.frame(edits: MediaEdits(adjustments: auto))
+                if let after = ScopeAnalyzer.analyze(edited.image, headroom: edited.headroom)?.analysis {
+                    print(String(format: "p5 %.2f→%.2f  p50 %.2f→%.2f  p95 %.2f→%.2f  sat %.2f→%.2f  clipH %.3f→%.3f",
+                                 before.p5, after.p5, before.p50, after.p50, before.p95, after.p95,
+                                 before.meanSaturation, after.meanSaturation, before.clippedHighlights, after.clippedHighlights))
+                }
+                if arguments.count == 3 {
+                    let left = ColorPipeline.toneMap(plain.image, sourceHeadroom: plain.headroom)
+                    let right = edited.image.transformed(by: .init(translationX: left.extent.width + 8, y: 0))
+                    let pair = right.composited(over: left)
+                    try ColorPipeline.shared.writeJPEGRepresentation(of: pair, to: URL(fileURLWithPath: arguments[2]),
+                        colorSpace: ColorPipeline.outputSpace, options: [:])
+                }
+            } else if command == "analyze" {
                 // Developer check for the coach: statistics and tips for one photo, as the app computes them.
                 let session = try ImageGradeSession(url: url, maximumDimension: 1024)
                 let frame = try await session.frame(edits: MediaEdits())

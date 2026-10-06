@@ -179,3 +179,44 @@ struct AdjustmentSectionTests {
         #expect(result.adjustments.exposure == -0.5 && result.adjustments.contrast == -5)
     }
 }
+
+struct AutoEnhanceTests {
+    private func photo(p1: Double = 0.03, p5: Double = 0.07, p50: Double = 0.46, p95: Double = 0.88, p99: Double = 0.93) -> PhotoAnalysis {
+        var a = PhotoAnalysis()
+        a.p1 = p1; a.p5 = p5; a.p50 = p50; a.p95 = p95; a.p99 = p99
+        a.meanSaturation = 0.32; a.neutralRGB = [0.5, 0.5, 0.5]; a.neutralFraction = 0.1
+        return a
+    }
+
+    @Test func wellExposedPhotoIsLeftNearlyAlone() {
+        let auto = AutoEnhance.adjustments(for: photo())
+        #expect(auto.exposure == 0 && auto.brightness == 0 && auto.contrast == 0 && auto.warmth == 0 && auto.vibrance == 0)
+    }
+
+    @Test func darkPhotoBrightensWithoutClippingItsHighlights() {
+        let auto = AutoEnhance.adjustments(for: photo(p5: 0.03, p50: 0.18, p95: 0.6, p99: 0.85))
+        #expect(auto.exposure >= 0.4 && auto.brightness > 0 && auto.shadows > 0)
+        // Never more than the highlight headroom of the brightest 1%.
+        #expect(auto.exposure <= log2(pow(0.97 / 0.85, 2.2)) + 0.001)
+    }
+
+    @Test func highKeyAndNightKeepTheirMood() {
+        let highKey = AutoEnhance.adjustments(for: photo(p1: 0.02, p5: 0.05, p50: 0.8, p95: 0.9, p99: 0.92))
+        #expect(highKey.exposure == 0 && highKey.brightness == 0)
+        let night = AutoEnhance.adjustments(for: photo(p5: 0.02, p50: 0.15, p95: 0.85, p99: 0.95))
+        #expect(night.exposure == 0 && night.brightness == 0)
+    }
+
+    @Test func hazyPhotoGetsDepthAndBlueCastIsWarmedHalfway() {
+        var a = photo(p1: 0.2, p5: 0.28, p50: 0.55, p95: 0.78, p99: 0.84)
+        a.neutralRGB = [0.42, 0.5, 0.58]
+        let auto = AutoEnhance.adjustments(for: a)
+        #expect(auto.contrast > 0 && auto.blackPoint > 0 && auto.whites > 0)
+        #expect(auto.warmth > 5 && auto.warmth <= 20)
+    }
+
+    @Test func vividPhotoGetsNoExtraColor() {
+        var a = photo(); a.meanSaturation = 0.2; a.saturatedFraction = 0.12
+        #expect(AutoEnhance.adjustments(for: a).vibrance == 0)
+    }
+}

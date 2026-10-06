@@ -4,6 +4,11 @@ import MediaCore
 import Observation
 import UniformTypeIdentifiers
 
+enum ColorMode: String, CaseIterable {
+    case simple, full
+    var title: String { self == .simple ? "简单" : "完整" }
+}
+
 enum WorkspaceMode: String, Sendable {
     case browse, edit
 }
@@ -99,6 +104,8 @@ final class AppModel {
 
     /// What this user knows and wants to learn; drives the coach.
     var learner = LearnerProfile() { didSet { if learner != oldValue { scheduleLearnerSave() } } }
+    /// 简单 shows a few plain controls; 完整 shows every grading stage. Beginners start simple.
+    var colorMode = ColorMode.simple { didSet { UserDefaults.standard.set(colorMode.rawValue, forKey: "color.mode") } }
     @ObservationIgnored private var learnerSave: Task<Void, Never>?
     @ObservationIgnored private let learnerFile: URL
     @ObservationIgnored private var clipboard: (EditRecipe, CreativeLUT?)?
@@ -129,6 +136,8 @@ final class AppModel {
         if let data = try? Data(contentsOf: learnerFile), let profile = try? JSONDecoder().decode(LearnerProfile.self, from: data) {
             learner = profile
         }
+        colorMode = ColorMode(rawValue: UserDefaults.standard.string(forKey: "color.mode") ?? "")
+            ?? (learner.level == .beginner ? .simple : .full)
         editor.onConceptsUsed = { [weak self] concepts in
             for concept in concepts { self?.learner.update(concept) { $0.used += 1 } }
         }
@@ -378,6 +387,18 @@ final class AppModel {
                 editor.selectLUT(next)
             } catch { fail("无法切换 LUT 色彩空间", error) }
         }
+    }
+
+    func autoEnhance() {
+        guard editor.isLoaded else { return }
+        let simple = colorMode == .simple
+        guard let summary = editor.applyAuto(title: { parameter in
+            simple ? SimpleControl.all.first { $0.parameter == parameter }?.title ?? parameter.title : parameter.title
+        }) else { show("正在分析画面，请稍后再试。", seconds: 2); return }
+        show(summary, actions: [
+            .init(title: "对比") { [weak self] in self?.editor.compareMode = self?.editor.isVideo == true ? .original : .split },
+            .init(title: "撤销") { [weak self] in self?.editor.undo() }
+        ])
     }
 
     func applyPreset(_ preset: GradePreset) {
@@ -885,6 +906,7 @@ final class AppModel {
         case "x": flag(.reject)
         case "u": flag(.none)
         case "g": mode = .browse
+        case "a": if editing { autoEnhance() }
         case "e": if mode == .browse { openSelection() }
         case "\\", "m": if editing { editor.compareMode = editor.compareMode == .original ? .off : .original }
         case "y": if editing, !editor.isVideo { editor.compareMode = editor.compareMode == .split ? .off : .split }

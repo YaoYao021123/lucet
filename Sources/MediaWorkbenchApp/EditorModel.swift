@@ -513,6 +513,27 @@ final class EditorModel {
         status = "已应用：\(suggestion.label)。左右对比查看变化，可撤销（⌘Z）。"
     }
 
+    /// One-click 自动: replaces exposure, tone, white balance and color with values computed from
+    /// the untouched picture (so pressing it again gives the same result); detail and effects stay.
+    /// Returns a short description, or nil while the picture is still being analysed.
+    func applyAuto(title: (AdjustmentParameter) -> String = { $0.title }) -> String? {
+        guard isLoaded, let source = originalAnalysis ?? (edits.hasGrade ? nil : scopes?.analysis) else { return nil }
+        if originalAnalysis == nil { originalAnalysis = source }
+        var next = AutoEnhance.adjustments(for: source)
+        for parameter in AdjustmentSection.detail.parameters + AdjustmentSection.effects.parameters {
+            next[parameter] = adjustments[parameter]
+        }
+        let changed = AdjustmentParameter.allCases.filter { next[$0] != 0 && !AdjustmentSection.detail.parameters.contains($0)
+            && !AdjustmentSection.effects.parameters.contains($0) }
+        group { adjustments = next }
+        guard !changed.isEmpty else { return "这张照片的明暗和颜色已经很均衡，自动没有改动。" }
+        let list = changed.prefix(4).map { parameter -> String in
+            let value = next[parameter]
+            return parameter == .exposure ? String(format: "%@ %+.2f", title(parameter), value) : String(format: "%@ %+d", title(parameter), Int(value))
+        }.joined(separator: " · ")
+        return "已自动调整：\(list)\(changed.count > 4 ? " 等" : "")"
+    }
+
     /// Runs horizon and face detection once per photo for the coach.
     func requestHorizon() {
         guard horizonTilt == nil, horizonTask == nil, !isVideo, let input = mediaURL, isLoaded else { return }

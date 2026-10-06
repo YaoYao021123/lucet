@@ -31,7 +31,8 @@ struct WorkbenchView: View {
         .navigationTitle(title)
         .navigationSubtitle(subtitle)
         .toolbar { WorkbenchToolbar(app: app) }
-        .overlay(alignment: .bottom) { ToastView(app: app).padding(.bottom, 44) }
+        // Above the canvas controls and video timeline in the editor.
+        .overlay(alignment: .bottom) { ToastView(app: app).padding(.bottom, app.mode == .edit ? (editor.isVideo ? 200 : 92) : 44) }
         .background { KeyMonitor { app.handleKey($0) } }
         .sheet(item: Binding(get: { app.sheet }, set: { app.sheet = $0 })) { sheet in
             SheetContent(app: app, sheet: sheet)

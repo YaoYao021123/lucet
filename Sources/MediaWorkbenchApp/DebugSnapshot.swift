@@ -76,6 +76,8 @@ enum DebugSnapshot {
             window.orderFront(nil)
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
+        case "auto": app.autoEnhance()
+        case "colormode": app.colorMode = ColorMode(rawValue: argument) ?? .simple
         case "relocate":
             let parts = argument.split(separator: "|").map(String.init)
             if parts.count == 2 { app.relocate(URL(fileURLWithPath: parts[0]).standardizedFileURL.path, to: URL(fileURLWithPath: parts[1])) }

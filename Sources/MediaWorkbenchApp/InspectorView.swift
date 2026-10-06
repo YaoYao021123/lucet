@@ -75,7 +75,56 @@ struct ColorPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScopePanel(editor: editor, level: app.learner.level).padding(.top, 8).padding(.bottom, 4)
+            header
+            if app.colorMode == .simple { simple } else { full }
+        }
+    }
+
+    /// 自动 for everyone, plus the 简单 / 完整 switch.
+    private var header: some View {
+        HStack(spacing: 10) {
+            Button { app.autoEnhance() } label: {
+                Label("自动", systemImage: "wand.and.stars").frame(maxWidth: .infinity)
+            }
+            .glassButton()
+            .help("根据这张照片自动调整曝光、影调、白平衡和色彩（A）。可撤销。")
+            GlassSegmentedControl(options: ColorMode.allCases, selection: Binding(get: { app.colorMode }, set: { app.colorMode = $0 }),
+                                  title: { $0.title }, size: .small, accessibilityTitle: "调色模式")
+                .frame(width: 112)
+                .help("简单：几个常用滑块。完整：示波器、色轮、曲线、HSL、LUT 等全部工具。")
+        }
+        .padding(.top, 10).padding(.bottom, 6)
+    }
+
+    /// A few plain-language controls; everything else lives in 完整.
+    private var simple: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            InsightStrip(app: app)
+            PresetStrip(app: app)
+            InspectorSection("调整", help: "最常用的几项。需要更多控制时切换到「完整」。", onReset: { editor.resetStage(.basic) }) {
+                let values = editor.adjustments
+                VStack(spacing: 2) {
+                    ForEach(SimpleControl.all, id: \.parameter) { control in
+                        ParameterRow(title: control.title, value: values[control.parameter], range: control.parameter.range,
+                                     step: control.parameter == .exposure ? 0.05 : 1, decimals: control.parameter == .exposure ? 1 : 0,
+                                     help: control.hint + "\n\n" + control.parameter.explanation,
+                                     influence: app.learner.hoverHints ? InfluenceKind.forParameter(control.parameter) : nil,
+                                     onChange: { editor.setAdjustment(control.parameter, $0) }, onEditing: editor.beginEditing,
+                                     onHover: { editor.hoverInfluence = $0 })
+                            .equatable()
+                    }
+                }
+            }
+            if editor.edits.usesAdvancedTools {
+                Label("这张照片还用了曲线、色轮、HSL 或 LUT 等调整，切换到「完整」可以查看。", systemImage: "info.circle")
+                    .font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
+            }
+        }
+    }
+
+    private var full: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScopePanel(editor: editor, level: app.learner.level).padding(.top, 4).padding(.bottom, 4)
             InsightStrip(app: app)
             PresetStrip(app: app)
             InspectorSection("基础", number: 1, isOn: stage(.basic), help: "曝光、影调、白平衡与色彩", onReset: { editor.resetStage(.basic) }) {
@@ -111,6 +160,28 @@ struct ColorPanel: View {
             }
             HDRSection(editor: editor)
         }
+    }
+}
+
+/// The 简单 mode's controls, named the way people describe photos.
+struct SimpleControl {
+    let parameter: AdjustmentParameter
+    let title: String
+    let hint: String
+    static let all = [
+        SimpleControl(parameter: .exposure, title: "亮度", hint: "整张照片变亮或变暗。"),
+        SimpleControl(parameter: .contrast, title: "对比度", hint: "亮的更亮、暗的更暗，画面更有力；往左更柔和。"),
+        SimpleControl(parameter: .highlights, title: "亮部", hint: "往左压暗最亮的地方，比如找回天空和云的层次。"),
+        SimpleControl(parameter: .shadows, title: "暗部", hint: "往右提亮阴影里的细节，比如逆光的人脸。"),
+        SimpleControl(parameter: .warmth, title: "冷暖", hint: "往右更暖（偏黄），往左更冷（偏蓝）。"),
+        SimpleControl(parameter: .vibrance, title: "鲜艳度", hint: "让颜色更鲜艳，优先增强偏淡的颜色，肤色不易过艳。"),
+    ]
+}
+
+extension MediaEdits {
+    /// Edits the 简单 mode doesn't show.
+    var usesAdvancedTools: Bool {
+        (lut != nil) || !wheels.isNeutral || !curves.isIdentity || !hsl.isNeutral
     }
 }
 
