@@ -7,7 +7,7 @@ Mac 原生应用（Swift 6 · SwiftUI · Core Image · AVFoundation），最低 
 ```sh
 bash scripts/run-workbench.sh            # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh           # 79 项测试
+bash scripts/test-workbench.sh           # 81 项测试
 bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行文件路径
 ```
 
@@ -17,12 +17,12 @@ bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行
 
 **编辑（E）**：按 DaVinci 式固定顺序处理，每一步都可单独开关比较：
 
-1. 基础：曝光、鲜明度、高光、阴影、亮度、对比度、白色、黑点、色温、色调、饱和度、自然饱和度
+1. 基础：按摄影概念分组，每组可单独复位。曝光（曝光、亮度）、影调（对比度、高光、阴影、白色、黑点、鲜明度）、白平衡（色温、色调）、色彩（自然饱和度、饱和度）
 2. 色轮：暗部 / 中间调 / 亮部 / 整体（Lift / Gamma / Gain / Offset），方向与矢量示波器一致
 3. 曲线：RGB 主曲线 + 红绿蓝单通道
 4. HSL 色彩混合：8 个色系的色相 / 饱和度 / 明亮度
 5. 风格 LUT：.cube（2–128 阶，兼容 GBK 标题、CRLF、DOMAIN / INPUT_RANGE），sRGB 或 Rec.709，强度可调，导入后长期保留
-6. 细节：降噪（最先）、清晰度、锐度、暗角（最后）
+6. 细节与效果：降噪（最先）、清晰度、锐度，以及暗角（最后）
 
 此外还有：
 
@@ -30,7 +30,7 @@ bash scripts/dev-build.sh                # 快速 Debug 构建，输出可执行
 - 对比与检查：原片对比（\）、左右分屏（Y）、溢出显示（J）。
 - 缩放：适合窗口 ↔ 100%（Z、双击、捏合），放大时自动载入原尺寸。
 - 预设：4 个内置，可自建。
-- 设置的复用：拷贝 / 粘贴调色（⇧⌘C / ⇧⌘V）、同步到所选（可撤回）。
+- 设置的复用：拷贝 / 粘贴调色（⇧⌘C / ⇧⌘V）；同步到所选时可按曝光、影调、白平衡、色彩、细节、效果分别选择（可撤回）。
 - 撤销 / 重做、命名快照，以及拉直、旋转、镜像、裁剪画幅。
 
 **学习（检查器「学习」页）**：教练会分析当前这张照片，用它的实际数据讲解问题和技巧，讲解随你的水平和兴趣调整：

@@ -108,17 +108,24 @@ struct ExportOptionsSheet: View {
 
 struct SyncSheet: View {
     let app: AppModel
-    @UIState private var groups: Set<AdjustmentGroup> = [.light, .color]
+    /// Exposure usually differs shot to shot, so it starts unchecked (as do detail and effects).
+    @UIState private var sections: Set<AdjustmentSection> = [.tone, .whiteBalance, .color]
     @UIState private var stages: Set<GradeStage> = [.wheels, .curves, .hsl]
     @UIState private var includeLUT = true
 
     var body: some View {
         let count = app.library.selection.subtracting([app.library.currentID ?? ""]).count
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "同步调色", subtitle: "把当前素材的所选调色复制到另外 \(count) 项。裁切、片段、封面、速度与声音保持各自设置。")
+            SheetHeader(title: "同步调色", subtitle: "把当前素材的所选调色复制到另外 \(count) 项。曝光默认不同步（每张往往不同）；裁切、片段、封面、速度与声音保持各自设置。")
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(AdjustmentGroup.allCases, id: \.self) { group in
-                    Toggle(group.rawValue, isOn: Binding(get: { groups.contains(group) }, set: { if $0 { groups.insert(group) } else { groups.remove(group) } }))
+                ForEach(AdjustmentSection.allCases, id: \.self) { section in
+                    Toggle(isOn: Binding(get: { sections.contains(section) }, set: { if $0 { sections.insert(section) } else { sections.remove(section) } })) {
+                        HStack(spacing: 6) {
+                            Text(section.title)
+                            Text(section.parameters.map(\.title).joined(separator: "、")).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .help(section.summary)
                 }
                 ForEach([GradeStage.wheels, .curves, .hsl], id: \.self) { stage in
                     Toggle(stage == .hsl ? "HSL 色彩混合" : stage.title, isOn: Binding(get: { stages.contains(stage) }, set: { if $0 { stages.insert(stage) } else { stages.remove(stage) } }))
@@ -132,10 +139,10 @@ struct SyncSheet: View {
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
                 Button("应用到 \(count) 项") {
                     app.sheet = nil
-                    app.synchronize(groups: groups, includeLUT: includeLUT, stages: stages)
+                    app.synchronize(sections: sections, includeLUT: includeLUT, stages: stages)
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(count == 0 || (groups.isEmpty && stages.isEmpty && !includeLUT))
+                .disabled(count == 0 || (sections.isEmpty && stages.isEmpty && !includeLUT))
             }
         }
         .padding(22).frame(width: 440)

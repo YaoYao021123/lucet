@@ -78,12 +78,11 @@ struct ColorPanel: View {
             ScopePanel(editor: editor, level: app.learner.level).padding(.top, 8).padding(.bottom, 4)
             InsightStrip(app: app)
             PresetStrip(app: app)
-            InspectorSection("基础", number: 1, isOn: stage(.basic), help: "曝光、白平衡与影调", onReset: { editor.resetStage(.basic) }) {
-                VStack(spacing: 2) {
-                    SubHeading(title: "光线")
-                    AdjustmentRows(editor: editor, group: .light, hints: app.learner.hoverHints)
-                    SubHeading(title: "色彩").padding(.top, 4)
-                    AdjustmentRows(editor: editor, group: .color, hints: app.learner.hoverHints)
+            InspectorSection("基础", number: 1, isOn: stage(.basic), help: "曝光、影调、白平衡与色彩", onReset: { editor.resetStage(.basic) }) {
+                VStack(spacing: 6) {
+                    ForEach([AdjustmentSection.exposure, .tone, .whiteBalance, .color], id: \.self) { section in
+                        AdjustmentRows(editor: editor, section: section, hints: app.learner.hoverHints)
+                    }
                 }
             }
             InspectorSection("色轮", number: 2, isOn: stage(.wheels),
@@ -105,7 +104,10 @@ struct ColorPanel: View {
             }
             InspectorSection("细节", number: 6, isOn: stage(.detail), help: "降噪在调色前进行，锐化与暗角在最后。",
                              startsCollapsed: true, onReset: { editor.resetStage(.detail) }) {
-                AdjustmentRows(editor: editor, group: .detail, hints: app.learner.hoverHints)
+                VStack(spacing: 6) {
+                    AdjustmentRows(editor: editor, section: .detail, hints: app.learner.hoverHints)
+                    AdjustmentRows(editor: editor, section: .effects, hints: app.learner.hoverHints)
+                }
             }
             HDRSection(editor: editor)
         }
@@ -121,14 +123,28 @@ struct CurveSection: View {
     }
 }
 
+/// One photographic group (影调, 白平衡…): a small heading with its definition as a
+/// tooltip, a reset that appears only when something in the group changed, then the rows.
 struct AdjustmentRows: View {
     let editor: EditorModel
-    let group: AdjustmentGroup
+    let section: AdjustmentSection
     var hints = true
     var body: some View {
         let values = editor.adjustments
+        let changed = section.parameters.contains { values[$0] != 0 }
         VStack(spacing: 1) {
-            ForEach(AdjustmentParameter.allCases.filter { $0.group == group }) { parameter in
+            HStack(spacing: 4) {
+                Text(section.title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                    .help(section.summary)
+                Spacer()
+                if changed {
+                    Button { editor.resetSection(section) } label: { Image(systemName: "arrow.counterclockwise").font(.caption2) }
+                        .buttonStyle(.borderless).foregroundStyle(.secondary)
+                        .help("复位\(section.title)").accessibilityLabel("复位\(section.title)")
+                }
+            }
+            .frame(height: 16)
+            ForEach(section.parameters) { parameter in
                 ParameterRow(title: parameter.title, value: values[parameter], range: parameter.range,
                              step: parameter == .exposure ? 0.05 : 1, decimals: parameter == .exposure ? 2 : 0,
                              suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,

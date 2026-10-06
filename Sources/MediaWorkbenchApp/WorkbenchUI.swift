@@ -199,18 +199,6 @@ struct InspectorSection<Content: View>: View {
     }
 }
 
-struct SubHeading: View {
-    let title: String
-    var trailing: AnyView?
-    var body: some View {
-        HStack {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-            Spacer()
-            trailing
-        }
-    }
-}
-
 struct IconButton: View {
     let title: String
     let icon: String

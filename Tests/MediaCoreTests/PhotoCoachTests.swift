@@ -143,3 +143,21 @@ struct PhotoCoachTests {
         #expect(abs(redInBlueMode[0] - redInBlueMode[2]) < 0.02) // turned gray
     }
 }
+
+struct AdjustmentSectionTests {
+    @Test func sectionsCoverEveryParameterExactlyOnce() {
+        let all = AdjustmentSection.allCases.flatMap(\.parameters)
+        #expect(all.count == AdjustmentParameter.allCases.count)
+        #expect(Set(all) == Set(AdjustmentParameter.allCases))
+        #expect(AdjustmentParameter.highlights.section == .tone && AdjustmentParameter.tint.section == .whiteBalance)
+    }
+
+    @Test func syncCopiesOnlyTheChosenConcepts() {
+        var source = EditRecipe()
+        source.adjustments.exposure = 1; source.adjustments.contrast = 30; source.adjustments.warmth = 25; source.adjustments.tint = -10
+        var target = EditRecipe(); target.adjustments.exposure = -0.5; target.adjustments.contrast = -5
+        let result = target.applying(from: source, sections: [.whiteBalance], includeLUT: false)
+        #expect(result.adjustments.warmth == 25 && result.adjustments.tint == -10)
+        #expect(result.adjustments.exposure == -0.5 && result.adjustments.contrast == -5)
+    }
+}

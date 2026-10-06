@@ -430,12 +430,13 @@ final class EditorModel {
         status = "已恢复原片画面，可撤销。"
     }
 
-    func resetGroup(_ group: AdjustmentGroup) {
-        self.group {
+    func resetSection(_ section: AdjustmentSection) {
+        group {
             var next = adjustments
-            for p in AdjustmentParameter.allCases where p.group == group { next[p] = 0 }
+            for p in section.parameters { next[p] = 0 }
             adjustments = next
         }
+        status = "已复位\(section.title)，可撤销。"
     }
 
     func resetStage(_ stage: GradeStage) {
@@ -449,7 +450,10 @@ final class EditorModel {
             case .curves: curves = .init()
             case .hsl: hsl = .init()
             case .lut: selectedLUT = nil; strength = 1
-            case .detail: resetGroup(.detail)
+            case .detail:
+                var next = adjustments
+                for p in AdjustmentSection.detail.parameters + AdjustmentSection.effects.parameters { next[p] = 0 }
+                adjustments = next
             }
         }
     }

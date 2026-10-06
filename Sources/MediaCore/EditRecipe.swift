@@ -67,6 +67,16 @@ public struct EditRecipe: Codable, Equatable, Sendable {
         return result
     }
 
+    /// Sync by photographic concept (e.g. white balance only), like Lightroom's sync dialog.
+    public func applying(from source: Self, sections: Set<AdjustmentSection>, includeLUT: Bool,
+                         stages: Set<GradeStage> = []) -> Self {
+        var result = applying(from: source, groups: [], includeLUT: includeLUT, stages: stages)
+        for section in sections {
+            for parameter in section.parameters { result.adjustments[parameter] = source.adjustments[parameter] }
+        }
+        return result
+    }
+
     /// Everything that defines the look, without geometry, timing or sound.
     public func applyingLook(from source: Self) -> Self {
         var result = applying(from: source, groups: Set(AdjustmentGroup.allCases), includeLUT: true,

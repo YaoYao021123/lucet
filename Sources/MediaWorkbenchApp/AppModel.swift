@@ -372,14 +372,14 @@ final class AppModel {
         }
     }
 
-    func synchronize(groups: Set<AdjustmentGroup>, includeLUT: Bool, stages: Set<GradeStage>) {
+    func synchronize(sections: Set<AdjustmentSection>, includeLUT: Bool, stages: Set<GradeStage>) {
         guard editor.isLoaded else { return }
         editor.flushDraft()
         do {
             let source = try editor.currentRecipe()
             let targets = library.selectedEntries.filter { $0.id != library.currentID }
             writeLook(source, to: targets, label: "同步") { before in
-                before.applying(from: source, groups: groups, includeLUT: includeLUT, stages: stages)
+                before.applying(from: source, sections: sections, includeLUT: includeLUT, stages: stages)
             }
         } catch { fail("无法同步", error) }
     }
