@@ -8,6 +8,9 @@ struct ZoneHistogram: View {
     let histogram: [Double]
     var focus: AdjustmentParameter?
     var height: CGFloat = 56
+    /// A zone picked in a lesson: shaded and its name in bold.
+    var selectedZone: ToneZone?
+    var showsCaption = true
 
     var body: some View {
         VStack(spacing: 3) {
@@ -16,15 +19,16 @@ struct ZoneHistogram: View {
                 .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 6))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             labels
-            Text(caption).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            if showsCaption { Text(caption).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .animation(.easeOut(duration: 0.15), value: focus)
+                .animation(.easeOut(duration: 0.15), value: focus) }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("亮度分布：" + caption)
     }
 
     private var active: Set<ToneZone> {
+        if let selectedZone { return [selectedZone] }
         guard let focus else { return [] }
         return Set(ToneZone.allCases.filter { ToneResponse.weight(focus, at: ($0.range.lowerBound + $0.range.upperBound) / 2) > 0.35 })
     }
@@ -72,6 +76,11 @@ struct ZoneHistogram: View {
                 var line = Path(); line.move(to: CGPoint(x: rect.minX, y: 0)); line.addLine(to: CGPoint(x: rect.minX, y: size.height))
                 context.stroke(line, with: .color(.white.opacity(0.1)), style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
             }
+        }
+        if let selectedZone {
+            let band = CGRect(x: size.width * selectedZone.range.lowerBound, y: 0,
+                              width: size.width * (selectedZone.range.upperBound - selectedZone.range.lowerBound), height: size.height)
+            context.fill(Path(band), with: .color(.white.opacity(0.14)))
         }
         // Where the focused control acts.
         if let focus {

@@ -102,6 +102,7 @@ struct LearnPanel: View {
                     }
                 }
             }
+            LessonList(app: app)
             AskSection(app: app)
             InspectorSection("我的学习", help: "选择水平和感兴趣的方向，讲解和推荐会随之调整。") {
                 VStack(alignment: .leading, spacing: 6) {
@@ -377,6 +378,43 @@ private struct TurnView: View {
             } else if let error = turn.error {
                 Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+/// 互动课: short animated lessons that run on the open photo.
+struct LessonList: View {
+    let app: AppModel
+    var body: some View {
+        let done = app.learner.lessonsDone
+        InspectorSection("互动课", help: "几分钟一课：用动画和你的照片讲清原理，边看边动手。") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("已完成 \(Lesson.catalog.filter { done.contains($0.id) }.count) / \(Lesson.catalog.count) 课")
+                    .font(.caption2).foregroundStyle(.secondary)
+                ForEach(LessonUnit.allCases, id: \.self) { unit in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(unit.title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        ForEach(Lesson.catalog.filter { $0.unit == unit }) { lesson in
+                            Button { app.openLesson(lesson.id) } label: {
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Image(systemName: done.contains(lesson.id) ? "checkmark.circle.fill" : "play.circle")
+                                        .foregroundStyle(done.contains(lesson.id) ? Color.secondary : Color.primary)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(lesson.title).font(.callout)
+                                        Text(lesson.hook).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                    Spacer(minLength: 4)
+                                    Text("\(lesson.minutes) 分钟").font(.caption2).foregroundStyle(.tertiary)
+                                }
+                                .padding(.vertical, 3)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help(lesson.hook)
+                        }
+                    }
+                }
             }
         }
     }

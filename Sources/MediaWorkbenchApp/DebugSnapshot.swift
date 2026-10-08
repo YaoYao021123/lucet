@@ -78,6 +78,13 @@ enum DebugSnapshot {
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
         case "focus": app.editor.focusParameter = AdjustmentParameter(rawValue: argument)
+        case "lesson":
+            // "id" or "id@step"
+            let parts = argument.split(separator: "@").map(String.init)
+            app.sheet = nil
+            LessonPlayer.debugStartStep = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
+            // Let the previous sheet close first, or SwiftUI keeps it (same lesson id).
+            Task { @MainActor in try? await Task.sleep(for: .milliseconds(700)); app.openLesson(parts[0]) }
         case "crop":
             // "scale,horizontal,vertical,ratio"
             let v = argument.split(separator: ",").compactMap { Double($0) }

@@ -18,6 +18,7 @@ struct SheetContent: View {
         case .savePreset: SavePresetSheet(app: app)
         case .shortcuts: ShortcutsSheet(app: app)
         case .tutorSettings: TutorSettingsSheet(tutor: app.tutor)
+        case .lesson(let id): if let lesson = Lesson.lesson(id) { LessonPlayer(app: app, lesson: lesson) }
         case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
         }
     }

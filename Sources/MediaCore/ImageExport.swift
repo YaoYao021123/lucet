@@ -110,6 +110,12 @@ public struct CaptureInfo: Sendable, Equatable {
     public var iso: String?
     public var captured: String?
     public var hasLocation = false
+    /// The same settings as numbers, for lessons that use the user's own photo.
+    public var fNumber: Double?
+    public var exposureTime: Double?
+    public var isoValue: Int?
+    public var focalLengthMM: Double?
+    public var focalLength35mm: Double?
 
     public static func read(_ url: URL) -> CaptureInfo? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
@@ -121,12 +127,14 @@ public struct CaptureInfo: Sendable, Equatable {
         let model = (tiff[kCGImagePropertyTIFFModel] as? String)?.trimmingCharacters(in: .whitespaces)
         if let model { info.camera = make.map { model.hasPrefix($0) ? model : "\($0) \(model)" } ?? model }
         info.lens = exif[kCGImagePropertyExifLensModel] as? String
-        if let focal = exif[kCGImagePropertyExifFocalLength] as? Double { info.focalLength = String(format: "%.0f mm", focal) }
-        if let f = exif[kCGImagePropertyExifFNumber] as? Double { info.aperture = String(format: "ƒ/%.1f", f) }
+        if let focal = exif[kCGImagePropertyExifFocalLength] as? Double { info.focalLength = String(format: "%.0f mm", focal); info.focalLengthMM = focal }
+        info.focalLength35mm = (exif[kCGImagePropertyExifFocalLenIn35mmFilm] as? NSNumber)?.doubleValue
+        if let f = exif[kCGImagePropertyExifFNumber] as? Double { info.aperture = String(format: "ƒ/%.1f", f); info.fNumber = f }
         if let time = exif[kCGImagePropertyExifExposureTime] as? Double, time > 0 {
             info.shutter = time >= 1 ? String(format: "%.1f s", time) : "1/\(Int((1 / time).rounded())) s"
+            info.exposureTime = time
         }
-        if let iso = (exif[kCGImagePropertyExifISOSpeedRatings] as? [Int])?.first { info.iso = "ISO \(iso)" }
+        if let iso = (exif[kCGImagePropertyExifISOSpeedRatings] as? [Int])?.first { info.iso = "ISO \(iso)"; info.isoValue = iso }
         info.captured = exif[kCGImagePropertyExifDateTimeOriginal] as? String
         info.hasLocation = properties[kCGImagePropertyGPSDictionary] != nil
         let empty = info.camera == nil && info.lens == nil && info.focalLength == nil && info.aperture == nil

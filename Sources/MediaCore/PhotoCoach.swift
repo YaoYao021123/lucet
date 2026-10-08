@@ -269,7 +269,21 @@ public struct LearnerProfile: Codable, Equatable, Sendable {
     public var progress: [Concept: ConceptProgress] = [:]
     public var hoverHints = true
     public var onboarded = false
+    /// Interactive lessons finished (ids from `Lesson.catalog`).
+    public var lessonsDone: Set<String> = []
     public init() {}
+
+    private enum CodingKeys: String, CodingKey { case level, topics, progress, hoverHints, onboarded, lessonsDone }
+    /// Missing keys default, so profiles saved by earlier versions keep loading.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        level = try values.decodeIfPresent(LearningLevel.self, forKey: .level) ?? .beginner
+        topics = try values.decodeIfPresent(Set<LearningTopic>.self, forKey: .topics) ?? [.exposure, .color]
+        progress = try values.decodeIfPresent([Concept: ConceptProgress].self, forKey: .progress) ?? [:]
+        hoverHints = try values.decodeIfPresent(Bool.self, forKey: .hoverHints) ?? true
+        onboarded = try values.decodeIfPresent(Bool.self, forKey: .onboarded) ?? false
+        lessonsDone = try values.decodeIfPresent(Set<String>.self, forKey: .lessonsDone) ?? []
+    }
 
     public func state(_ concept: Concept) -> ConceptProgress { progress[concept] ?? ConceptProgress() }
 

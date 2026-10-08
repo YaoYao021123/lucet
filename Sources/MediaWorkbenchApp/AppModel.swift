@@ -26,6 +26,7 @@ enum ActiveSheet: Identifiable {
     case shortcuts
     case tutorSettings
     case livePreview(LivePhotoResources)
+    case lesson(String)
 
     var id: String {
         switch self {
@@ -37,6 +38,7 @@ enum ActiveSheet: Identifiable {
         case .shortcuts: "shortcuts"
         case .tutorSettings: "tutor"
         case .livePreview(let resources): "live-\(resources.identifier)"
+        case .lesson(let id): "lesson-\(id)"
         }
     }
 }
@@ -405,6 +407,15 @@ final class AppModel {
                 editor.selectLUT(next)
             } catch { fail("无法切换 LUT 色彩空间", error) }
         }
+    }
+
+    func openLesson(_ id: String) { sheet = .lesson(id) }
+
+    /// A finished lesson counts as having tried its concept, so the learning path ticks it.
+    func completeLesson(_ lesson: Lesson) {
+        learner.lessonsDone.insert(lesson.id)
+        if let concept = lesson.concept { learner.update(concept) { $0.tried += 1 } }
+        show("完成「\(lesson.title)」。", seconds: 3)
     }
 
     func autoEnhance() {

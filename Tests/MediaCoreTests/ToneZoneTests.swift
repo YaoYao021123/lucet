@@ -44,3 +44,29 @@ struct ToneZoneTests {
         #expect(abs((shares[.deepShadows] ?? 0) - 0.5) < 1e-9 && abs((shares[.brightest] ?? 0) - 0.5) < 1e-9)
     }
 }
+
+struct LessonCatalogTests {
+    @Test func catalogIsConsistent() {
+        let ids = Lesson.catalog.map(\.id)
+        #expect(Set(ids).count == ids.count)
+        for lesson in Lesson.catalog {
+            #expect(!lesson.steps.isEmpty && !lesson.title.isEmpty && !lesson.hook.isEmpty)
+            for step in lesson.steps {
+                guard let question = step.question else { continue }
+                switch question.answer {
+                case .option(let index): #expect(question.options.indices.contains(index), "\(lesson.id)")
+                case .mainZone: #expect(question.options == ToneZone.allCases.map(\.title), "\(lesson.id)")
+                }
+            }
+        }
+        // Every scene the app draws is used by some lesson, so none is dead code.
+        let used = Set(Lesson.catalog.flatMap { $0.steps.map(\.scene) })
+        #expect(used == Set(LessonScene.allCases))
+    }
+
+    @Test func zoneQuestionAnswersFromThePhoto() throws {
+        let question = try #require(Lesson.lesson("pixels-histogram")?.steps.last?.question)
+        #expect(question.correctIndex(zoneShares: [.midtones: 0.6, .shadows: 0.3]) == 2)
+        #expect(question.correctIndex(zoneShares: [.brightest: 0.5, .highlights: 0.4]) == 4)
+    }
+}
