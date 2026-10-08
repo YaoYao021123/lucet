@@ -552,6 +552,13 @@ struct InfoPanel: View {
                     InspectorSection(group.title) {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(group.rows) { row($0.title, $0.value) }
+                            if group.title == "拍摄", group.rows.contains(where: { ["光圈", "快门", "ISO"].contains($0.title) }) {
+                                HStack(spacing: 12) {
+                                    Button("光圈是什么？") { app.openLesson("aperture") }
+                                    Button("快门和 ISO？") { app.openLesson("exposure-triangle") }
+                                }
+                                .buttonStyle(.borderless).font(.callout).padding(.top, 2)
+                            }
                             if group.title == "位置", let coordinate = details.coordinate {
                                 Button("在地图中打开") { openMap(coordinate) }
                                     .buttonStyle(.borderless).font(.callout).padding(.top, 2)

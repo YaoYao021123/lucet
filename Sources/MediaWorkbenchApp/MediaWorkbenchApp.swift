@@ -121,6 +121,16 @@ struct WorkbenchCommands: Commands {
             Button("显示或隐藏检查器") { app.showInspector.toggle() }.keyboardShortcut("i", modifiers: [.command, .option])
             Divider()
         }
+        CommandMenu("学习") {
+            // Lessons are static content, so this menu never needs rebuilding.
+            ForEach(LessonUnit.allCases, id: \.self) { unit in
+                Section(unit.title) {
+                    ForEach(Lesson.catalog.filter { $0.unit == unit }) { lesson in
+                        Button(lesson.title) { app.openLesson(lesson.id) }
+                    }
+                }
+            }
+        }
         CommandGroup(replacing: .help) {
             Button("键盘快捷键") { app.sheet = .shortcuts }.keyboardShortcut("/", modifiers: [.command])
         }
