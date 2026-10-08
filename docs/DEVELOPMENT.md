@@ -37,6 +37,10 @@ swift run --configuration release media-benchmark
 
 页面里的截图由应用自带的快照模式生成：`bash scripts/make-site-screenshots.sh <示例照片文件夹> [示例视频]`。快照无法呈现 Liquid Glass 材质，想要真实玻璃效果，可以自己截一张图替换 `website/assets/shot-edit.jpg`（文件名不变即可）。示例照片会公开展示，请只用你有权公开的照片。
 
+## 宣传视频
+
+`docs/marketing/xiaohongshu/video.html` 是一段 1080×1920、约 49 秒的竖屏视频，所有动画由同一个时钟驱动，可以实时播放、拖到任意时间，也可以逐帧渲染。`bash scripts/render-xiaohongshu-video.sh` 用无头 Chrome 渲染每一帧、再用 ffmpeg 合成 `dist/xiaohongshu.mp4`（无声，约 5 分钟，需要 Chrome 和 ffmpeg）；`... still <秒数>…` 只渲染指定时刻的静帧用于检查。口播稿、剪辑与发布文案见 `docs/marketing/xiaohongshu/script.md`。
+
 ## 代码结构
 
 - `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、`CubeLUT`、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）。
