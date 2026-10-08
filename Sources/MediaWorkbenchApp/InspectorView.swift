@@ -103,6 +103,7 @@ struct ColorPanel: View {
             PresetStrip(app: app)
             InspectorSection("调整", help: "最常用的几项。需要更多控制时切换到「完整」。", onReset: { editor.resetStage(.basic) }) {
                 let values = editor.adjustments
+                ZoneHistogramFeed(editor: editor).padding(.bottom, 6)
                 VStack(spacing: 2) {
                     ForEach(SimpleControl.all, id: \.parameter) { control in
                         ParameterRow(title: control.title, value: values[control.parameter], range: control.parameter.range,
@@ -110,7 +111,7 @@ struct ColorPanel: View {
                                      help: control.hint + "\n\n" + control.parameter.explanation,
                                      influence: app.learner.hoverHints ? InfluenceKind.forParameter(control.parameter) : nil,
                                      onChange: { editor.setAdjustment(control.parameter, $0) }, onEditing: editor.beginEditing,
-                                     onHover: { editor.hoverInfluence = $0 })
+                                     onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(control.parameter, $0) })
                             .equatable()
                     }
                 }
@@ -221,7 +222,7 @@ struct AdjustmentRows: View {
                              suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
                              influence: hints ? InfluenceKind.forParameter(parameter) : nil,
                              onChange: { editor.setAdjustment(parameter, $0) }, onEditing: editor.beginEditing,
-                             onHover: { editor.hoverInfluence = $0 })
+                             onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(parameter, $0) })
                     .equatable()
             }
         }
@@ -652,5 +653,21 @@ struct FlowLayout: Layout {
             x += size.width + spacing; line = max(line, size.height); widest = max(widest, x)
         }
         return (CGSize(width: min(width, widest), height: y + line), points)
+    }
+}
+
+/// Reads scopes and focus in its own body so slider drags don't redraw the whole panel.
+struct ZoneHistogramFeed: View {
+    let editor: EditorModel
+    var height: CGFloat = 56
+    var body: some View {
+        ZoneHistogram(histogram: editor.scopes?.analysis.lumaHistogram ?? [], focus: editor.focusParameter, height: height)
+    }
+}
+
+extension EditorModel {
+    func focus(_ parameter: AdjustmentParameter, _ on: Bool) {
+        if on { if focusParameter != parameter { focusParameter = parameter } }
+        else if focusParameter == parameter { focusParameter = nil }
     }
 }

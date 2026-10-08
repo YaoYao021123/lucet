@@ -28,6 +28,8 @@ public struct PhotoAnalysis: Sendable, Equatable {
     public var darkCenter: [Double]?
     public var brightFraction = 0.0
     public var darkFraction = 0.0
+    /// Share of pixels per brightness step (64 steps, tallest = 1), for zone diagrams and lessons.
+    public var lumaHistogram: [Double] = []
 
     public init() {}
 
@@ -112,6 +114,10 @@ public struct PhotoAnalysis: Sendable, Equatable {
             }
             a.p1 = percentile(0.01); a.p5 = percentile(0.05); a.p50 = percentile(0.5)
             a.p95 = percentile(0.95); a.p99 = percentile(0.99)
+            var steps = [Double](repeating: 0, count: 64)
+            for (index, value) in lumaHistogram.enumerated() { steps[index / 4] += Double(value) }
+            let tallest = max(1, steps.max() ?? 1)
+            a.lumaHistogram = steps.map { $0 / tallest }
             a.meanLuma = lumaHistogram.enumerated().reduce(0.0) { $0 + Double($1.offset) * Double($1.element) } / 255 / total
             a.clippedHighlights = Double(white) / total
             a.clippedShadows = Double(black) / total

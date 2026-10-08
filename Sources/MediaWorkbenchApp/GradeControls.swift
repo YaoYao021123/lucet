@@ -37,6 +37,7 @@ struct ScopePanel: View {
             .frame(height: kind == .vectorscope ? 128 : 84)
             .overlay(alignment: .topLeading) { clipBadge(shadows: true) }
             .overlay(alignment: .topTrailing) { clipBadge(shadows: false) }
+            if kind == .histogram { ZoneLabels(focus: editor.focusParameter) }
             // Plain-language reading of this diagram for this photo.
             if let analysis = editor.scopes?.analysis {
                 Text(PhotoCoach.reading(scope: kind.rawValue, analysis, level: level))
@@ -50,7 +51,11 @@ struct ScopePanel: View {
     @ViewBuilder private var content: some View {
         let scopes = editor.scopes
         switch editor.scopeKind {
-        case .histogram: HistogramShape(histogram: scopes?.histogram)
+        case .histogram:
+            ZStack {
+                HistogramShape(histogram: scopes?.histogram)
+                ZoneShading(focus: editor.focusParameter)
+            }
         case .waveform: WaveformView(image: scopes?.waveform, sections: 1)
         case .parade: WaveformView(image: scopes?.parade, sections: 3)
         case .vectorscope: VectorscopeView(image: scopes?.vectorscope)

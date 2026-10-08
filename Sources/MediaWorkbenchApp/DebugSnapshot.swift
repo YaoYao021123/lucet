@@ -77,6 +77,7 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "focus": app.editor.focusParameter = AdjustmentParameter(rawValue: argument)
         case "crop":
             // "scale,horizontal,vertical,ratio"
             let v = argument.split(separator: ",").compactMap { Double($0) }
@@ -87,7 +88,7 @@ enum DebugSnapshot {
             let parts = argument.split(separator: "|").map(String.init)
             if parts.count == 2 { app.relocate(URL(fileURLWithPath: parts[0]).standardizedFileURL.path, to: URL(fileURLWithPath: parts[1])) }
         case "tab": app.inspectorTab = InspectorTab(rawValue: argument) ?? .color
-        case "scope": UserDefaults.standard.set(argument, forKey: "scope.kind")
+        case "scope": UserDefaults.standard.set(argument, forKey: "scope.kind"); app.editor.scopeKind = ScopeKind(rawValue: argument) ?? app.editor.scopeKind
         case "expand": UserDefaults.standard.set(false, forKey: "section.collapsed.\(argument)")
         case "collapse": UserDefaults.standard.set(true, forKey: "section.collapsed.\(argument)")
         case "compare": app.editor.compareMode = CompareMode(rawValue: argument) ?? .off

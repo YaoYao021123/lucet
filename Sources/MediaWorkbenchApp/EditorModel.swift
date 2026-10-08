@@ -51,6 +51,8 @@ final class EditorModel {
             schedulePreview()
         }
     }
+    /// The tone control being hovered or dragged; the zone histogram shades where it acts.
+    var focusParameter: AdjustmentParameter?
     /// True when `frame` was rendered without the crop, so the crop frame can be drawn on it.
     private(set) var frameIsUncropped = false
     /// Why the last open failed, shown in place of the canvas.

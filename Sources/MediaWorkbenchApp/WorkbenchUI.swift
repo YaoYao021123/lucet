@@ -49,6 +49,8 @@ struct ParameterRow: View, @MainActor Equatable {
     let onChange: (Double) -> Void
     var onEditing: (Bool) -> Void = { _ in }
     var onHover: (InfluenceKind?) -> Void = { _ in }
+    /// Hovering anywhere on the row or dragging: the histogram shows this control's zones.
+    var onFocus: (Bool) -> Void = { _ in }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.title == rhs.title && lhs.value == rhs.value && lhs.range == rhs.range && lhs.step == rhs.step
@@ -88,6 +90,8 @@ struct ParameterRow: View, @MainActor Equatable {
         }
         .font(.subheadline)
         .frame(height: 18)
+        .contentShape(Rectangle())
+        .onHover { inside in if !dragging { onFocus(inside) } }
         .contextMenu { Button("恢复默认值") { reset() } }
         .opacity(enabled ? 1 : 0.5)
     }
@@ -115,6 +119,7 @@ struct ParameterRow: View, @MainActor Equatable {
 
     private func editingChanged(_ editing: Bool) {
         dragging = editing
+        onFocus(editing)
         onEditing(editing)
         if !editing { position = nil }
     }
