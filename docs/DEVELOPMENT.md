@@ -7,7 +7,7 @@
 ```sh
 bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh             # 94 项测试
+bash scripts/test-workbench.sh             # 98 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
 bash scripts/package-release.sh            # 生成 dist/Guangji-<版本>-arm64.zip（临时签名，未公证）
 ```
