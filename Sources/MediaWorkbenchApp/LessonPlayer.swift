@@ -144,6 +144,16 @@ struct LessonSceneView: View {
         case .shutterMotion: ShutterScene(photo: photo)
         case .isoNoise: ISOScene(photo: photo)
         case .exposureTriangle: ExposureTriangleScene(photo: photo)
+        case .colorTemperature: ColorTemperatureScene(photo: photo)
+        case .whitePicker: WhitePickerScene(photo: photo)
+        case .colorThreeNumbers: ColorThreeNumbersScene()
+        case .hslBand: HSLBandScene(photo: photo)
+        case .fieldOfView: FieldOfViewScene(photo: photo)
+        case .perspective: PerspectiveScene()
+        case .frameRate: FrameRateScene()
+        case .shutterAngle: ShutterAngleScene()
+        case .logCurve: LogCurveScene()
+        case .logConversion: LogConversionScene(photo: photo)
         }
     }
 }

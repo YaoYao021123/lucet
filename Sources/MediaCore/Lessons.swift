@@ -17,12 +17,14 @@ public struct Lesson: Identifiable, Sendable {
 }
 
 public enum LessonUnit: String, CaseIterable, Sendable {
-    case reading, tone, camera
+    case reading, tone, color, camera, video
     public var title: String {
         switch self {
         case .reading: "看懂一张照片"
         case .tone: "调整明暗"
+        case .color: "颜色"
         case .camera: "拍摄的原理"
+        case .video: "视频与 Live"
         }
     }
 }
@@ -45,8 +47,12 @@ public enum LessonScene: String, Sendable, CaseIterable {
     case clippingDemo
     // Tone
     case exposureVsBrightness, toneControl, curveAxes, curveShapes
+    // Color
+    case colorTemperature, whitePicker, colorThreeNumbers, hslBand
     // Camera
-    case apertureOpening, depthOfField, shutterMotion, isoNoise, exposureTriangle
+    case apertureOpening, depthOfField, shutterMotion, isoNoise, exposureTriangle, fieldOfView, perspective
+    // Video
+    case frameRate, shutterAngle, logCurve, logConversion
 }
 
 public struct LessonQuestion: Sendable {
@@ -133,6 +139,26 @@ extension Lesson {
                                                 options: ["整体往上", "S 形", "整体往下"], answer: .option(1),
                                                 explanation: "S 形把直方图向两边拉开，画面就不再发灰。")),
         ]),
+        Lesson(id: "white-balance", unit: .color, title: "白平衡与色温",
+               hook: "为什么在室内拍的照片总是发黄？", concept: .whiteBalance, steps: [
+            LessonStep(.colorTemperature, "光本身有颜色",
+                       "烛光和灯泡偏橙，正午阳光接近白，阴天和树荫偏蓝。用开尔文（K）表示：数字越小越暖，越大越冷。选一种光，看同一张照片被染成什么样。"),
+            LessonStep(.whitePicker, "找一个本该是白或灰的地方",
+                       "白纸、白墙、灰色路面在真实世界里没有颜色。点照片里这样的地方，光集会把它校正成中性灰，整张照片的偏色就跟着消失。",
+                       question: LessonQuestion(prompt: "暖黄灯光下拍的照片发黄，色温滑块该往哪边？",
+                                                options: ["往暖（右）", "往冷（左）"], answer: .option(1),
+                                                explanation: "照片偏暖，就往冷的方向补回来。日落等想保留的暖色，可以只补一部分。")),
+        ]),
+        Lesson(id: "hsl", unit: .color, title: "HSL：只改一种颜色",
+               hook: "怎样只让天空更蓝，而草地不变？", concept: .hsl, steps: [
+            LessonStep(.colorThreeNumbers, "一个颜色，三个数",
+                       "色相是哪种颜色（转一圈：红→黄→绿→青→蓝→紫）；饱和度是多鲜艳（越靠外越浓）；明亮度是多亮。拖动色轮上的点和下面的滑块。"),
+            LessonStep(.hslBand, "只挑出一种颜色",
+                       "选一个色系，照片上只有这种颜色保持彩色。再拖它的色相、饱和度、明亮度，其他颜色不会动。",
+                       question: LessonQuestion(prompt: "想让天空更深一点、草地不受影响，应该调什么？",
+                                                options: ["整体饱和度", "蓝色的明亮度往下", "曝光往下"], answer: .option(1),
+                                                explanation: "HSL 只作用在选中的颜色上：压暗蓝色，天空变深，绿色的草地不变。")),
+        ]),
         Lesson(id: "aperture", unit: .camera, title: "光圈：数字越大，开口越小",
                hook: "为什么 ƒ/4 比 ƒ/2.8 的光圈小？", concept: nil, steps: [
             LessonStep(.apertureOpening, "ƒ 后面是一个除数",
@@ -155,6 +181,37 @@ extension Lesson {
                                                 options: ["把快门调慢很多", "开大光圈，再适当提高 ISO", "把 ISO 调到最低"],
                                                 answer: .option(1),
                                                 explanation: "先用光圈多进光；还不够再提 ISO。快门太慢，手一抖就糊了。")),
+        ]),
+        Lesson(id: "focal-length", unit: .camera, title: "焦距：广角和长焦",
+               hook: "同一个位置，为什么手机「2 倍」「5 倍」拍出的画面差这么多？", concept: nil, steps: [
+            LessonStep(.fieldOfView, "焦距决定看多宽",
+                       "焦距越短，看到的范围越宽（广角）；越长，越像望远镜（长焦）。拖动焦距，看你的照片能装下多少。手机上的「2 倍」「5 倍」，就是在换焦距。"),
+            LessonStep(.perspective, "长焦会把背景「拉近」",
+                       "让人在画面里一样大，长焦需要人站得更远，背景就显得又大又近；广角则背景很远、很小。这叫透视压缩。",
+                       question: LessonQuestion(prompt: "在小房间里拍一大群人的合影，选哪种焦距？",
+                                                options: ["广角（短焦距）", "长焦（长焦距）"], answer: .option(0),
+                                                explanation: "广角能在近距离装下更宽的画面；长焦要退得很远，小房间里做不到。")),
+        ]),
+        Lesson(id: "frame-rate", unit: .video, title: "帧率与快门",
+               hook: "为什么视频的快门不能像拍照那样越快越好？", concept: nil, steps: [
+            LessonStep(.frameRate, "视频是一秒很多张照片",
+                       "24 帧就是每秒 24 张，60 帧是 60 张。帧越多，动作越顺滑；用 60 帧拍、按 24 帧放，就是 2.5 倍慢动作。"),
+            LessonStep(.shutterAngle, "每一帧要有一点拖影",
+                       "快门太快，每帧都清清楚楚，连起来反而一跳一跳。常用做法是快门约等于 1/(2×帧率)：24 帧用 1/50，30 帧用 1/60（叫 180° 快门）。白天太亮时，要加 ND 滤镜减光，而不是提高快门。",
+                       question: LessonQuestion(prompt: "用 25 帧拍视频，按这个原则快门该设多少？",
+                                                options: ["1/25 秒", "1/50 秒", "1/1000 秒"], answer: .option(1),
+                                                explanation: "1/(2×25) = 1/50 秒，动作自然。1/1000 太快，画面会有卡顿感。")),
+        ]),
+        Lesson(id: "log-lut", unit: .video, title: "Log 素材与 LUT",
+               hook: "D-Log 拍出来为什么灰蒙蒙的？", concept: .logFootage, steps: [
+            LessonStep(.logCurve, "Log 把更多亮度装进同一个文件",
+                       "普通模式（Rec.709）亮到一定程度就变成纯白。Log 用一条平缓的曲线，把很暗到很亮都记下来，代价是画面看起来又灰又淡。拖动「场景亮度」比较两条线。"),
+            LessonStep(.logConversion, "LUT 把它还原成正常画面",
+                       "转换 LUT 是一张对照表，把 Log 的灰色画面换回正常的对比和颜色。拖动强度，看直方图从挤在中间变成铺开。注意：这里用你的照片模拟 Log 的样子。",
+                       question: LessonQuestion(prompt: "拿到 D-Log 素材，第一步做什么？",
+                                                options: ["直接拉高饱和度和对比度", "先套用这台相机对应的转换 LUT", "降低曝光"],
+                                                answer: .option(1),
+                                                explanation: "先用厂商的转换 LUT 回到正常画面，再在上面调色；直接拉滑块很难还原准确的颜色。")),
         ]),
     ]
 
