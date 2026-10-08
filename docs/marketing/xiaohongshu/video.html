@@ -78,6 +78,12 @@ img{display:block}
 .rule{width:140px;height:4px;background:var(--faint);margin:0 0 44px;opacity:.7}
 .disclaimer{position:absolute;left:96px;right:150px;bottom:410px;font-size:30px;color:var(--faint);line-height:1.5}
 
+/* 8 how it was made: real commit lines build up */
+.logbox{position:absolute;left:96px;right:96px;top:860px;font:29px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}
+.logbox .row2{display:flex;gap:24px;opacity:0;animation:fade .4s ease var(--d,0s) both;white-space:nowrap}
+.logbox .row2 i{font-style:normal;color:#77746c;flex:none}
+.logbox .row2 span{color:#d6d3c8;overflow:hidden;text-overflow:ellipsis}
+
 /* controls (never part of the render) */
 #hud{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(30,30,32,.88);color:#ddd;font:14px/1.4 var(--font);white-space:nowrap;z-index:10;transition:opacity .25s}
 body.playing #hud,body.render #hud,body.record #hud{opacity:0;pointer-events:none}
@@ -162,7 +168,16 @@ body.playing #hud,body.render #hud,body.record #hud{opacity:0;pointer-events:non
     </div>
   </section>
 
-  <!-- 8 · close (6 s) -->
+  <!-- 8 · how it was made (6.5 s) -->
+  <section class="scene" data-name="做法" data-dur="6.5">
+    <div class="safe" style="bottom:auto">
+      <h2 class="h m"><span class="ln" style="--d:.2s">这个 App，是我和</span><span class="ln" style="--d:.6s">Claude Code</span><span class="ln" style="--d:1s">一起做的</span></h2>
+      <p class="sub" style="margin-top:22px"><span class="ln" style="--d:1.7s">从 ChatGPT 的原型开始</span></p>
+    </div>
+    <div class="logbox" id="log"></div>
+  </section>
+
+  <!-- 9 · close (6 s) -->
   <section class="scene" data-name="结尾" data-dur="6">
     <div class="safe" style="bottom:auto">
       <div class="rule fade" style="--d:.1s"></div>
@@ -187,6 +202,25 @@ const FADE = 0.4;
 const q = new URLSearchParams(location.search);
 document.body.classList.toggle("render", q.has("render"));
 document.body.classList.toggle("record", q.has("record"));
+
+const LOG = [
+  ["4072608", "Baseline: ChatGPT prototype as received"],
+  ["f99fe13", "Rebuild the workbench UI"],
+  ["6aa164c", "Compact inspector and an adaptive coach"],
+  ["0d74df2", "Liquid Glass segmented controls"],
+  ["ad45c60", "Calmer, mostly neutral interface"],
+  ["c4ebd85", "Coach: stop calling high-key photos bad"],
+  ["786aa6c", "Find moved or renamed files"],
+  ["7a2d555", "自动 and a 简单 mode"],
+  ["760a567", "Save exports to Photos and share them"],
+  ["aa6cf20", "Drag the crop frame on the picture"],
+  ["7480183", "Website: flatter layout"],
+  ["cca616c", "Xiaohongshu launch pack"],
+];
+(function(){
+  document.getElementById("log").innerHTML = LOG.map(([h, m], i) =>
+    `<div class="row2" style="--d:${(2.2 + i * 0.3).toFixed(2)}s"><i>${h}</i><span>${m}</span></div>`).join("");
+})();
 
 // A few dozen sliders for the "too complex" scene.
 (function(){

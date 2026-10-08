@@ -108,6 +108,14 @@ bash scripts/run-workbench.sh
 - D-Log 等 Log 素材需要自己导入对应的转换 LUT，自动识别还在计划中。
 - 导入的文件夹不会自动监视新文件。
 
+## 怎么做出来的，和一起做
+
+光集的第一版，是 ChatGPT 写出来的原型（`git log` 的第一条就是 “Baseline: ChatGPT prototype as received”）。之后我把它交给 [Claude Code](https://claude.com/claude-code)，让它先挑毛病，再一点点改：导入大文件夹不再卡住，界面重做，加上「自动」、预设缩略图、拖动裁剪、互动课。官网和宣传视频也是同样的做法：用网页技术写好，再渲染出来。
+
+最有意思的是，几乎每一次改动都来自一句普通的人话，比如「这个蓝色太亮了」「信息不够」「方框太多」。不用先学编程，把感觉说清楚，剩下的交给 AI 去试、去改、去测试。
+
+所以光集也想和你一起做。有想法或者遇到问题，到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 说；你也在用 Claude Code 或别的 AI 工具做东西，欢迎分享你的做法。
+
 ## 反馈
 
 遇到问题或想要某个功能，欢迎到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们，附上一张截图会很有帮助。

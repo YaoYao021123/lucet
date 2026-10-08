@@ -2,7 +2,8 @@
 
 怎么让该知道光集的人知道它。里面的帖子草稿都是用「我」的口吻写的，发之前请改成你自己的话；方括号 `[…]` 是需要你补的链接或信息。
 
-> 小红书的视频、口播稿和发布文案在 [xiaohongshu/script.md](xiaohongshu/script.md)。
+> 小红书的视频、图文 / 实况图、口播稿和发布文案在 [xiaohongshu/script.md](xiaohongshu/script.md)。
+> **「和 AI 一起做出来」的故事**（真实节点、数字、三篇帖子草稿）在 [story.md](story.md)。
 
 ## 1. 先把一句话说清楚
 

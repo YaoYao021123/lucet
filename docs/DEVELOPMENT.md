@@ -41,6 +41,8 @@ swift run --configuration release media-benchmark
 
 `docs/marketing/xiaohongshu/video.html` 是一段 1080×1920、约 49 秒的竖屏视频，所有动画由同一个时钟驱动，可以实时播放、拖到任意时间，也可以逐帧渲染。`bash scripts/render-xiaohongshu-video.sh` 用无头 Chrome 渲染每一帧、再用 ffmpeg 合成 `dist/xiaohongshu.mp4`（无声，约 5 分钟，需要 Chrome 和 ffmpeg）；`... still <秒数>…` 只渲染指定时刻的静帧用于检查。口播稿、剪辑与发布文案见 `docs/marketing/xiaohongshu/script.md`。
 
+同一套做法还生成小红书的**图文 / 实况图**：`docs/marketing/xiaohongshu/slides.html` 是 8 张 1080×1440 的卡片（图片在中间、文字在下面，每张带 3 秒动效）。`bash scripts/render-xiaohongshu-slides.sh` 输出静态图 `dist/xhs-slides/*.jpg`，以及用光集自己的实况图代码合成的 Live Photo 配对 `dist/xhs-slides/live/*.jpg + *.mov`（`media-probe live <视频> <新文件夹>` 可单独把一段 ≤3 秒的视频变成实况图）。两个渲染脚本共用 `scripts/lib/render-frame.sh`（无头 Chrome 逐帧截图）。
+
 ## 代码结构
 
 - `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、`CubeLUT`、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）。

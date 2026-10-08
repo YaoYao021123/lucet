@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import MediaCore
 
@@ -8,15 +9,25 @@ struct MediaProbe {
         guard let command = arguments.first,
               ((["inspect", "lut", "straighten", "details", "analyze", "auto"].contains(command) && arguments.count == 2)
                 || (command == "auto" && arguments.count == 3)
+                || (command == "live" && (3...4).contains(arguments.count))
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "auto" {
+            if command == "live" {
+                // Turns a short video into a Live Photo pair (cover JPEG + paired MOV) in a new folder; the system's
+                // pairing check runs inside. The cover defaults to just before the end of the clip.
+                let duration = try await AVURLAsset(url: url).load(.duration).seconds
+                let cover = arguments.count == 4 ? (Double(arguments[3]) ?? duration - 0.2) : duration - 0.2
+                let clip = ClipSettings(start: 0, end: min(duration, 3.0), cover: min(cover, min(duration, 3.0) - 0.05))
+                let result = try await LivePhotoPipeline.export(url, to: URL(fileURLWithPath: arguments[2]).standardizedFileURL,
+                                                                 clip: clip, edits: MediaEdits())
+                print(result.imageURL.path); print(result.videoURL.path)
+            } else if command == "auto" {
                 // Developer check for 自动: the values, the statistics after, and an optional before|after JPEG.
                 let session = try ImageGradeSession(url: url, maximumDimension: 1024)
                 let plain = try await session.frame(edits: MediaEdits())

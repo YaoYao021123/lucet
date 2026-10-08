@@ -139,6 +139,8 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 .fit li{margin-top:6px}
 @media(max-width:720px){.fit{grid-template-columns:1fr;gap:36px}}
 
+.commits{margin:0;font:15px/2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);overflow:auto;white-space:pre}
+.commits i{font-style:normal;color:var(--faint);margin-right:16px}
 .faq{max-width:760px;margin:40px auto 0}
 details{border-bottom:1px solid var(--line);padding:6px 0}
 details:first-child{border-top:1px solid var(--line)}
@@ -168,6 +170,7 @@ footer .wrap{display:grid;gap:10px}
       <a href="#why">为什么做</a>
       <a href="#features">功能</a>
       <a href="#dji">DJI 素材</a>
+      <a href="#made">怎么做的</a>
       <a href="#faq">常见问题</a>
       <a class="btn primary small-btn cta" href="#download">下载</a>
     </div>
@@ -315,6 +318,33 @@ footer .wrap{display:grid;gap:10px}
         <p class="small" style="margin-top:16px">还在计划中：D-Log 素材自动套用转换 LUT（现在需要你自己导入对应的 LUT）。</p>
       </div>
       <div class="shot"><img src="assets/panel-info.jpg" width="600" height="1330" alt="信息面板：一段 DJI 视频的编码、帧率、码率、色彩空间和位深" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section id="made">
+  <div class="wrap">
+    <div class="feature" style="padding:0">
+      <div class="text">
+        <p class="kicker">怎么做出来的</p>
+        <h2>用一句人话，和 AI 一起把它做出来</h2>
+        <p>光集的第一版，是 ChatGPT 写出来的原型。我把它交给 Claude Code，让它先挑毛病，再一点点改：导入大文件夹不再卡住，界面重做成现在的样子，加上「自动」、预设缩略图和边调边学。你正在看的这个网页，还有宣传视频，也是这样做的：用网页技术写好，再渲染出来。</p>
+        <p>过程里最有意思的是：几乎每一次改动，都来自一句普通的人话，比如「这个蓝色太亮了」「信息不够」「方框太多」。不用先学编程，把感觉说清楚，剩下的交给 AI 去试、去改、去测试。</p>
+        <p>所以光集也想和你一起做。有想法，到 GitHub 的 Issues 里说；你也在用 Claude Code 或别的 AI 工具做东西，欢迎分享你的做法，互相看看。</p>
+        <p style="margin-top:26px"><a class="btn glass" href="https://github.com/YaoYao021123/pic_review_edit/issues">到 GitHub 说说你的想法</a></p>
+      </div>
+      <pre class="commits" aria-label="光集的真实提交记录节选：从「ChatGPT 的原型」开始，逐步改成现在的样子"><i>4072608</i>Baseline: ChatGPT prototype as received
+<i>f99fe13</i>Rebuild the workbench UI
+<i>6aa164c</i>Compact inspector and an adaptive coach
+<i>0d74df2</i>Liquid Glass segmented controls
+<i>ad45c60</i>Calmer, mostly neutral interface
+<i>c4ebd85</i>Coach: stop calling high-key photos bad
+<i>786aa6c</i>Find moved or renamed files
+<i>7a2d555</i>自动 and a 简单 mode
+<i>760a567</i>Save exports to Photos and share them
+<i>aa6cf20</i>Drag the crop frame on the picture
+<i>7480183</i>Website: flatter layout
+<i>cca616c</i>Xiaohongshu launch pack</pre>
     </div>
   </div>
 </section>
