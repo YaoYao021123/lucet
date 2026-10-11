@@ -43,6 +43,8 @@ swift run --configuration release media-benchmark
 
 同一套做法还生成小红书的**图文 / 实况图**：`docs/marketing/xiaohongshu/slides.html` 是 8 张 1080×1440 的卡片（图片在中间、文字在下面，每张带 3 秒动效）。`bash scripts/render-xiaohongshu-slides.sh` 输出静态图 `dist/xhs-slides/*.jpg`，以及用光集自己的实况图代码合成的 Live Photo 配对 `dist/xhs-slides/live/*.jpg + *.mov`（`media-probe live <视频> <新文件夹>` 可单独把一段 ≤3 秒的视频变成实况图）。两个渲染脚本共用 `scripts/lib/render-frame.sh`（无头 Chrome 逐帧截图）。
 
+**声音**：`bash scripts/render-xiaohongshu-audio.sh` 生成背景音乐和配音版（见 `docs/marketing/xiaohongshu/script.md` 第 1b 节）。`scripts/audio/make-voiceover.py` 把 `narration.json` 的台词转成语音（`--engine edge|melo|say|files`），用 whisper-cli 做语音识别核对，并按配音长度算出每个场景的时长（写入 `timeline.json`，视频渲染通过 `DURS` 环境变量读取）；`scripts/audio/make-music.py` 按这份时间线合成原创音乐。需要 `.venv-audio`（numpy、edge-tts、sherpa-onnx，首次运行自动创建）和 `brew install whisper-cpp` 加一个 Whisper 模型（`~/.cache/whisper-cpp/ggml-small.bin`）。
+
 ## 代码结构
 
 - `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、`CubeLUT`、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）。

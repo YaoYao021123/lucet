@@ -233,6 +233,8 @@ const LOG = [
 })();
 
 const scenes = [...document.querySelectorAll(".scene")];
+// ?dur=4,5.2,... sets every scene's length (the render script passes lengths that fit the narration).
+if (q.has("dur")) q.get("dur").split(",").forEach((d, i) => { if (scenes[i] && +d > 0) scenes[i].dataset.dur = d; });
 let total = 0;
 for (const s of scenes) { s.start = total; s.dur = +s.dataset.dur; total += s.dur; s.end = total; }
 
