@@ -87,6 +87,8 @@ ENGINE=files bash scripts/render-xiaohongshu-audio.sh voice mine
 
 ## 2. 口播稿（按场景对时间）
 
+> 想讲完整的故事？**长版口播稿（中文约 5 分钟 + English 约 6 分钟）** 在 [../script-long.md](../script-long.md)，提词器用 `teleprompter.html?v=long-zh` / `?v=long-en`。下面是 55 秒短版。
+
 中文口播大约每秒 4–5 个字，每段字数已经按这个控制。
 
 | 时间 | 场景 | 屏幕上的字 | 口播 |
