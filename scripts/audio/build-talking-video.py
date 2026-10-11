@@ -28,6 +28,8 @@ from pathlib import Path
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts/lib"))
+from sketch_pics import find_pics, pics_param
 XHS = ROOT / "docs/marketing/xiaohongshu"
 WHISPER_MODEL = Path.home() / ".cache/whisper-cpp/ggml-small.bin"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -248,7 +250,7 @@ def plan_sketches(cues, total):
     return plan
 
 
-def render_sketches(plan, work):
+def render_sketches(plan, work, pics):
     """Each board is drawn frame by frame by headless Chrome, then turned into a short clip. Returns the clip paths."""
     env_lib = ROOT / "scripts/lib/render-frame.sh"
     clips = []
@@ -262,7 +264,7 @@ def render_sketches(plan, work):
 
         def one(i):
             raw = folder / f"{i:04d}.raw.png"
-            url = f"file://{XHS}/sketches.html?board={p['name']}&render=1&t={i / BOARD_FPS:.3f}&cues={cues}"
+            url = f"file://{XHS}/sketches.html?board={p['name']}&render=1&t={i / BOARD_FPS:.3f}&cues={cues}&pics={pics_param(pics)}"
             run(["bash", "-c", f'chrome="{CHROME}"; work="{folder}"; source "{env_lib}"; CHROME_HEIGHT=1167 render_frame "{url}" "{raw}"'])
             run(["ffmpeg", "-loglevel", "error", "-y", "-i", raw, "-vf", f"crop=1080:{SKETCH_H}:0:0", folder / f"{i:04d}.png"])
             raw.unlink()
@@ -310,6 +312,7 @@ def main():
                     help="where your face is in the frame, 0 = top, 1 = bottom (default 0.38); sets the crop while a sketch is up")
     ap.add_argument("--no-trim", action="store_true", help="keep every pause")
     ap.add_argument("--no-music", action="store_true")
+    ap.add_argument("--no-pics", action="store_true", help="hand-drawn icons only, no screenshots in the sketches")
     ap.add_argument("--no-sketches", action="store_true", help="face and captions only")
     ap.add_argument("--captions", help="use this (edited) captions.srt instead of recognising speech again")
     ap.add_argument("--plan-only", action="store_true", help="stop after recognising speech and planning the sketches")
@@ -334,7 +337,7 @@ def main():
     if args.plan_only:
         return
 
-    clips = render_sketches(plan, work)
+    clips = render_sketches(plan, work, {} if args.no_pics else find_pics())
     cap_files = render_captions(cues, work)
     if not args.no_music:
         make_music(total, work)
