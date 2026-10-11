@@ -30,29 +30,34 @@ const NS = "http://www.w3.org/2000/svg";
 const Q = new URLSearchParams(location.search);
 const svg = document.getElementById("s"), root = document.getElementById("board"), rc = rough.svg(svg);
 const INK = "#1e1e1e", GREY = "#868e96", RED = "#c92a2a", GREEN = "#2b8a3e", ORANGE = "#e8590c", SOFT = "#fff3bf", MINT = "#d3f9d8";
-let seed = 1; const items = [];
+let seed = 1; const items = [], EX = [];          // EX: the same drawing as plain shapes, for the .excalidraw export
 
 /* ---- drawing helpers: each returns nothing, and registers an item that starts at an anchor word ---- */
 function opt(o = {}) { return { roughness: 1.5, bowing: 1.3, strokeWidth: 3.4, stroke: INK, seed: seed++, ...o }; }
 function put(g, at, delay = 0, dur = 0.7, kind = "shape") { root.appendChild(g); items.push({ g, at, delay, dur, kind }); }
-const rect = (x, y, w, h, at, d, o) => put(rc.rectangle(x, y, w, h, opt(o)), at, d, 0.8);
-const circle = (x, y, r, at, d, o) => put(rc.circle(x, y, r * 2, opt(o)), at, d, 0.7);
-const line = (x1, y1, x2, y2, at, d, o) => put(rc.line(x1, y1, x2, y2, opt(o)), at, d, 0.5);
+const rect = (x, y, w, h, at, d, o) => { EX.push({ t: "rectangle", x, y, w, h, o }); put(rc.rectangle(x, y, w, h, opt(o)), at, d, 0.8); };
+const circle = (x, y, r, at, d, o) => { EX.push({ t: "ellipse", x: x - r, y: y - r, w: r * 2, h: r * 2, o }); put(rc.circle(x, y, r * 2, opt(o)), at, d, 0.7); };
+const line = (x1, y1, x2, y2, at, d, o) => { EX.push({ t: "line", x: x1, y: y1, pts: [[0, 0], [x2 - x1, y2 - y1]], o }); put(rc.line(x1, y1, x2, y2, opt(o)), at, d, 0.5); };
 function arrow(x1, y1, x2, y2, at, d, o = {}) {
   const a = Math.atan2(y2 - y1, x2 - x1), h = 26;
+  EX.push({ t: "arrow", x: x1, y: y1, pts: [[0, 0], [x2 - x1, y2 - y1]], o });
   const g = document.createElementNS(NS, "g");
   g.appendChild(rc.line(x1, y1, x2, y2, opt(o)));
   for (const s of [-0.5, 0.5]) g.appendChild(rc.line(x2, y2, x2 - h * Math.cos(a + s), y2 - h * Math.sin(a + s), opt(o)));
   put(g, at, d, 0.7);
 }
 function cross(x, y, r, at, d, color = RED) { const g = document.createElementNS(NS, "g");
+  EX.push({ t: "line", x: x - r, y: y - r, pts: [[0, 0], [2 * r, 2 * r]], o: { stroke: color, strokeWidth: 6 } });
+  EX.push({ t: "line", x: x + r, y: y - r, pts: [[0, 0], [-2 * r, 2 * r]], o: { stroke: color, strokeWidth: 6 } });
   g.appendChild(rc.line(x - r, y - r, x + r, y + r, opt({ stroke: color, strokeWidth: 6 })));
   g.appendChild(rc.line(x + r, y - r, x - r, y + r, opt({ stroke: color, strokeWidth: 6 }))); put(g, at, d, 0.5); }
-function check(x, y, s, at, d, color = GREEN) { put(rc.linearPath([[x - s, y], [x - s * 0.3, y + s * 0.7], [x + s, y - s * 0.8]], opt({ stroke: color, strokeWidth: 7 })), at, d, 0.5); }
+function check(x, y, s, at, d, color = GREEN) {
+  EX.push({ t: "line", x: x - s, y, pts: [[0, 0], [s * 0.7, s * 0.7], [s * 2, -s * 0.8]], o: { stroke: color, strokeWidth: 7 } });
+  put(rc.linearPath([[x - s, y], [x - s * 0.3, y + s * 0.7], [x + s, y - s * 0.8]], opt({ stroke: color, strokeWidth: 7 })), at, d, 0.5); }
 function text(str, x, y, at, d, { size = 54, color = INK, anchor = "middle" } = {}) {
   const t = document.createElementNS(NS, "text");
   Object.entries({ x, y, "text-anchor": anchor, "font-size": size, fill: color }).forEach(([k, v]) => t.setAttribute(k, v));
-  t.textContent = str; put(t, at, d, 0.5, "text");
+  EX.push({ t: "text", str, x, y, size, color, anchor }); t.textContent = str; put(t, at, d, 0.5, "text");
 }
 function phone(x, y, w, h, at, d, fill) {
   rect(x, y, w, h, at, d, { fill, fillStyle: "solid" }); rect(x + 14, y + 22, w - 28, h - 70, at, d + 0.15, { strokeWidth: 2.4 });
@@ -66,6 +71,7 @@ function person(x, y, at, d) {
   circle(x, y, 40, at, d); line(x, y + 40, x, y + 200, at, d + 0.2); line(x, y + 85, x - 62, y + 140, at, d + 0.3);
   line(x, y + 85, x + 70, y + 125, at, d + 0.35); line(x, y + 200, x - 55, y + 292, at, d + 0.5); line(x, y + 200, x + 58, y + 292, at, d + 0.55);
   line(x - 16, y - 6, x - 16, y - 2, at, d + 0.6, { strokeWidth: 5 }); line(x + 16, y - 6, x + 16, y - 2, at, d + 0.6, { strokeWidth: 5 });
+  EX.push({ t: "line", x: x - 14, y: y + 18, pts: [[0, 0], [7, 6], [14, 8], [21, 6], [28, 0]], o: { strokeWidth: 3 } });
   put(rc.arc(x, y + 10, 34, 24, 0.25 * Math.PI, 0.75 * Math.PI, false, opt({ strokeWidth: 3 })), at, d + 0.65, 0.3);
 }
 
@@ -168,6 +174,32 @@ const cues = {};
 anchors.forEach((a, i) => { if (!(a in cues)) cues[a] = i * 1.6; });         // missing anchors are spaced out so a board is never half empty
 const last = Math.max(...anchors.map(a => cues[a])) + 4;
 window.BOARD = { name, anchors, cues };
+/* ---- export: sketches.html?board=flow&export=1 writes the board as an Excalidraw file (see scripts/export-excalidraw.py) ---- */
+function toExcalidraw() {
+  const width = (w) => w >= 5 ? 4 : w >= 3 ? 2 : 1;
+  const elements = EX.map((e, i) => {
+    const o = e.o || {}, base = {
+      id: `${name}-${i}`, angle: 0, strokeColor: e.color ?? o.stroke ?? INK, backgroundColor: o.fill ?? "transparent", fillStyle: "solid",
+      strokeWidth: width(o.strokeWidth ?? 3.4), strokeStyle: o.strokeLineDash ? "dashed" : "solid", roughness: 1, opacity: 100, groupIds: [],
+      frameId: null, roundness: null, seed: 1000 + i * 7, version: 1, versionNonce: i + 1, isDeleted: false, boundElements: null, updated: 1,
+      link: null, locked: false };
+    if (e.t === "text") {                                    // an SVG text's y is its baseline; Excalidraw wants the top-left corner
+      const w = [...e.str].reduce((n, c) => n + (/[\u2e80-\u9fff\uff00-\uffef]/.test(c) ? 1 : 0.55), 0) * e.size, h = Math.round(e.size * 1.25);
+      return { ...base, type: "text", x: e.anchor === "middle" ? e.x - w / 2 : e.x, y: e.y - e.size, width: w, height: h, text: e.str, originalText: e.str,
+        fontSize: e.size, fontFamily: 5, textAlign: e.anchor === "middle" ? "center" : "left", verticalAlign: "top", containerId: null,
+        autoResize: true, lineHeight: 1.25 };
+    }
+    if (e.t === "line" || e.t === "arrow") {
+      const xs = e.pts.map(p => p[0]), ys = e.pts.map(p => p[1]);
+      return { ...base, type: e.t, x: e.x, y: e.y, width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys),
+        points: e.pts, lastCommittedPoint: null, startBinding: null, endBinding: null, startArrowhead: null,
+        endArrowhead: e.t === "arrow" ? "arrow" : null, ...(e.t === "arrow" ? { elbowed: false } : {}) };
+    }
+    return { ...base, type: e.t, x: e.x, y: e.y, width: e.w, height: e.h };
+  });
+  return { type: "excalidraw", version: 2, source: "https://excalidraw.com", elements, appState: { viewBackgroundColor: "#fbf8ef", gridSize: null }, files: {} };
+}
+if (Q.has("export")) { const pre = document.createElement("pre"); pre.id = "excalidraw"; pre.textContent = JSON.stringify(toExcalidraw()); document.body.appendChild(pre); }
 if (Q.has("render")) document.body.classList.add("render");
 if (Q.has("play") && !Q.has("render")) {
   let t0 = null; const loop = (ts) => { t0 = t0 ?? ts; seek(((ts - t0) / 1000) % (last + 1), cues); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
