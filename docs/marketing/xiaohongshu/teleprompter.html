@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>光集 · 提词器</title>
+<!--
+  Open this in Chrome, put the window at the top of your screen right under the camera (or on a tablet next to the lens),
+  and read it as if you were telling a friend. Don't memorise it: say it in your own words, redo any sentence you like.
+
+    Space  start / pause (3-2-1 first)      ↑ ↓  faster / slower      + −  text size
+    M      mirror (for a real teleprompter glass)      R  back to the start      H  hide / show the help
+
+  Edit the words in LINES below. A line in 【】 is a slot for something only you can say.
+-->
+<style>
+:root{--text:#f2f0e8;--dim:#5d5b54;--bg:#0b0b0c}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;overflow:hidden}
+#text{position:absolute;left:50%;top:0;width:min(880px,88vw);transform:translateX(-50%);will-change:transform}
+.line{font-size:var(--size,56px);line-height:1.45;font-weight:700;margin:0 0 .9em;color:var(--dim);transition:color .25s}
+.line.now{color:var(--text)}
+.line.slot{font-weight:500;font-style:italic}
+body.mirror #text{transform:translateX(-50%) scaleX(-1)}
+/* where your eyes should rest: a thin marker on the left edge, a third of the way down */
+#eye{position:absolute;left:0;top:30%;width:34px;height:3px;background:#f2f0e8;opacity:.6}
+#count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:220px;font-weight:800;background:rgba(11,11,12,.88)}
+#help{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);font-size:14px;color:#9a978d;white-space:nowrap;transition:opacity .3s}
+body.playing #help{opacity:0}
+#pos{position:fixed;right:18px;top:14px;font-size:14px;color:#6c6a62}
+</style>
+</head>
+<body>
+<div id="stage"><div id="text"></div><div id="eye"></div></div>
+<div id="count"></div><div id="pos"></div>
+<div id="help">空格 开始/暂停 · ↑↓ 速度 · +− 字号 · M 镜像 · R 重来</div>
+<script>
+const LINES = [
+  "你用 DJI 拍完素材，想在 Mac 上调色，",
+  "有没有发现：DJI Mimo，只有手机版？",
+  "我也遇到过。Lightroom、Photoshop 当然能做，",
+  "可第一次打开，全是看不懂的滑块。",
+  "所以我做了个小工具，叫「光集」。",
+  "点一下「自动」，它会先看这张照片，",
+  "再帮你调好明暗和颜色。不满意，一键撤销。",
+  "预设，直接用你自己的照片预览，喜欢哪个，点哪个。",
+  "裁剪，也是直接在照片上拖。",
+  "调完，直接存进「照片」，iPhone 上就能看到。",
+  "视频，还能做成实况照片。",
+  "【这里说一句只有你能说的：你最喜欢哪个功能，或者做它时最意外的一件事】",
+  "还有件有意思的事：这个 App，最早的原型是 ChatGPT 写的，",
+  "后来我用 Claude Code，一点点改成现在的样子。",
+  "每一次改动，几乎都只是我说了一句人话，",
+  "比如「这个蓝色太亮了」，比如「方框太多了」。",
+  "现在还是早期版本，只有 Apple 芯片的 Mac 能用。",
+  "想试试的，评论区告诉我；",
+  "你也在用 AI 做东西的话，也来聊聊。"
+];
+const box = document.getElementById("text");
+LINES.forEach(t => { const p = document.createElement("p"); p.className = "line" + (t.startsWith("【") ? " slot" : ""); p.textContent = t; box.appendChild(p); });
+const lines = [...box.children];
+let y = 0, speed = 46, size = 56, playing = false, last = 0, counting = false;
+const stage = document.getElementById("stage"), pos = document.getElementById("pos");
+function apply() {
+  document.documentElement.style.setProperty("--size", size + "px");
+  const start = innerHeight * 0.30;                       // the first line begins at the eye marker
+  box.style.top = start - y + "px";
+  const mid = innerHeight * 0.30 + 40;
+  lines.forEach(l => { const r = l.offsetTop + start - y; l.classList.toggle("now", r < mid + 30 && r + l.offsetHeight > mid - 30); });
+  pos.textContent = `速度 ${speed}`;
+}
+function frame(ts) {
+  if (playing) { y += speed * (ts - last) / 1000; const end = box.scrollHeight; if (y > end) { y = end; toggle(); } apply(); }
+  last = ts; requestAnimationFrame(frame);
+}
+function toggle() {
+  if (counting) return;
+  if (playing) { playing = false; document.body.classList.remove("playing"); return; }
+  counting = true; const c = document.getElementById("count"); c.style.display = "flex"; let n = 3; c.textContent = n;
+  const tick = setInterval(() => { n--; if (n > 0) c.textContent = n; else { clearInterval(tick); c.style.display = "none"; counting = false; playing = true; document.body.classList.add("playing"); last = performance.now(); } }, 1000);
+}
+addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); toggle(); }
+  else if (e.key === "ArrowUp") { speed = Math.min(140, speed + 6); apply(); }
+  else if (e.key === "ArrowDown") { speed = Math.max(12, speed - 6); apply(); }
+  else if (e.key === "+" || e.key === "=") { size = Math.min(96, size + 4); apply(); }
+  else if (e.key === "-") { size = Math.max(32, size - 4); apply(); }
+  else if (e.key === "m" || e.key === "M") document.body.classList.toggle("mirror");
+  else if (e.key === "r" || e.key === "R") { y = 0; playing = false; document.body.classList.remove("playing"); apply(); }
+});
+addEventListener("resize", apply); apply(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>
