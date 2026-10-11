@@ -11,9 +11,17 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 demo="${1:?demo photo folder}"; hero="${2:?hero photo}"; video="${3:-}"; compare_photo="${4:-$hero}"
-out="$root/website/assets"; work="$(mktemp -d)"; shots="$work/shots"; crops="$work/crops"
+# Fail before touching anything: a missing photo must never overwrite the website's pictures with empty ones.
+[ -n "$(ls "$demo"/*.jpg 2>/dev/null)" ] || { echo "示例照片文件夹里没有 .jpg：$demo" >&2; exit 1; }
+for f in "$hero" "$compare_photo" ${video:+"$video"}; do [ -f "$f" ] || { echo "找不到文件：$f" >&2; exit 1; }; done
+site="$root/website/assets"; work="$(mktemp -d)"; out="$work/out"; shots="$work/shots"; crops="$work/crops"
 mkdir -p "$out" "$shots" "$crops"
 bin="$(bash scripts/dev-build.sh | tail -1)"
+# The app restores its last window and split-view sizes; start from the defaults so the layout (and so the crops
+# below) is the same every time.
+for key in "NSWindow Frame workbench" "NSSplitView Subview Frames workbench, SidebarNavigationSplitView"; do
+  defaults delete media-workbench "$key" 2>/dev/null || true
+done
 imports="$demo${video:+,$video}"
 
 run() { # steps
@@ -23,19 +31,46 @@ run() { # steps
   kill "$pid" 2>/dev/null || true
 }
 
-# Browse grid, then the hero photo after 自动, presets, the 构图 tab with a square crop, the 学习 tab.
-run "import:$imports;wait:12;shot:browse;open:$hero;tab:color;colormode:simple;wait:4;auto;wait:8;shot:edit;\
-panel:presets@700;crop:0.9,30,0,1;tab:geometry;wait:3;shot:crop;tab:learn;wait:2;panel:learn@1150;quit"
+# Browse grid, then the hero photo after 自动, presets, the 构图 tab with a square crop, the 学习 tab. Each window shot
+# is paired with a panel render of the same inspector state (see with_panel below).
+run "size:1470x836;import:$imports;wait:12;shot:browse;open:$hero;tab:color;colormode:simple;wait:4;auto;wait:8;shot:edit;\
+panel:presets@800;crop:0.9,30,0,1;tab:geometry;wait:3;panel:geometry@800;shot:crop;tab:learn;wait:2;panel:learn@1150;quit"
 [ -n "$video" ] && run "open:$video;tab:info;collapse:文件;wait:6;panel:info@1100;quit"
 run "open:$hero;wait:3;sheet:export;wait:2;shot:export;quit"
 
+# The crops below assume a 1470 x 836 pt window (2940 x 1672 px). Stop here rather than crop the wrong thing.
+for f in edit crop browse; do
+  got="$(sips -g pixelWidth -g pixelHeight "$shots/$f.png" | awk '/pixel/{printf "%sx", $2}')"
+  [ "$got" = "2940x1672x" ] || { echo "$f.png 的尺寸是 ${got%x}，应为 2940x1672（窗口大小没有生效）" >&2; exit 1; }
+done
 jpg() { sips -s format jpeg -s formatOptions 90 "$1" --out "$2" >/dev/null 2>&1; }
 # Crops keep full widths and cut panels at section boundaries (a cut through a list looks broken).
 # Note: sips treats "--cropOffset 0 0" as "no offset" and crops from the CENTER, so top-aligned crops use 1 0.
 # Window shots lose the title bar (its glass controls can't be captured) and the status bar.
-sips -c 1514 2940 --cropOffset 104 0 "$shots/edit.png" --out "$crops/edit.png" >/dev/null; jpg "$crops/edit.png" "$out/shot-edit.jpg"
+# The window capture can't draw the secondary text on the inspector's translucent material in every build (the labels
+# come out near-black), so the inspector column is replaced by the same panel rendered in its own window, where the text
+# is drawn correctly. Where the column starts is measured in each capture (the canvas background is darker than the
+# inspector's) and the panel render is scaled to the column's real width, so nothing is guessed.
+PANEL_DY=16
+inspector_x() { # <window.png> -> x where the inspector column starts
+  ffmpeg -loglevel error -y -i "$1" -vf "crop=2940:1:0:1400,format=gray" -f rawvideo -pix_fmt gray - |
+    python3 -c "
+import sys
+row = sys.stdin.buffer.read()
+# the inspector is the solid band at the right edge: it starts just after the last dark (canvas) pixel
+dark = [i for i in range(2000, len(row)) if row[i] < 24]
+print(dark[-1] + 1 if dark else '')"
+}
+with_panel() { # <window.png> <panel.png> <window x offset kept on the left> <out.png>
+  local x; x="$(inspector_x "$1")"
+  [ -n "$x" ] && [ "$x" -gt 2100 ] && [ "$x" -lt 2700 ] || { echo "找不到检查器的左边界：$1（x=$x）" >&2; return 1; }
+  local width=$((2940 - x)) left=$((x - $3))
+  ffmpeg -loglevel error -y -i "$1" -i "$2" -filter_complex \
+    "[0:v]crop=${left}:1514:$3:104[l];[1:v]scale=${width}:-2,crop=${width}:1514:0:${PANEL_DY}[r];[l][r]hstack" "$4"
+}
+with_panel "$shots/edit.png" "$shots/presets.png" 0 "$crops/edit.png"; jpg "$crops/edit.png" "$out/shot-edit.jpg"
 # Without the sidebar the picture and the inspector can be shown larger on the page.
-sips -c 1514 2415 --cropOffset 104 525 "$shots/crop.png" --out "$crops/crop.png" >/dev/null; jpg "$crops/crop.png" "$out/shot-crop.jpg"
+with_panel "$shots/crop.png" "$shots/geometry.png" 525 "$crops/crop.png"; jpg "$crops/crop.png" "$out/shot-crop.jpg"
 sips -c 960 2415 --cropOffset 104 525 "$shots/browse.png" --out "$crops/browse.png" >/dev/null; jpg "$crops/browse.png" "$out/shot-browse.jpg"
 sips -c 880 660 --cropOffset 1 0 "$shots/presets.png" --out "$crops/presets.png" >/dev/null; jpg "$crops/presets.png" "$out/panel-presets.jpg"
 sips -c 870 660 --cropOffset 1 0 "$shots/learn.png" --out "$crops/learn.png" >/dev/null; jpg "$crops/learn.png" "$out/panel-learn.jpg"
@@ -49,4 +84,7 @@ w=$(sips -g pixelWidth "$cmp" | awk '/pixelWidth/{print $2}'); h=$(sips -g pixel
 half=$(( (w - 8) / 2 ))
 sips -c "$h" "$half" --cropOffset 0 1 "$cmp" --out "$out/before.jpg" >/dev/null
 sips -c "$h" "$half" --cropOffset 0 $((half + 8)) "$cmp" --out "$out/after.jpg" >/dev/null
+# Only now replace the website's images, and only if every one was produced.
+for f in shot-edit shot-crop shot-browse; do [ -s "$out/$f.jpg" ] || { echo "没有生成 $f.jpg，网站图片保持不变" >&2; exit 1; }; done
+cp -f "$out"/*.jpg "$site"/
 echo "Updated website/assets (working files in $work)"
