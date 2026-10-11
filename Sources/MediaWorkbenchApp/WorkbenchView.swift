@@ -58,7 +58,7 @@ struct WorkbenchView: View {
 
     private var title: String {
         if app.mode == .edit, let url = editor.url { return url.lastPathComponent }
-        return "光集"
+        return "Lucet 光集"
     }
 
     private var subtitle: String {

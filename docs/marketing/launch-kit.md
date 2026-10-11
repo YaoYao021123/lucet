@@ -1,9 +1,17 @@
-# 光集发布包
+# Lucet 光集发布包
 
 怎么让该知道光集的人知道它。里面的帖子草稿都是用「我」的口吻写的，发之前请改成你自己的话；方括号 `[…]` 是需要你补的链接或信息。
 
 > 小红书的视频、图文 / 实况图、口播稿和发布文案在 [xiaohongshu/script.md](xiaohongshu/script.md)。
 > **「和 AI 一起做出来」的故事**（真实节点、数字、三篇帖子草稿）在 [story.md](story.md)。
+
+## 0. 名字怎么写
+
+- 品牌全称：**Lucet 光集**（英文在前，中间一个空格）。标题、首次出现、图片和视频封面都用全称。
+- 正文里第二次以后可以只写「光集」；英文环境写 **Lucet**。
+- 口号：**让每一个瞬间，自有光彩。**（英文：Let your moments shine.）
+- 名字的来历，一句话版：Lucet 是拉丁语「它在发光」，光集是把光收集起来。
+- 「Lucet」怎么读需要你定一个：英文习惯读「卢-塞特」（/ˈluː.sɛt/），古典拉丁语读「卢-凯特」（/ˈluː.kɛt/）。定下来后，视频和口播里统一用一种。
 
 ## 1. 先把一句话说清楚
 
@@ -21,7 +29,7 @@
 三种长度的介绍：
 
 - **15 字**：Mac 上最简单的照片视频调色。
-- **50 字**：光集是一款 Mac 调色工具：一键自动、六个滑块、预设一眼挑，DJI 和 iPhone 拍的照片、视频、Live Photo 都能调，调完直接存进「照片」，不用先学摄影。
+- **50 字**：Lucet 光集是一款 Mac 调色工具：一键自动、六个滑块、预设一眼挑，DJI 和 iPhone 拍的照片、视频、Live Photo 都能调，调完直接存进「照片」，不用先学摄影。
 - **150 字**：我用 DJI 拍素材，想调颜色，才发现 DJI Mimo 只有手机版；Lightroom、Photoshop 又什么都有，却让没有基础的人无从下手。所以做了光集：默认只有「自动」和六个滑块，预设直接用你的照片预览，裁剪直接在画面上拖；想深入就展开示波器、色轮、曲线；它还会指着你这张照片告诉你哪里过曝、哪里偏色。原片从不被修改，所有数据留在你的 Mac 上。
 
 ## 2. 谁会在意，去哪找
@@ -55,7 +63,7 @@
 
 ### 即刻 / 微博（一段话）
 
-> 做了个 Mac 上的调色工具「光集」。起因：DJI Mimo 只有手机版，想在 Mac 上调色只剩 Lightroom/PS，对没基础的人太重了。光集默认只有「自动」+ 六个滑块，预设用你的照片预览，调完存进「照片」。想深入再展开示波器、色轮、曲线，并且它会指着这张照片告诉你哪里有问题。早期版本，欢迎试用和吐槽 [链接]
+> 做了个 Mac 上的调色工具「Lucet 光集」。起因：DJI Mimo 只有手机版，想在 Mac 上调色只剩 Lightroom/PS，对没基础的人太重了。光集默认只有「自动」+ 六个滑块，预设用你的照片预览，调完存进「照片」。想深入再展开示波器、色轮、曲线，并且它会指着这张照片告诉你哪里有问题。早期版本，欢迎试用和吐槽 [链接]
 
 ### 少数派 / V2EX / 知乎（长，讲过程）
 
@@ -72,7 +80,7 @@
 
 ### 英文简介（用于 GitHub、Product Hunt 之类）
 
-> **Guangji (光集)** — a simple colour-grading app for Mac, built for people who shoot with DJI or iPhone but find Lightroom intimidating. One-click Auto, six plain sliders, preset thumbnails on your own photo, drag-to-crop, and export straight to Photos (Live Photos included). Pro tools — scopes, wheels, curves, HSL, LUTs — are one click away. Originals are never modified; nothing is uploaded. *Note: the interface is currently Chinese only; Apple silicon, macOS 15+.*
+> **Lucet (光集)** — a simple colour-grading app for Mac, built for people who shoot with DJI or iPhone but find Lightroom intimidating. One-click Auto, six plain sliders, preset thumbnails on your own photo, drag-to-crop, and export straight to Photos (Live Photos included). Pro tools — scopes, wheels, curves, HSL, LUTs — are one click away. Originals are never modified; nothing is uploaded. *Note: the interface is currently Chinese only; Apple silicon, macOS 15+.*
 
 ## 4. 演示视频（30–45 秒，最值钱的素材）
 

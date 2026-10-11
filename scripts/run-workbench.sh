@@ -24,8 +24,8 @@ cat > "$workbench_app/Contents/Info.plist" <<'PLIST'
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>media-workbench</string>
 <key>CFBundleIdentifier</key><string>local.mediaworkbench.prototype</string>
-<key>CFBundleName</key><string>光集</string>
-<key>CFBundleDisplayName</key><string>光集</string>
+<key>CFBundleName</key><string>Lucet 光集</string>
+<key>CFBundleDisplayName</key><string>Lucet 光集</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleVersion</key><string>1</string>

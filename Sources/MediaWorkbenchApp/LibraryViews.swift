@@ -332,7 +332,7 @@ struct BrowseGrid: View {
         VStack(spacing: 14) {
             BrandEmptyIllustration().frame(width: 240, height: 160)
             if library.entries.isEmpty {
-                Text("把光，收进画面。").font(.title2.weight(.medium))
+                Text("让每一个瞬间，自有光彩。").font(.title2.weight(.medium))
                 Text("导入照片、视频或 Live Photo 文件夹，开始浏览、评级与调色。").foregroundStyle(.secondary)
                 HStack {
                     Button("导入文件夹…") { app.importMedia(folders: true) }.primaryButton()

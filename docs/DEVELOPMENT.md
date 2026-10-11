@@ -9,7 +9,7 @@ bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/Med
 bash scripts/run-workbench.sh --build-only
 bash scripts/test-workbench.sh             # 98 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
-bash scripts/package-release.sh            # 生成 dist/Guangji-<版本>-arm64.zip（临时签名，未公证）
+bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zip（临时签名，未公证）
 ```
 
 要求：macOS 15+、Apple 芯片、Xcode 命令行工具（不需要完整 Xcode）。最低系统 macOS 15；在 macOS 26 上使用 Liquid Glass。无第三方依赖。
@@ -25,7 +25,7 @@ swift run --configuration release media-benchmark
 
 ## 发布
 
-1. `bash scripts/package-release.sh`，得到 `dist/Guangji-<版本>-arm64.zip` 与 SHA-256。
+1. `bash scripts/package-release.sh`，得到 `dist/Lucet-<版本>-arm64.zip` 与 SHA-256。
 2. 在 GitHub 新建 Release，上传 zip，把 SHA-256 写进说明。
 3. 当前只有临时签名，系统会要求用户手动放行一次（网站「常见问题」已写明步骤）。要让用户直接双击打开，需要 Apple Developer ID 签名并公证。
 

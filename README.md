@@ -1,10 +1,13 @@
 <div align="center">
 
-<img src="website/assets/app-icon.png" width="96" alt="光集图标">
+<img src="website/assets/app-icon.png" width="96" alt="Lucet 光集图标">
 
-# 光集
+# Lucet 光集
 
-**在 Mac 上把照片调好看，不用先学摄影。**
+**让每一个瞬间，自有光彩。**<br>
+<sub>Let your moments shine.</sub>
+
+在 Mac 上把照片调好看，不用先学摄影；想学的时候，它用你自己的照片讲给你听。
 
 一键自动 · 六个滑块 · 预设一眼挑 · 调完存进「照片」<br>
 照片、视频、Live Photo 都能调。给 DJI 和 iPhone 拍摄者的 Mac 调色工具。
@@ -13,13 +16,45 @@
 
 <p align="center"><img src="website/assets/shot-edit.jpg" alt="光集的编辑界面" width="860"></p>
 
-## 为什么做光集
+## 背后的故事
+
+### 起点：一个只有手机版的 App
 
 我用 DJI 拍素材，想调一下颜色和色调，才发现 DJI Mimo 只有手机版（iOS 和 Android）。想在大屏幕上调，只能回到手机上。
 
 Lightroom、Photoshop 当然什么都能做，但打开的第一眼，就是几十个看不懂的滑块。
 
-光集想做中间那一块：**在 Mac 上，简单得像手机 App；想学的时候，也有人在旁边讲。** 默认只给你最常用的几样，其余的专业工具都在，只是先收起来。
+Lucet 光集想做中间那一块：**在 Mac 上，简单得像手机 App；想学的时候，也有人在旁边讲。** 默认只给你最常用的几样，其余的专业工具都在，只是先收起来。
+
+### 先挑毛病，再加功能
+
+最早的一版原型是 ChatGPT 写的，仓库的第一条提交就叫 “Baseline: ChatGPT prototype as received”。它能跑，但用起来又慢又乱。后来我在 Claude Code 里继续做，第一件事不是加功能，而是挑毛病，并且每个毛病都在 Mac 上实测：
+
+- 把一个有 2000 个文件的文件夹加入素材库：原来要 6.9 秒，界面卡住；现在不到 0.01 秒。
+- DJI Pocket 3 官方的 Spring / Winter Pro LUT：原来直接导入失败（文件标题是 GBK 编码）；现在能正常导入，解析时间从约 0.6 秒降到 0.02 秒。
+- 导出照片：原来只能存 PNG，还丢掉全部拍摄信息；现在可以选 JPEG / HEIC / PNG，并保留拍摄时间和相机信息。
+
+### 一句人话，一次修改
+
+之后几乎每次改动，都从一句普通的话开始：「这个蓝色太亮了」「右边不够紧凑」「信息不够」「对新手不够友好」。AI 改，我看，再说，一轮一轮。官网和宣传视频也是这样做出来的：用网页技术写好，再渲染出来。
+
+AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片，曾被判成「整体偏亮」，建议把曝光降 1.5 档；可白桌子本来就该亮。这样的问题，都是在真正用的时候一眼看出来，再修好、加上测试的。
+
+### 为什么要「边调边学」
+
+一键滤镜能让照片变好看，但下一次，你还是不知道为什么。
+
+抖音上的摄影博主张小样用动画讲直方图、曲线和光圈，比任何说明书都清楚，可是只有几条视频，覆盖不了全部基础。于是我们把这种讲法放进了 App：用你自己的照片，看像素怎样按亮度堆成直方图，拖动光圈看背景怎样变虚。所有课程的文字和动画都是我们自己写、自己画的。大纲公开在 [docs/curriculum.md](docs/curriculum.md)，还在一课一课往上加。
+
+### 名字
+
+**Lucet** 是拉丁语，意思是「它在发光」。**光集**，是把光收集起来。一张照片，本来就是被留住的光。
+
+### 我们在意的
+
+- 原片从不被修改；没有账号，不上传照片。
+- 能做什么、还做不到什么，都写清楚（见下方「现在的限制」）。
+- 欢迎一起做：想法、问题、你自己的照片故事，都可以到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们。如果你也在用 [Claude Code](https://claude.com/claude-code) 或别的 AI 工具做东西，欢迎分享你的做法。
 
 ## 它能做什么
 
@@ -58,8 +93,8 @@ Lightroom、Photoshop 当然什么都能做，但打开的第一眼，就是几�
 
 **系统要求**：Apple 芯片（M 系列）的 Mac，macOS 15 或更高。界面目前只有中文。
 
-1. 到 [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest) 下载最新的 `Guangji-…-arm64.zip`，解压，把「光集」拖进「应用程序」。
-2. 第一次打开会被系统拦下（提示无法验证开发者），因为目前的版本还没有经过 Apple 公证。放行方法：先双击打开一次，看到提示后点「完成」→ 打开「系统设置 › 隐私与安全性」→ 滚动到最下面 → 在「光集」旁点「仍要打开」。只需要一次。
+1. 到 [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest) 下载最新的 `Lucet-…-arm64.zip`，解压，把「Lucet 光集」拖进「应用程序」。
+2. 第一次打开会被系统拦下（提示无法验证开发者），因为目前的版本还没有经过 Apple 公证。放行方法：先双击打开一次，看到提示后点「完成」→ 打开「系统设置 › 隐私与安全性」→ 滚动到最下面 → 在「Lucet 光集」旁点「仍要打开」。只需要一次。
 
 想自己构建（需要 Xcode 命令行工具，`xcode-select --install`）：
 
@@ -98,7 +133,7 @@ bash scripts/run-workbench.sh
 
 ## 现在的限制
 
-光集还是早期版本，诚实地说：
+Lucet 光集还是早期版本，诚实地说：
 
 - 仅支持 Apple 芯片 Mac 与 macOS 15+，界面只有中文。
 - 还没有 Apple 公证，首次打开需要手动放行（见上方安装）。
@@ -107,14 +142,6 @@ bash scripts/run-workbench.sh
 - 常见相机 RAW 文件可以导入，但只是按普通图片处理，并非 RAW 冲洗；这部分目前测试有限。
 - D-Log 等 Log 素材需要自己导入对应的转换 LUT，自动识别还在计划中。
 - 导入的文件夹不会自动监视新文件。
-
-## 怎么做出来的，和一起做
-
-光集的第一版，是 ChatGPT 写出来的原型（`git log` 的第一条就是 “Baseline: ChatGPT prototype as received”）。之后我把它交给 [Claude Code](https://claude.com/claude-code)，让它先挑毛病，再一点点改：导入大文件夹不再卡住，界面重做，加上「自动」、预设缩略图、拖动裁剪、互动课。官网和宣传视频也是同样的做法：用网页技术写好，再渲染出来。
-
-最有意思的是，几乎每一次改动都来自一句普通的人话，比如「这个蓝色太亮了」「信息不够」「方框太多」。不用先学编程，把感觉说清楚，剩下的交给 AI 去试、去改、去测试。
-
-所以光集也想和你一起做。有想法或者遇到问题，到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 说；你也在用 Claude Code 或别的 AI 工具做东西，欢迎分享你的做法。
 
 ## 反馈
 
@@ -126,4 +153,4 @@ bash scripts/run-workbench.sh
 
 ---
 
-<sub>光集是独立开发的软件，与 DJI、Apple、Adobe 没有关联，也未获得它们的认可。DJI、Mimo、iPhone、Live Photo、Lightroom、Photoshop 等名称属于各自的所有者。</sub>
+<sub>Lucet 光集是独立开发的软件，与 DJI、Apple、Adobe、Anthropic、OpenAI 没有关联，也未获得它们的认可。DJI、Mimo、iPhone、Live Photo、Lightroom、Photoshop、Claude、ChatGPT 等名称属于各自的所有者。</sub>

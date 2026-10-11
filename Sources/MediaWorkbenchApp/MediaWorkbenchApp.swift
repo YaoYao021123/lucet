@@ -16,7 +16,7 @@ struct MediaWorkbenchApp: App {
     }
 
     var body: some Scene {
-        Window("光集", id: "workbench") {
+        Window("Lucet 光集", id: "workbench") {
             WorkbenchView(app: app)
                 .frame(minWidth: 1080, minHeight: 700)
                 .preferredColorScheme(.dark)
