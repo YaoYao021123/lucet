@@ -89,7 +89,7 @@ ENGINE=files bash scripts/render-xiaohongshu-audio.sh voice mine
 
 **白板里放真实截图**：`auto`、`presets`、`save` 三页（以及 `presets` 页里的裁剪）会放 `docs/marketing/xiaohongshu/pics/` 下的图片：`auto`、`presets`、`crop`、`save`（`.jpg` 或 `.png`）。现在放的是光集的真实截图；想换成你自己的截图或照片，用同样的文件名放进去覆盖即可，删掉某个文件就会回到手绘小图。成片里加 `--no-pics` 则全部用手绘图。图片也会一起打包进 `.excalidraw` 文件。目前只支持图片，不支持视频片段。
 
-**也可以在 excalidraw.com 里打开**：`docs/marketing/xiaohongshu/excalidraw/` 里有 15 页白板各自的 `.excalidraw` 文件（`phone.excalidraw`、`sliders.excalidraw`……名字和上面的页名一样）。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
+**也可以在 excalidraw.com 里打开**：所有 15 页都在**一个文件**里：`docs/marketing/xiaohongshu/excalidraw/lucet-story.excalidraw`（按故事顺序排成 3 行、每行 5 页，每页一个带名字的框，如“1 phone”“2 sliders”）。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
 
 > 工具已经用一段合成语音的"替身录像"跑通过一遍（只验证版面、字幕、白板对时），没有正式成片。你的真实录像还没有。
 
