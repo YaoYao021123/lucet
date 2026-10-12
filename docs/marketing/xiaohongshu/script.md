@@ -81,11 +81,15 @@ ENGINE=files bash scripts/render-xiaohongshu-audio.sh voice mine
 - `--no-sketches` 只要脸 + 字幕；`--no-music` 去掉背景音乐；`--no-trim` 保留所有停顿。
 - 一轮大约 10 分钟（大部分时间在逐帧画白板），之后改字幕重跑还是这个时间。
 
-**3. 白板是怎么跟着你说话的**：`sketches.html` 里有三块白板（`problem` 问题、`flow` 四个步骤、`story` 做法的故事）。每个图形绑在一个"关键词"上（比如 `auto` 对应你说"自动"），工具在识别出的文字里按顺序找这些词，到那一秒就开始画。所以：**照提词器念就行，但想改词，要保留这些关键词**（见 `build-talking-video.py` 里的 `BOARDS`）。没听到的词，图会紧跟着上一个画出来，所以白板不会缺东西。想改图，编辑 `sketches.html`（用 `?board=flow&play=1` 在 Chrome 里循环预览）。
+**3. 白板是怎么跟着你说话的**：故事一共 **15 页**白板，按讲故事的顺序：`phone`（Mimo 只有手机版）→ `sliders`（专业软件的一堆滑块）→ `idea`（想法）→ `origin`（ChatGPT 原型 → Claude Code 挑毛病）→ `audit`（实测的改进）→ `sentences`（一句人话，一次修改）→ `mistake`（AI 也会错：白桌子的拿铁）→ `auto`（自动）→ `presets`（预设和裁剪）→ `save`（存进「照片」）→ `inspire`（张小样和边调边学的由来）→ `learn`（像素 → 直方图、光圈、亮部）→ `name`（Lucet 光集）→ `honest`（现在的限制和不会做的事）→ `invite`（邀请）。**配长版口播稿（`teleprompter.html?v=long-zh`，约 5 分钟）刚好 15 页全出现**；55 秒短版会出现其中 9 页左右。
 
-**白板里放真实截图**：`flow` 白板的四个格子（自动 / 预设 / 裁剪 / 存进照片）里，会放 `docs/marketing/xiaohongshu/pics/` 下的图片：`auto`、`presets`、`crop`、`save`（`.jpg` 或 `.png`）。现在放的是光集的真实截图；想换成你自己的截图或照片，用同样的文件名放进去覆盖即可，删掉某个文件就会回到手绘小图标。成片里加 `--no-pics` 则全部用手绘图标。图片也会一起打包进 `.excalidraw` 文件。目前只支持图片，不支持视频片段。
+每个图形绑在一个“关键词”上（比如 `auto` 对应你说“自动”），工具在识别出的文字里找这些词，到那一秒就开始画。所以：**照提词器念就行，但想改词，要保留这些关键词**（词表在 `scripts/lib/sketch_pics.py` 的 `BOARDS`）。没听到的词，图会紧跟着上一个画出来，所以页面不会缺东西；整页都没提到，这一页就跳过。想改图，编辑 `sketches.html`（用 `?board=learn&play=1` 在 Chrome 里循环预览）。
 
-**也可以在 excalidraw.com 里打开**：`docs/marketing/xiaohongshu/excalidraw/` 里有三块白板的 `.excalidraw` 文件（`problem`、`flow`、`story`）。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
+> 5 分钟的成片要把 15 页全部逐帧画出来，渲染大约要 30–40 分钟（只在第一次；改字幕再跑也是这个时间）。先用 `--plan-only` 看安排，再放心跑。
+
+**白板里放真实截图**：`auto`、`presets`、`save` 三页（以及 `presets` 页里的裁剪）会放 `docs/marketing/xiaohongshu/pics/` 下的图片：`auto`、`presets`、`crop`、`save`（`.jpg` 或 `.png`）。现在放的是光集的真实截图；想换成你自己的截图或照片，用同样的文件名放进去覆盖即可，删掉某个文件就会回到手绘小图。成片里加 `--no-pics` 则全部用手绘图。图片也会一起打包进 `.excalidraw` 文件。目前只支持图片，不支持视频片段。
+
+**也可以在 excalidraw.com 里打开**：`docs/marketing/xiaohongshu/excalidraw/` 里有 15 页白板各自的 `.excalidraw` 文件（`phone.excalidraw`、`sliders.excalidraw`……名字和上面的页名一样）。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
 
 > 工具已经用一段合成语音的"替身录像"跑通过一遍（只验证版面、字幕、白板对时），没有正式成片。你的真实录像还没有。
 

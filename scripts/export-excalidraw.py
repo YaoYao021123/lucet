@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Writes the three whiteboard sketches as .excalidraw files you can open and edit on https://excalidraw.com
 
-    python3 scripts/export-excalidraw.py            # -> docs/marketing/xiaohongshu/excalidraw/{problem,flow,story}.excalidraw
+    python3 scripts/export-excalidraw.py            # -> docs/marketing/xiaohongshu/excalidraw/<board>.excalidraw, one file per page
 
 On excalidraw.com: open the menu (top left) -> Open, or just drag the file onto the page. The shapes are the same as
 in the video (drawn by docs/marketing/xiaohongshu/sketches.html). Text is placed approximately; nudge anything that looks off.
@@ -21,13 +21,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts/lib"))
-from sketch_pics import find_pics, pics_param
+from sketch_pics import BOARDS, find_pics, pics_param
 XHS = ROOT / "docs/marketing/xiaohongshu"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 out = XHS / "excalidraw"
 out.mkdir(exist_ok=True)
+for old in out.glob("*.excalidraw"):
+    old.unlink()                                   # pages that no longer exist
 pics = find_pics()
-for board in ("problem", "flow", "story"):
+for board, anchors in BOARDS:
     with tempfile.TemporaryDirectory() as profile, tempfile.TemporaryFile() as dump:
         chrome = subprocess.Popen([CHROME, "--headless=new", "--disable-gpu", f"--user-data-dir={profile}", "--dump-dom",
                                    f"file://{XHS}/sketches.html?board={board}&export=1&pics={pics_param(pics)}"], stdout=dump, stderr=subprocess.DEVNULL)
@@ -42,6 +44,8 @@ for board in ("problem", "flow", "story"):
     if not m:
         raise SystemExit(f"{board}: Chrome did not return the drawing")
     doc = json.loads(html.unescape(m.group(1)))
+    if set(doc.pop("anchors")) != {k for k, _ in anchors}:
+        raise SystemExit(f"{board}: the anchors in sketches.html and scripts/lib/sketch_pics.py (BOARDS) differ")
     for e in doc["elements"]:                      # pictures travel inside the file, so it opens anywhere
         if e["type"] == "image":
             path = Path(pics[e["fileId"][4:]]["path"])

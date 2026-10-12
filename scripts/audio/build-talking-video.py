@@ -9,8 +9,8 @@ Your face and your own voice stay the main thing. The tool only does the editing
   2. cleans the voice: low rumble and steady background noise out, even volume, normal streaming loudness,
   3. trims dead air: leading/trailing silence and long pauses are shortened (jump cuts), so it keeps moving,
   4. recognises what you said (Whisper, on this Mac) and writes captions (captions.srt; fix it and run with --captions),
-  5. draws hand-made whiteboard sketches (Excalidraw style, docs/marketing/xiaohongshu/sketches.html) while you
-     talk: each shape appears at the moment you say its word. Your face moves to the lower half while a sketch is
+  5. draws hand-made whiteboard sketches (Excalidraw style, 15 pages, docs/marketing/xiaohongshu/sketches.html) while
+     you tell the story: each shape appears at the moment you say its word; a page you never mention is skipped. Your face moves to the lower half while a sketch is
      up, and fills the screen at the start and the end,
   6. burns the captions in and puts a quiet original music bed under your voice (it ducks while you speak).
 
@@ -29,13 +29,13 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts/lib"))
-from sketch_pics import find_pics, pics_param
+from sketch_pics import BOARDS, MAX_SPAN, find_pics, pics_param
 XHS = ROOT / "docs/marketing/xiaohongshu"
 WHISPER_MODEL = Path.home() / ".cache/whisper-cpp/ggml-small.bin"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PROMPT = "以下是普通话的句子，使用简体中文。光集，DJI，Mimo，Mac，Claude Code，ChatGPT，Lightroom，Photoshop，iPhone，实况照片。"
 # Whisper's usual mis-hearings of the product's words (edit freely).
-FIXES = {"光极": "光集", "光景": "光集", "光级": "光集", "克劳德扣得": "Claude Code", "克劳德 Code": "Claude Code",
+FIXES = {"光极": "光集", "路塞特": "Lucet", "Lucid": "Lucet", "露塞特": "Lucet", "光景": "光集", "光级": "光集", "克劳德扣得": "Claude Code", "克劳德 Code": "Claude Code",
          "cloud code": "Claude Code", "Cloud Code": "Claude Code", "查特GPT": "ChatGPT", "check gpt": "ChatGPT",
          "Check GPT": "ChatGPT", "API": "App", "MIMO": "Mimo", "mimo": "Mimo", "Memo": "Mimo"}
 # Trimming: pauses longer than PAUSE_MAX are cut down to 2 * KEEP; the very start and end get LEAD / TAIL.
@@ -47,14 +47,6 @@ CAPTION_Y = 1450          # top of the 300 px caption strip (its text sits at th
 INTRO, OUTRO = 3.5, 4.0   # seconds of full-screen face at the start / the end
 HOLD = 3.5                # a sketch stays up this long after its last word
 BOARD_FPS = 10            # sketches are drawn at 10 pictures a second (hand-drawn look, and quick to render)
-
-# What you say -> when a sketch element appears. Names are the "anchors" of each board in sketches.html;
-# the patterns are searched in order, in the recognised text (so a board never draws things out of order).
-BOARDS = [
-    ("problem", [("mimo", r"Mimo|米莫|咪摩|手机版"), ("lightroom", r"Lightroom|Photoshop|莱特|看不懂")]),
-    ("flow", [("name", r"光集"), ("auto", r"自动"), ("presets", r"预设"), ("crop", r"裁剪"), ("save", r"存进|照片")]),
-    ("story", [("chatgpt", r"ChatGPT"), ("claude", r"Claude Code"), ("human", r"人话"), ("blue", r"蓝色"), ("boxes", r"方框")]),
-]
 
 
 def run(cmd, **kw):
@@ -166,7 +158,10 @@ def split_long(cue):
         while len(part) > MAX_CAPTION:              # no punctuation to cut at: cut by length
             if cur:
                 chunks.append(cur); cur = ""
-            chunks.append(part[:MAX_CAPTION - 2]); part = part[MAX_CAPTION - 2:]
+            cut = MAX_CAPTION - 2
+            while cut < len(part) and part[cut - 1].isascii() and part[cut].isascii() and part[cut - 1].isalnum() and part[cut].isalnum():
+                cut += 1                            # never cut inside an English word
+            chunks.append(part[:cut]); part = part[cut:]
         if len(cur) + len(part) > MAX_CAPTION and cur:
             chunks.append(cur); cur = ""
         cur += part
@@ -175,7 +170,7 @@ def split_long(cue):
     span, at, out = cue["end"] - cue["start"], cue["start"], []
     for ch in chunks:
         d = span * len(ch) / len(text)
-        out.append({"start": at, "end": at + d, "text": ch.strip(" ，。,.、")}); at += d
+        out.append({"start": at, "end": at + d, "text": ch.strip("，。,.、")}); at += d
     return [c for c in out if c["text"]]
 
 
@@ -223,14 +218,26 @@ def plan_sketches(cues, total):
         for i, _ in enumerate(c["text"]):
             times.append(c["start"] + (c["end"] - c["start"]) * i / n)
         text += c["text"]
-    found, pos = [], 0
-    for name, anchors in BOARDS:
+    def search(anchors, pos):
         hits = {}
         for key, pattern in anchors:
             m = re.compile(pattern, re.I).search(text, pos)
-            if m:
+            if m and (not hits or times[m.start()] - min(hits.values()) <= MAX_SPAN):
                 hits[key] = times[m.start()]; pos = m.start() + 1
-        found.append((name, anchors, hits))
+        return hits, pos
+
+    found, pos, retry = [], 0, []
+    for name, anchors in BOARDS:                    # pages are matched in story order ...
+        hits, after = search(anchors, pos)
+        if hits:
+            found.append((name, anchors, hits)); pos = after
+        else:
+            retry.append((name, anchors))
+    for name, anchors in retry:                     # ... and a page whose words came earlier in a shorter script is looked for from the start
+        hits, _ = search(anchors, 0)
+        if hits and not any(min(hits.values()) < max(o.values()) and max(hits.values()) > min(o.values()) for _, _, o in found):
+            found.append((name, anchors, hits))
+    found.sort(key=lambda f: min(f[2].values()))
 
     plan = []
     for k, (name, anchors, hits) in enumerate(found):
