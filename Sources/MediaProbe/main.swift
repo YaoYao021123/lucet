@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import ImageIO
 import MediaCore
 
 @main
@@ -9,16 +10,48 @@ struct MediaProbe {
         guard let command = arguments.first,
               ((["inspect", "lut", "straighten", "details", "analyze", "auto", "similar"].contains(command) && arguments.count == 2)
                 || (command == "auto" && arguments.count == 3)
+                || (["render", "match"].contains(command) && (4...5).contains(arguments.count))
                 || (command == "live" && (3...4).contains(arguments.count))
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | similar <文件夹> | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | similar <文件夹> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "similar" {
+            if command == "render" || command == "match" {
+                // render <image> <recipe.json | -> <out.jpg> [long edge]: the image with a saved recipe applied
+                //   (local adjustments included; LUT references are skipped).
+                // match <image> <reference> <out.jpg> [long edge]: 「匹配色调」 toward the reference, at 80%.
+                let output = URL(fileURLWithPath: arguments[3])
+                var options = ImageExportOptions()
+                options.maxLongEdge = arguments.count == 5 ? Int(arguments[4]) : 1600
+                options.keepMetadata = false
+                var edits = MediaEdits()
+                if command == "render" {
+                    if arguments[2] != "-" {
+                        var recipe = try JSONDecoder().decode(EditRecipe.self, from: Data(contentsOf: URL(fileURLWithPath: arguments[2])))
+                        recipe.lut = nil
+                        try recipe.validate()
+                        edits = MediaEdits(recipe: recipe, lut: nil)
+                    }
+                } else {
+                    let session = try ImageGradeSession(url: url, maximumDimension: 1024)
+                    let plain = try await session.frame(edits: MediaEdits())
+                    let source = try ColorPipeline.sdrBitmap(plain.image, headroom: plain.headroom)
+                    let reference = URL(fileURLWithPath: arguments[2])
+                    guard let referenceSource = CGImageSourceCreateWithURL(reference as CFURL, nil),
+                          let referenceImage = CGImageSourceCreateThumbnailAtIndex(referenceSource, 0, [
+                            kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                            kCGImageSourceThumbnailMaxPixelSize: 1024] as CFDictionary),
+                          let from = LookMatch.statistics(source), let to = LookMatch.statistics(referenceImage) else { exit(4) }
+                    edits = MediaEdits(lut: CreativeLUT(cube: LookMatch.lut(from: from, to: to, title: "match"), name: "match"), strength: 0.8)
+                }
+                try? FileManager.default.removeItem(at: output)
+                try ImageExporter.export(url, to: output, edits: edits, options: options)
+                print("已写入 \(output.path)")
+            } else if command == "similar" {
                 // Groups near-duplicates and bursts among the images in a folder.
                 let files = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
                     .filter { ["jpg", "jpeg", "heic", "png", "dng", "tif", "tiff"].contains($0.pathExtension.lowercased()) }

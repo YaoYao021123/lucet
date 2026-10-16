@@ -259,6 +259,38 @@ def write_strings(found, english):
     ENGLISH.write_text("\n".join(out))
 
 
+def sync_chinese_plurals():
+    """Chinese has no plural forms, but every plural key needs a zh-Hans entry too: a key missing
+    there falls back to the development language (English) for .stringsdict lookups."""
+    import plistlib
+    english = ENGLISH.with_suffix(".stringsdict")
+    if not english.exists():
+        return
+    spec = re.compile(r"%(?:\d+\$)?[-+ #0]*\d*(?:\.\d+)?(?:ll|l|h)?[dfs@uxXeEgGc]")
+    chinese = {}
+    for key, entry in plistlib.loads(english.read_bytes()).items():
+        match = re.search(r"%(?:(\d+)\$)?#@n@", entry["NSStringLocalizedFormatKey"])
+        index = int(match.group(1)) if match and match.group(1) else 1
+        specs = list(spec.finditer(key))
+        multiple, parts, last = len(specs) > 1, [], 0
+        for number, found in enumerate(specs, start=1):
+            parts.append(key[last:found.start()])
+            if number == index:
+                parts.append(f"%{number}$#@n@" if multiple else "%#@n@")
+            else:
+                parts.append(f"%{number}${found.group(0)[1:]}" if multiple else found.group(0))
+            last = found.end()
+        parts.append(key[last:])
+        chinese[key] = {"NSStringLocalizedFormatKey": "".join(parts),
+                        "n": {"NSStringFormatSpecTypeKey": "NSStringPluralRuleType",
+                              "NSStringFormatValueTypeKey": "lld", "other": "%lld"}}
+    target = ROOT / "Localization/zh-Hans.lproj/Localizable.stringsdict"
+    data = plistlib.dumps(chinese, sort_keys=True)
+    if not target.exists() or target.read_bytes() != data:
+        target.write_bytes(data)
+        print("updated", target.relative_to(ROOT))
+
+
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else "check"
     if command in ("extract", "check"):
@@ -283,6 +315,7 @@ def main():
             print(f"placeholders differ: {key!r} -> {english[key]!r}")
         status |= bool(mismatched)
     if command == "check":
+        sync_chinese_plurals()
         unused = [k for k in english if k not in found]
         for key in unused:
             print("unused:", key)
@@ -292,6 +325,7 @@ def main():
         additions = json.loads(Path(sys.argv[2]).read_text())
         english.update(additions)
         write_strings(found, english)
+        sync_chinese_plurals()
         print(f"{len(additions)} merged, {len(english)} English entries")
     if command == "wrap":
         wrap(found)

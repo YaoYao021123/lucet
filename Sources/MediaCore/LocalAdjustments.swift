@@ -63,6 +63,26 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
         }
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case id, shape, enabled, invert, feather, start, end, center, radii, strokes, adjustments
+    }
+
+    /// Tolerant like the rest of the recipe: anything missing takes its default.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        shape = try values.decode(Shape.self, forKey: .shape)
+        id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        invert = try values.decodeIfPresent(Bool.self, forKey: .invert) ?? false
+        feather = try values.decodeIfPresent(Double.self, forKey: .feather) ?? 0.35
+        start = try values.decodeIfPresent(CGPoint.self, forKey: .start) ?? start
+        end = try values.decodeIfPresent(CGPoint.self, forKey: .end) ?? end
+        center = try values.decodeIfPresent(CGPoint.self, forKey: .center) ?? center
+        radii = try values.decodeIfPresent(CGSize.self, forKey: .radii) ?? radii
+        strokes = try values.decodeIfPresent([BrushStroke].self, forKey: .strokes) ?? []
+        adjustments = try values.decodeIfPresent(BasicAdjustments.self, forKey: .adjustments) ?? .init()
+    }
+
     public var title: String { shape.title }
     public var hasEffect: Bool {
         enabled && !adjustments.sanitized.isNeutral && (shape != .brush || !strokes.isEmpty || invert)

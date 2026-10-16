@@ -29,7 +29,8 @@ enum DebugSnapshot {
                     if values.count == 2, let window = workbenchWindow {
                         window.setContentSize(NSSize(width: values[0], height: values[1]))
                     }
-                case "quit": NSApp.terminate(nil)
+                // An open sheet would hold up terminate(); snapshot runs have nothing to save.
+                case "quit": exit(0)
                 case "panel":
                     // The inspector isn't always presented for an accessory-policy window,
                     // so render it in its own offscreen window: "panel:name" or "panel:name@1600".
@@ -81,6 +82,25 @@ enum DebugSnapshot {
         case "groups": app.mode = .browse; app.showGroups = argument != "off"
         case "local": if let shape = LocalAdjustment.Shape(rawValue: argument) { app.editor.addLocal(shape) }
         case "localmask": app.editor.showMask = argument != "off"
+        case "localset":
+            // "start=0.5,0|end=0.5,0.5|exposure=-0.7|highlights=-40" on the selected layer
+            guard let id = app.editor.selectedLocalID else { break }
+            for pair in argument.split(separator: "|") {
+                let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
+                guard kv.count == 2 else { continue }
+                let numbers = kv[1].split(separator: ",").compactMap { Double($0) }
+                app.editor.updateLocal(id) { layer in
+                    switch kv[0] {
+                    case "start" where numbers.count == 2: layer.start = CGPoint(x: numbers[0], y: numbers[1])
+                    case "end" where numbers.count == 2: layer.end = CGPoint(x: numbers[0], y: numbers[1])
+                    case "center" where numbers.count == 2: layer.center = CGPoint(x: numbers[0], y: numbers[1])
+                    case "radii" where numbers.count == 2: layer.radii = CGSize(width: numbers[0], height: numbers[1])
+                    case "feather" where numbers.count == 1: layer.feather = numbers[0]
+                    default:
+                        if let parameter = AdjustmentParameter(rawValue: kv[0]), numbers.count == 1 { layer.adjustments[parameter] = numbers[0] }
+                    }
+                }
+            }
         case "localstroke":
             // "x1,y1,x2,y2,…" normalized, added to the selected layer
             let v = argument.split(separator: ",").compactMap { Double($0) }

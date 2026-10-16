@@ -62,8 +62,9 @@ extension AppModel {
                 }.value
                 // Full transfer can be strong; start at 80% and let the slider decide.
                 editor.group { editor.selectLUT(lut); editor.strength = 0.8 }
+                let editor = self.editor
                 show(L("已向「\(entry.url.deletingPathExtension().lastPathComponent)」的色调靠拢。在「风格 LUT」里用强度调整多少。"),
-                     actions: [.init(title: L("撤销")) { [weak self] in self?.editor.undo() }])
+                     actions: [.init(title: L("撤销")) { editor.undo() }])
             } catch { fail(L("无法匹配色调"), error) }
         }
     }
