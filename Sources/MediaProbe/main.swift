@@ -7,18 +7,36 @@ struct MediaProbe {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         guard let command = arguments.first,
-              ((["inspect", "lut", "straighten", "details", "analyze", "auto"].contains(command) && arguments.count == 2)
+              ((["inspect", "lut", "straighten", "details", "analyze", "auto", "similar"].contains(command) && arguments.count == 2)
                 || (command == "auto" && arguments.count == 3)
                 || (command == "live" && (3...4).contains(arguments.count))
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | similar <文件夹> | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
-            if command == "live" {
+            if command == "similar" {
+                // Groups near-duplicates and bursts among the images in a folder.
+                let files = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
+                    .filter { ["jpg", "jpeg", "heic", "png", "dng", "tif", "tiff"].contains($0.pathExtension.lowercased()) }
+                    .sorted { $0.lastPathComponent < $1.lastPathComponent }
+                let start = Date()
+                let items = files.compactMap { file in PhotoFingerprint.read(file).map { SimilarPhotos.Item(id: file.lastPathComponent, folder: url.path, print: $0) } }
+                print("\(items.count) 张，指纹用时 \(Int(Date().timeIntervalSince(start) * 1000)) ms")
+                for group in SimilarPhotos.groups(items) { print("\(group.kind.rawValue) · \(group.ids.joined(separator: ", "))") }
+                if ProcessInfo.processInfo.environment["SIMILAR_DEBUG"] != nil {
+                    for (i, a) in items.enumerated() {
+                        let nearest = items.enumerated().filter { $0.offset != i }.min { SimilarPhotos.distance(a.print.hash, $0.element.print.hash) < SimilarPhotos.distance(a.print.hash, $1.element.print.hash) }
+                        if let n = nearest?.element {
+                            let color = zip(a.print.color, n.print.color).reduce(Float(0)) { $0 + ($1.0 - $1.1) * ($1.0 - $1.1) }
+                            print(a.id, "→", n.id, SimilarPhotos.distance(a.print.hash, n.print.hash), String(format: "color %.3f aspect %.3f/%.3f", color, a.print.aspect, n.print.aspect))
+                        }
+                    }
+                }
+            } else if command == "live" {
                 // Turns a short video into a Live Photo pair (cover JPEG + paired MOV) in a new folder; the system's
                 // pairing check runs inside. The cover defaults to just before the end of the clip.
                 let duration = try await AVURLAsset(url: url).load(.duration).seconds

@@ -21,6 +21,7 @@ struct SheetContent: View {
         case .lesson(let id): if let lesson = Lesson.lesson(id) { LessonPlayer(app: app, lesson: lesson) }
         case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
         case .matchLook: MatchLookSheet(app: app)
+        case .compare(let ids): CullingSheet(app: app, ids: ids)
         }
     }
 }

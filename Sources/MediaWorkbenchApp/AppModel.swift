@@ -28,6 +28,7 @@ enum ActiveSheet: Identifiable {
     case livePreview(LivePhotoResources)
     case lesson(String)
     case matchLook
+    case compare([String])
 
     var id: String {
         switch self {
@@ -41,6 +42,7 @@ enum ActiveSheet: Identifiable {
         case .livePreview(let resources): "live-\(resources.identifier)"
         case .lesson(let id): "lesson-\(id)"
         case .matchLook: "match-look"
+        case .compare(let ids): "compare-\(ids.joined(separator: "|").hashValue)"
         }
     }
 }
@@ -100,6 +102,11 @@ final class AppModel {
     let library: LibraryModel
     let thumbnails: ThumbnailStore
     let editor: EditorModel
+    let similar: SimilarityIndex
+    /// Browse view shows only groups of similar shots and bursts.
+    var showGroups = false {
+        didSet { if showGroups { similar.refresh(library.entries, missing: library.missing) } }
+    }
     let exports: ExportQueue
     let tutor = TutorModel()
 
@@ -146,6 +153,7 @@ final class AppModel {
         library = LibraryModel(root: root)
         thumbnails = ThumbnailStore(drafts: drafts)
         editor = EditorModel(drafts: drafts)
+        similar = SimilarityIndex(root: root)
         exports = ExportQueue()
         if let data = UserDefaults.standard.data(forKey: "guangji.export"),
            let settings = try? JSONDecoder().decode(ExportSettings.self, from: data) {

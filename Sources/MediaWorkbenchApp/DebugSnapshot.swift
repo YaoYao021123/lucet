@@ -78,6 +78,13 @@ enum DebugSnapshot {
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
         case "match": app.matchLook(to: URL(fileURLWithPath: argument).standardizedFileURL.path)
+        case "groups": app.mode = .browse; app.showGroups = argument != "off"
+        case "compare":
+            // "a.jpg,b.jpg" or "zoom:a.jpg,b.jpg"
+            let zoom = argument.hasPrefix("zoom:")
+            CullingSheet.debugZoomed = zoom
+            let paths = (zoom ? String(argument.dropFirst(5)) : argument).split(separator: ",")
+            app.sheet = .compare(paths.map { URL(fileURLWithPath: String($0)).standardizedFileURL.path })
         case "focus": app.editor.focusParameter = AdjustmentParameter(rawValue: argument)
         case "lesson":
             // "id" or "id@step"

@@ -68,3 +68,10 @@ extension AppModel {
         }
     }
 }
+
+extension AppModel {
+    /// Selected photos in library order, for side-by-side culling (videos left out, at most 8).
+    var compareSelection: [String] {
+        library.visible.filter { library.selection.contains($0.id) && !$0.isVideo }.prefix(8).map(\.id)
+    }
+}

@@ -190,6 +190,24 @@
 "DOMAIN_MAX 必须逐通道大于 DOMAIN_MIN" = "DOMAIN_MAX must be greater than DOMAIN_MIN in every channel";
 "色表不完整，需要 %lld 条 RGB" = "The table is incomplete; it needs %lld RGB entries";
 
+/* CullingViews.swift */
+"点按选择 · ← → 切换 · P 选用 · X 排除 · U 取消标记 · 1–5 评级 · Z 或双击放大到 100% · 放大时拖动可同步平移" = "Click to choose · ← → to move · P pick · X reject · U unflag · 1–5 rate · Z or double-click to zoom to 100% · drag while zoomed to pan them all together";
+"并排选片" = "Compare and Cull";
+"放大到 100%" = "Zoom to 100%";
+"所有照片同时放大到同一个位置，比较清晰度（Z）" = "Zoom every photo to the same spot to compare sharpness (Z)";
+"只保留选中的这张" = "Keep Only This One";
+"选用当前这张，排除这组里的其他照片" = "Pick this one and reject the others in this set";
+"完成" = "Done";
+"已选用 1 张，排除 %lld 张。可在筛选里隐藏已排除的照片。" = "Picked 1 and rejected %lld. Use the filter to hide rejected photos.";
+"选用（P）" = "Pick (P)";
+"排除（X）" = "Reject (X)";
+"正在比对照片 %lld / %lld…" = "Comparing photos %lld of %lld…";
+"没有找到相似的照片或连拍" = "No similar shots or bursts found";
+"相似：同一场景、构图和颜色几乎一样的几张。连拍：同一台相机 2 秒内连续拍下的照片。视频不参与比对。" = "Similar: shots of the same scene with nearly the same framing and colors. Bursts: photos taken by the same camera less than 2 seconds apart. Videos aren't compared.";
+"相似" = "Similar";
+"连拍" = "Burst";
+"并排比较" = "Compare";
+
 /* EditRecipe.swift */
 "配方参数无效或版本不支持。" = "The recipe has invalid settings or an unsupported version.";
 "LUT 引用无效。" = "Invalid LUT reference.";
@@ -423,8 +441,6 @@
 "添加音乐…" = "Add Music…";
 "评级与标记" = "Rating & Flag";
 "%lld 星（数字键 %lld）" = "%lld-star rating (key %lld)";
-"选用（P）" = "Pick (P)";
-"排除（X）" = "Reject (X)";
 "光圈是什么？" = "What's aperture?";
 "快门和 ISO？" = "Shutter and ISO?";
 "在地图中打开" = "Open in Maps";
@@ -518,7 +534,6 @@
 "重播" = "Replay";
 "上一步" = "Back";
 "下一步" = "Next";
-"完成" = "Done";
 "想一想" = "Think about it";
 "再看看画面。" = "Take another look at the image.";
 "答对了。" = "That's right.";
@@ -807,6 +822,7 @@
 "同步调色…" = "Sync Adjustments…";
 "导出…" = "Export…";
 "拼图 Live…" = "Collage Live…";
+"并排比较所选" = "Compare Selected Side by Side";
 "让当前照片匹配它的色调" = "Match Current Photo to Its Colors";
 "从素材库移除" = "Remove from Library";
 "素材库" = "Library";
@@ -825,6 +841,9 @@
 "清除筛选" = "Clear Filters";
 "筛选：类型、评级、选用 / 排除" = "Filter by type, rating, pick / reject";
 "筛选结果 %lld 项" = "%lld matching";
+"相似与连拍" = "Similar & Bursts";
+"把同一场景的几张相似照片和连拍归成一组，并排比较后只留最好的" = "Group similar shots of one scene and bursts, compare them side by side and keep the best";
+"并排比较所选照片（最多 8 张）" = "Compare the selected photos side by side (up to 8)";
 "缩略图大小" = "Thumbnail size";
 "让每一个瞬间，自有光彩。" = "Let your moments shine.";
 "导入照片、视频或 Live Photo 文件夹，开始浏览、评级与调色。" = "Import a folder of photos, videos or Live Photos to start browsing, rating and adjusting.";
@@ -983,6 +1002,7 @@
 "下一项" = "Next";
 "向左旋转" = "Rotate Left";
 "向右旋转" = "Rotate Right";
+"显示相似与连拍" = "Show Similar & Bursts";
 "复位全部编辑" = "Reset All Edits";
 "浏览网格" = "Browse Grid";
 "编辑" = "Edit";

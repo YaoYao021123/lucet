@@ -70,6 +70,9 @@ struct LibraryContextMenu: View {
         Button("同步调色…") { app.sheet = .sync }.disabled(!app.editor.isLoaded || app.library.selection.subtracting([app.library.currentID ?? ""]).isEmpty)
         Button("导出…") { app.exportSelection() }
         Button("拼图 Live…") { app.openCollage() }
+        if app.library.selection.count > 1 {
+            Button("并排比较所选") { app.sheet = .compare(app.compareSelection) }
+        }
         if app.editor.isLoaded, !app.editor.isVideo, !entry.isVideo, entry.id != app.library.currentID {
             Button("让当前照片匹配它的色调") { app.matchLook(to: entry.id) }
         }
@@ -277,6 +280,8 @@ struct BrowseGrid: View {
             toolbar
             if library.visible.isEmpty {
                 empty
+            } else if app.showGroups {
+                GroupedBrowse(app: app, cellWidth: cellWidth)
             } else {
                 GeometryReader { geometry in
                     let spacing = 10.0
@@ -323,6 +328,14 @@ struct BrowseGrid: View {
                 Button("清除筛选") { library.filter = LibraryFilter() }.buttonStyle(.borderless).font(.callout)
             }
             Spacer()
+            Toggle(isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0 })) {
+                Label("相似与连拍", systemImage: "square.on.square")
+            }
+            .toggleStyle(.button).controlSize(.small)
+            .help("把同一场景的几张相似照片和连拍归成一组，并排比较后只留最好的")
+            if library.selection.count > 1 {
+                Button("并排比较") { app.sheet = .compare(app.compareSelection) }.controlSize(.small).help("并排比较所选照片（最多 8 张）")
+            }
             Image(systemName: "square.grid.3x3").foregroundStyle(.tertiary)
             Slider(value: $cellWidth, in: 130...360).frame(width: 110).controlSize(.small).help("缩略图大小")
             Image(systemName: "square.grid.2x2").foregroundStyle(.tertiary)

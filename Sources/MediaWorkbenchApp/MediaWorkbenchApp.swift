@@ -108,6 +108,10 @@ struct WorkbenchCommands: Commands {
             Button("向左旋转") { editor.rotate(clockwise: false) }.keyboardShortcut("[", modifiers: [.command]).disabled(!editor.isLoaded)
             Button("向右旋转") { editor.rotate(clockwise: true) }.keyboardShortcut("]", modifiers: [.command]).disabled(!editor.isLoaded)
             Button("自动拉直", action: editor.autoStraighten).disabled(!editor.isLoaded || editor.isVideo)
+            Divider()
+            Button("并排比较所选") { app.sheet = .compare(app.compareSelection) }
+                .keyboardShortcut("c", modifiers: [.command, .option]).disabled(app.compareSelection.count < 2)
+            Toggle("显示相似与连拍", isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0; if $0 { app.mode = .browse } }))
             Button("复位全部编辑", action: editor.resetAll).disabled(!editor.isLoaded)
             Divider()
             Button("在 Finder 中显示", action: app.revealSelection).keyboardShortcut("r", modifiers: [.command, .shift])
