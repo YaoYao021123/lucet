@@ -44,15 +44,15 @@ public enum TutorError: Error, LocalizedError, Equatable {
     case missingKey, refused, truncated, badResponse(String), http(Int, String), network(String)
     public var errorDescription: String? {
         switch self {
-        case .missingKey: "还没有设置 Anthropic API 密钥。"
-        case .refused: "这个问题没有得到回答（被安全策略拒绝）。换个问法试试。"
-        case .truncated: "回答过长被截断了，请把问题问得更具体一些。"
-        case .badResponse(let detail): "无法解析回答：\(detail)"
-        case .http(401, _): "API 密钥无效或已失效，请在设置中更新。"
-        case .http(429, _): "请求太频繁或额度已用完，请稍后再试。"
-        case .http(let code, let message) where code >= 500: "服务暂时不可用（\(code)）。\(message)"
-        case .http(let code, let message): "请求失败（\(code)）：\(message)"
-        case .network(let detail): "无法连接 Anthropic：\(detail)"
+        case .missingKey: L("还没有设置 Anthropic API 密钥。")
+        case .refused: L("这个问题没有得到回答（被安全策略拒绝）。换个问法试试。")
+        case .truncated: L("回答过长被截断了，请把问题问得更具体一些。")
+        case .badResponse(let detail): L("无法解析回答：\(detail)")
+        case .http(401, _): L("API 密钥无效或已失效，请在设置中更新。")
+        case .http(429, _): L("请求太频繁或额度已用完，请稍后再试。")
+        case .http(let code, let message) where code >= 500: L("服务暂时不可用（\(code)）。\(message)")
+        case .http(let code, let message): L("请求失败（\(code)）：\(message)")
+        case .network(let detail): L("无法连接 Anthropic：\(detail)")
         }
     }
 }
@@ -102,9 +102,9 @@ public struct ClaudePhotoTutor: PhotoTutor {
         public let note: String
     }
     public static let models: [ModelOption] = [
-        ModelOption(id: "claude-opus-5-5", title: "Claude Opus 5.5", note: "默认：讲解最准确（$4 / $20 每百万 token）"),
-        ModelOption(id: "claude-sonnet-5-5", title: "Claude Sonnet 5.5", note: "更快，成本约一半（$2 / $10 每百万 token）"),
-        ModelOption(id: "claude-haiku-4-5", title: "Claude Haiku 4.5", note: "最快最便宜，讲解较简单（$1 / $5 每百万 token）")
+        ModelOption(id: "claude-opus-5-5", title: "Claude Opus 5.5", note: L("默认：讲解最准确（$4 / $20 每百万 token）")),
+        ModelOption(id: "claude-sonnet-5-5", title: "Claude Sonnet 5.5", note: L("更快，成本约一半（$2 / $10 每百万 token）")),
+        ModelOption(id: "claude-haiku-4-5", title: "Claude Haiku 4.5", note: L("最快最便宜，讲解较简单（$1 / $5 每百万 token）"))
     ]
     public static let defaultModel = "claude-opus-5-5"
 
@@ -112,6 +112,9 @@ public struct ClaudePhotoTutor: PhotoTutor {
     public let model: String
     public var endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
     public var displayName: String { Self.models.first { $0.id == model }?.title ?? model }
+
+    /// The interface language; Claude answers in it.
+    public var language = AppLanguage.current
 
     public init(apiKey: String, model: String = ClaudePhotoTutor.defaultModel) {
         self.apiKey = apiKey; self.model = model
@@ -162,12 +165,12 @@ public struct ClaudePhotoTutor: PhotoTutor {
         var body: [String: Any] = [
             "model": model,
             "max_tokens": 16000,
-            "system": [["type": "text", "text": Self.systemPrompt]],
+            "system": [["type": "text", "text": Self.systemPrompt(language)]],
             "messages": messages,
             // Caches the frozen prefix (system + earlier turns) for follow-up questions.
             "cache_control": ["type": "ephemeral"]
         ]
-        var outputConfig: [String: Any] = ["format": ["type": "json_schema", "schema": Self.answerSchema]]
+        var outputConfig: [String: Any] = ["format": ["type": "json_schema", "schema": Self.answerSchema(language)]]
         if usesEffort { outputConfig["effort"] = "medium" }
         body["output_config"] = outputConfig
         if usesFallbacks { body["fallbacks"] = "default" }
@@ -201,7 +204,7 @@ public struct ClaudePhotoTutor: PhotoTutor {
         }
         let json = (try? JSONSerialization.data(withJSONObject: context, options: [.sortedKeys]))
             .map { String(decoding: $0, as: UTF8.self) } ?? "{}"
-        return "<context>\n\(json)\n</context>\n\n问题：\(c.question)"
+        return "<context>\n\(json)\n</context>\n\nQuestion: \(c.question)"
     }
 
     static func settingsSummary(_ edits: MediaEdits) -> [String: Any] {
@@ -229,16 +232,16 @@ public struct ClaudePhotoTutor: PhotoTutor {
 
     static func parseResponse(_ data: Data) throws -> (TutorAnswer, Data) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw TutorError.badResponse("不是 JSON")
+            throw TutorError.badResponse(L("不是 JSON"))
         }
         let stop = object["stop_reason"] as? String
         if stop == "refusal" { throw TutorError.refused }
         if stop == "max_tokens" { throw TutorError.truncated }
-        guard let content = object["content"] as? [[String: Any]] else { throw TutorError.badResponse("缺少 content") }
+        guard let content = object["content"] as? [[String: Any]] else { throw TutorError.badResponse(L("缺少 content")) }
         // Structured output arrives as the final text block; thinking blocks precede it.
         guard let text = content.last(where: { $0["type"] as? String == "text" })?["text"] as? String,
               let json = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] else {
-            throw TutorError.badResponse("回答格式不符")
+            throw TutorError.badResponse(L("回答格式不符"))
         }
         let assistant = try JSONSerialization.data(withJSONObject: ["role": "assistant", "content": content], options: [.sortedKeys])
         return (decodeAnswer(json, model: object["model"] as? String ?? ""), assistant)
@@ -281,7 +284,7 @@ public struct ClaudePhotoTutor: PhotoTutor {
     // MARK: Schema and prompt (frozen: byte-identical on every request)
 
     /// Built on demand ([String: Any] is not Sendable); key-sorted serialization keeps it byte-identical.
-    static var answerSchema: [String: Any] {
+    static func answerSchema(_ language: AppLanguage) -> [String: Any] {
         func object(_ properties: [String: Any], required: [String]) -> [String: Any] {
             ["type": "object", "properties": properties, "required": required, "additionalProperties": false]
         }
@@ -295,32 +298,35 @@ public struct ClaudePhotoTutor: PhotoTutor {
             "delta": ["type": "number", "description": "Change in slider units (-100...100)"]
         ], required: ["band", "component", "delta"])
         let suggestion = object([
-            "label": ["type": "string", "description": "Short Chinese label, e.g. 高光 -30 · 阴影 +20"],
+            "label": ["type": "string", "description": language == .chinese
+                      ? "Short Chinese label, e.g. 高光 -30 · 阴影 +20" // loc:ignore
+                      : "Short English label, e.g. Highlights -30 · Shadows +20"],
             "concept": ["type": "string", "enum": Concept.allCases.map(\.rawValue)],
             "adjustments": ["type": "array", "items": adjustment],
             "hsl": ["type": "array", "items": hsl]
         ], required: ["label", "concept", "adjustments", "hsl"])
         return object([
-            "answer": ["type": "string", "description": "The explanation, in Simplified Chinese"],
+            "answer": ["type": "string", "description": "The explanation, in \(language.replyLanguage)"],
             "suggestions": ["type": "array", "items": suggestion, "description": "0 to 3 concrete edits the app can apply"],
             "concepts": ["type": "array", "items": ["type": "string", "enum": Concept.allCases.map(\.rawValue)]],
-            "followUps": ["type": "array", "items": ["type": "string"], "description": "2-3 short follow-up questions in Chinese"]
+            "followUps": ["type": "array", "items": ["type": "string"], "description": "2-3 short follow-up questions in \(language.replyLanguage)"]
         ], required: ["answer", "suggestions", "concepts", "followUps"])
     }
 
-    static let systemPrompt: String = {
+    static func systemPrompt(_ language: AppLanguage) -> String {
         let parameters = AdjustmentParameter.allCases.map { p in
             "- \(p.rawValue) (\(p.title)): range \(Int(p.range.lowerBound))...\(Int(p.range.upperBound))\(p == .exposure ? " EV" : "")"
         }.joined(separator: "\n")
         let concepts = Concept.allCases.map { "\($0.rawValue) (\($0.title))" }.joined(separator: ", ")
+        // loc:ignore-next
         return """
-        You are the photo-editing teacher inside 光集, a Mac app for grading photos, videos and Live Photos. \
+        You are the photo-editing teacher inside Lucet 光集, a Mac app for grading photos, videos and Live Photos. \
         A learner asks about the photo they are editing. Each question comes with a small preview of the photo \
         as it currently looks (when attached), measured statistics, the current settings, the app's own coach tips, \
         and what the learner already knows.
 
         How to answer:
-        - Answer in Simplified Chinese. Base every claim on the preview, the statistics or the settings; \
+        - Answer in \(language.replyLanguage). Base every claim on the preview, the statistics or the settings; \
         if something cannot be judged from them, say so instead of guessing.
         - Teach, don't just prescribe: say what you see in this photo, why it matters, and what to try.
         - Match the learner's level. beginner: plain words, one idea at a time, at most about 200 characters, \
@@ -342,24 +348,24 @@ public struct ClaudePhotoTutor: PhotoTutor {
         Concept ids for "concepts" and each suggestion's "concept": \(concepts).
         followUps: 2 to 3 short questions this learner might want to ask next about this photo.
         """
-    }()
+    }
 }
 
 /// Offline tutor for previews and development; never touches the network.
 public struct SampleTutor: PhotoTutor {
     public init() {}
-    public var displayName: String { "示例回答（离线）" }
+    public var displayName: String { L("示例回答（离线）") }
     public func ask(_ context: TutorContext, history: TutorTranscript) async throws -> (TutorAnswer, TutorTranscript) {
         try await Task.sleep(for: .milliseconds(400))
         var next = history
         next.messages.append(Data("{\"role\":\"user\",\"content\":\"\"}".utf8))
         next.messages.append(Data("{\"role\":\"assistant\",\"content\":[]}".utf8))
         let answer = TutorAnswer(
-            answer: "天空偏亮、云层细节少，是因为高光接近溢出。先把高光往下拉找回云的层次，再单独降低蓝色的明亮度让天空更深；地面不会受影响。",
-            suggestions: [TutorSuggestion(label: "高光 -30 · 蓝色明亮度 -15", concept: .highlights,
-                                          suggestion: CoachSuggestion(label: "高光 -30 · 蓝色明亮度 -15", deltas: [.highlights: -30],
+            answer: L("天空偏亮、云层细节少，是因为高光接近溢出。先把高光往下拉找回云的层次，再单独降低蓝色的明亮度让天空更深；地面不会受影响。"),
+            suggestions: [TutorSuggestion(label: L("高光 -30 · 蓝色明亮度 -15"), concept: .highlights,
+                                          suggestion: CoachSuggestion(label: L("高光 -30 · 蓝色明亮度 -15"), deltas: [.highlights: -30],
                                                                       hsl: [HSLChange(band: .blue, component: .luminance, delta: -15)]))],
-            concepts: [.highlights, .sky], followUps: ["为什么不直接降低曝光？", "怎么让云更立体？"], model: "sample")
+            concepts: [.highlights, .sky], followUps: [L("为什么不直接降低曝光？"), L("怎么让云更立体？")], model: "sample")
         return (answer, next)
     }
 }

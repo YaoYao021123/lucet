@@ -7,3 +7,6 @@ dist/
 # Reference material downloaded for study; not ours to redistribute.
 Douyin-Zhang-Xiaoyang/
 .venv-audio/
+
+# Partner's web edition (Apache-2.0 public release), kept for study; its own repo is the source of truth.
+reference/

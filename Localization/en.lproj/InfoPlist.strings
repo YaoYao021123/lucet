@@ -1,0 +1,3 @@
+/* English Info.plist strings for Lucet 光集. */
+"CFBundleDisplayName" = "Lucet 光集";
+"NSPhotoLibraryAddUsageDescription" = "Lucet saves the photos, videos and Live Photos you export into Photos. It never reads or changes the photos already there.";

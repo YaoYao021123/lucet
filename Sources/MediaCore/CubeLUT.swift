@@ -13,7 +13,7 @@ public struct CubeLUT: Sendable {
         case invalid(line: Int, reason: String)
         public var errorDescription: String? {
             switch self {
-            case let .invalid(line, reason): return "LUT 第 \(line) 行：\(reason)"
+            case let .invalid(line, reason): return L("LUT 第 \(line) 行：\(reason)")
             }
         }
     }
@@ -68,9 +68,9 @@ public struct CubeLUT: Sendable {
                 let lead = buffer[first]
                 let isKeyword = (lead >= 0x41 && lead <= 0x5A) || (lead >= 0x61 && lead <= 0x7A) || lead == 0x5F
                 if !isKeyword {
-                    guard let size else { throw fail("色表前缺少 LUT_3D_SIZE") }
+                    guard let size else { throw fail(L("色表前缺少 LUT_3D_SIZE")) }
                     if expected == 0 { expected = size * size * size * 3; values.reserveCapacity(expected) }
-                    guard values.count < expected else { throw fail("色表条目过多") }
+                    guard values.count < expected else { throw fail(L("色表条目过多")) }
                     var cursor = first
                     for _ in 0..<3 {
                         let pointer = UnsafeMutablePointer(mutating: base + cursor)
@@ -78,13 +78,13 @@ public struct CubeLUT: Sendable {
                         let value = pointer.withMemoryRebound(to: CChar.self, capacity: 1) { strtof($0, &next) }
                         let consumed = next.map { UnsafeRawPointer($0) - UnsafeRawPointer(base) } ?? cursor
                         guard consumed > cursor, consumed <= contentEnd,
-                              consumed == contentEnd || Self.isSpace(buffer[consumed]) else { throw fail("需要三个数值") }
-                        guard value.isFinite else { throw fail("数值必须有限") }
+                              consumed == contentEnd || Self.isSpace(buffer[consumed]) else { throw fail(L("需要三个数值")) }
+                        guard value.isFinite else { throw fail(L("数值必须有限")) }
                         values.append(value)
                         cursor = consumed
                     }
                     while cursor < contentEnd, Self.isSpace(buffer[cursor]) { cursor += 1 }
-                    guard cursor == contentEnd else { throw fail("需要三个数值") }
+                    guard cursor == contentEnd else { throw fail(L("需要三个数值")) }
                     continue
                 }
 
@@ -94,49 +94,49 @@ public struct CubeLUT: Sendable {
                 let rest = Array(buffer[keyEnd..<contentEnd])
                 let tokens = Self.tokens(rest)
                 func triple() throws -> [Float] {
-                    guard tokens.count == 3 else { throw fail("需要三个数值") }
+                    guard tokens.count == 3 else { throw fail(L("需要三个数值")) }
                     return try tokens.map {
-                        guard let value = Float($0), value.isFinite else { throw fail("数值必须有限") }
+                        guard let value = Float($0), value.isFinite else { throw fail(L("数值必须有限")) }
                         return value
                     }
                 }
                 let known = ["TITLE", "LUT_3D_SIZE", "DOMAIN_MIN", "DOMAIN_MAX", "LUT_3D_INPUT_RANGE"]
                 if known.contains(key) {
-                    guard values.isEmpty else { throw fail("头信息必须在色表之前") }
-                    guard headers.insert(key).inserted else { throw fail("头信息重复：\(key)") }
+                    guard values.isEmpty else { throw fail(L("头信息必须在色表之前")) }
+                    guard headers.insert(key).inserted else { throw fail(L("头信息重复：\(key)")) }
                 }
                 switch key {
                 case "TITLE":
                     var body = rest[...]
                     while let byte = body.first, Self.isSpace(byte) { body = body.dropFirst() }
                     while let byte = body.last, Self.isSpace(byte) { body = body.dropLast() }
-                    guard body.count >= 2, body.first == 0x22, body.last == 0x22 else { throw fail("TITLE 必须使用双引号") }
+                    guard body.count >= 2, body.first == 0x22, body.last == 0x22 else { throw fail(L("TITLE 必须使用双引号")) }
                     title = Self.decodeTitle(Array(body.dropFirst().dropLast()))
                 case "LUT_3D_SIZE":
                     guard tokens.count == 1, let parsed = Int(tokens[0]), (2...128).contains(parsed) else {
-                        throw fail("当前支持 2–128 阶 3D LUT")
+                        throw fail(L("当前支持 2–128 阶 3D LUT"))
                     }
                     size = parsed
                 case "DOMAIN_MIN": minimum = try triple()
                 case "DOMAIN_MAX": maximum = try triple()
                 case "LUT_3D_INPUT_RANGE":
                     guard tokens.count == 2, let low = Float(tokens[0]), let high = Float(tokens[1]),
-                          low.isFinite, high.isFinite else { throw fail("输入范围需要两个数值") }
+                          low.isFinite, high.isFinite else { throw fail(L("输入范围需要两个数值")) }
                     minimum = [low, low, low]; maximum = [high, high, high]
-                case "LUT_1D_SIZE", "LUT_1D_INPUT_RANGE": throw fail("当前不支持 1D 或组合 LUT")
+                case "LUT_1D_SIZE", "LUT_1D_INPUT_RANGE": throw fail(L("当前不支持 1D 或组合 LUT"))
                 default:
                     // Unknown vendor keywords (for example LUT_IN_VIDEO_RANGE) are
                     // tolerated before the table; after it they indicate a malformed file.
-                    guard values.isEmpty else { throw fail("色表中出现未知关键字：\(key)") }
+                    guard values.isEmpty else { throw fail(L("色表中出现未知关键字：\(key)")) }
                 }
             }
         }
-        guard let size else { throw ParseError.invalid(line: 1, reason: "缺少 LUT_3D_SIZE") }
+        guard let size else { throw ParseError.invalid(line: 1, reason: L("缺少 LUT_3D_SIZE")) }
         guard zip(minimum, maximum).allSatisfy({ $0 < $1 }) else {
-            throw ParseError.invalid(line: 1, reason: "DOMAIN_MAX 必须逐通道大于 DOMAIN_MIN")
+            throw ParseError.invalid(line: 1, reason: L("DOMAIN_MAX 必须逐通道大于 DOMAIN_MIN"))
         }
         guard values.count == size * size * size * 3 else {
-            throw ParseError.invalid(line: max(1, line), reason: "色表不完整，需要 \(size * size * size) 条 RGB")
+            throw ParseError.invalid(line: max(1, line), reason: L("色表不完整，需要 \(size * size * size) 条 RGB"))
         }
         self.title = title
         dimension = size

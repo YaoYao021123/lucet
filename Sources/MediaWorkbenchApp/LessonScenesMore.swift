@@ -74,7 +74,7 @@ private func linear(_ v: Double) -> Double { pow(max(0, v), 2.2) }
 
 struct ColorTemperatureScene: View {
     let photo: LessonPhoto
-    private static let lights: [(String, Double)] = [("烛光", 1900), ("灯泡", 2800), ("日出日落", 3500), ("正午阳光", 5500), ("阴天", 6500), ("树荫", 8000)]
+    private static let lights: [(String, Double)] = [(L("烛光"), 1900), (L("灯泡"), 2800), (L("日出日落"), 3500), (L("正午阳光"), 5500), (L("阴天"), 6500), (L("树荫"), 8000)]
     @UIState private var kelvin = 2800.0
     var body: some View {
         // The camera is set for daylight; the scene is lit by `kelvin`.
@@ -83,7 +83,7 @@ struct ColorTemperatureScene: View {
         let norm = 0.2126 * gains.0 + 0.7152 * gains.1 + 0.0722 * gains.2
         return VStack(spacing: 14) {
             LessonImage(image: photo.gains(gains.0 / norm, gains.1 / norm, gains.2 / norm),
-                        caption: String(format: "在 %.0f K 的光下，相机按日光拍摄时的样子", kelvin))
+                        caption: String(format: L("在 %.0f K 的光下，相机按日光拍摄时的样子"), kelvin))
                 .frame(maxHeight: 300)
             HStack(spacing: 6) {
                 ForEach(Self.lights, id: \.1) { name, k in
@@ -100,8 +100,8 @@ struct ColorTemperatureScene: View {
                     .buttonStyle(.plain)
                 }
             }
-            LessonSlider(title: "色温", value: $kelvin, range: 1800...9000, format: { String(format: "%.0f K", $0) })
-            Text(kelvin < 4500 ? "光偏暖：白墙看起来发黄发橙。" : kelvin > 6000 ? "光偏冷：白墙看起来发蓝。" : "接近日光：白色基本是白的。")
+            LessonSlider(title: L("色温"), value: $kelvin, range: 1800...9000, format: { String(format: "%.0f K", $0) })
+            Text(kelvin < 4500 ? L("光偏暖：白墙看起来发黄发橙。") : kelvin > 6000 ? L("光偏冷：白墙看起来发蓝。") : L("接近日光：白色基本是白的。"))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }
@@ -142,10 +142,10 @@ struct WhitePickerScene: View {
             .frame(maxHeight: 320)
             if let s = sample {
                 HStack(spacing: 14) {
-                    swatch("你点的颜色", Color(red: s.0, green: s.1, blue: s.2))
+                    swatch(L("你点的颜色"), Color(red: s.0, green: s.1, blue: s.2))
                     Image(systemName: "arrow.right").foregroundStyle(.secondary)
                     let grey = (s.0 + s.1 + s.2) / 3
-                    swatch("校正成中性灰", Color(white: grey))
+                    swatch(L("校正成中性灰"), Color(white: grey))
                     Spacer()
                     Text(cast(s)).font(.callout).foregroundStyle(.secondary).frame(maxWidth: 260, alignment: .leading)
                 }
@@ -174,11 +174,13 @@ struct WhitePickerScene: View {
     private func cast(_ s: (Double, Double, Double)) -> String {
         let warm = (s.2 - s.0) / max(0.01, s.2 + s.0) / 0.16 * 100
         let tint = (s.1 - (s.0 + s.2) / 2) / max(0.01, s.1) / 0.16 * 100
-        guard abs(warm) > 4 || abs(tint) > 4 else { return "这里本来就接近中性，照片基本没有偏色。" }
+        guard abs(warm) > 4 || abs(tint) > 4 else { return L("这里本来就接近中性，照片基本没有偏色。") }
         var parts: [String] = []
-        if abs(warm) > 4 { parts.append(String(format: "色温 %+.0f", min(100, max(-100, warm)))) }
-        if abs(tint) > 4 { parts.append(String(format: "色调 %+.0f", min(100, max(-100, tint)))) }
-        return "这里偏\(warm < -4 ? "暖" : warm > 4 ? "冷" : tint > 4 ? "绿" : "洋红")。在光集里相当于：" + parts.joined(separator: "，") + "。"
+        if abs(warm) > 4 { parts.append(String(format: L("色温 %+.0f"), min(100, max(-100, warm)))) }
+        if abs(tint) > 4 { parts.append(String(format: L("色调 %+.0f"), min(100, max(-100, tint)))) }
+        let lead = warm < -4 ? L("这里偏暖。在光集里相当于：") : warm > 4 ? L("这里偏冷。在光集里相当于：")
+            : tint > 4 ? L("这里偏绿。在光集里相当于：") : L("这里偏洋红。在光集里相当于：")
+        return lead + parts.joined(separator: L("，")) + L("。")
     }
 }
 
@@ -214,17 +216,17 @@ struct ColorThreeNumbersScene: View {
                 VStack(alignment: .leading, spacing: 12) {
                     RoundedRectangle(cornerRadius: 10).fill(Color(hue: hue, saturation: saturation, brightness: lightness))
                         .frame(width: 150, height: 100)
-                    row("色相", "\(Int(hue * 360))°", "哪一种颜色（转一圈）")
-                    row("饱和度", "\(Int(saturation * 100))", "有多鲜艳（离中心多远）")
-                    row("明亮度", "\(Int(lightness * 100))", "有多亮")
+                    row(L("色相"), "\(Int(hue * 360))°", L("哪一种颜色（转一圈）"))
+                    row(L("饱和度"), "\(Int(saturation * 100))", L("有多鲜艳（离中心多远）"))
+                    row(L("明亮度"), "\(Int(lightness * 100))", L("有多亮"))
                 }
             }
-            LessonSlider(title: "明亮度", value: $lightness, range: 0.1...1, format: { "\(Int($0 * 100))" })
+            LessonSlider(title: L("明亮度"), value: $lightness, range: 0.1...1, format: { "\(Int($0 * 100))" })
         }
     }
     private func row(_ title: String, _ value: String, _ hint: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title).font(.callout.weight(.medium)).frame(width: 48, alignment: .leading)
+            Text(title).font(.callout.weight(.medium)).frame(width: .label(48), alignment: .leading)
             Text(value).font(.callout.monospacedDigit()).frame(width: 40, alignment: .trailing)
             Text(hint).font(.caption).foregroundStyle(.secondary)
         }
@@ -243,7 +245,7 @@ struct HSLBandScene: View {
         let v = values[band] ?? (0, 0, 0)
         return VStack(spacing: 12) {
             LessonImage(image: isolate ? photo.bandMask(band, on: r.pixels) : r.image,
-                        caption: isolate ? "彩色的部分属于「\(band.title)」色系" : nil)
+                        caption: isolate ? L("彩色的部分属于「\(band.title)」色系") : nil)
                 .frame(maxHeight: 280)
             HStack(spacing: 6) {
                 ForEach(HueBand.allCases, id: \.self) { item in
@@ -257,9 +259,9 @@ struct HSLBandScene: View {
                 Spacer()
                 Toggle("只显示这种颜色", isOn: $isolate).toggleStyle(.checkbox).font(.callout)
             }
-            LessonSlider(title: "\(band.title) 色相", value: binding(0), range: -100...100)
-            LessonSlider(title: "饱和度", value: binding(1), range: -100...100)
-            LessonSlider(title: "明亮度", value: binding(2), range: -100...100)
+            LessonSlider(title: L("\(band.title) 色相"), value: binding(0), range: -100...100)
+            LessonSlider(title: L("饱和度"), value: binding(1), range: -100...100)
+            LessonSlider(title: L("明亮度"), value: binding(2), range: -100...100)
         }
     }
     private func binding(_ index: Int) -> Binding<Double> {
@@ -284,7 +286,7 @@ struct FieldOfViewScene: View {
         let angle = 2 * atan(36 / (2 * focal)) * 180 / .pi
         return VStack(spacing: 14) {
             HStack(spacing: 18) {
-                LessonImage(image: crop, caption: String(format: "等效 %.0f mm · 水平视角约 %.0f°", focal, angle)).frame(maxWidth: .infinity)
+                LessonImage(image: crop, caption: String(format: L("等效 %.0f mm · 水平视角约 %.0f°"), focal, angle)).frame(maxWidth: .infinity)
                 Canvas { context, size in
                     // Top view: the camera and the slice of the world it sees.
                     let eye = CGPoint(x: size.width / 2, y: size.height - 16)
@@ -300,11 +302,11 @@ struct FieldOfViewScene: View {
                 .frame(width: 200)
             }
             .frame(maxHeight: 300)
-            LessonSlider(title: "焦距", value: $zoom, range: 1...8, format: { String(format: "%.0f mm", base * $0) })
-            Text(focal < 35 ? "广角：装得多，适合风景、室内、合影。" : focal < 70 ? "标准：接近人眼看到的感觉。" : "长焦：像望远镜，把远处拉近，背景更简洁。")
+            LessonSlider(title: L("焦距"), value: $zoom, range: 1...8, format: { String(format: "%.0f mm", base * $0) })
+            Text(focal < 35 ? L("广角：装得多，适合风景、室内、合影。") : focal < 70 ? L("标准：接近人眼看到的感觉。") : L("长焦：像望远镜，把远处拉近，背景更简洁。"))
                 .font(.callout).foregroundStyle(.secondary)
             if photo.capture?.focalLength35mm != nil {
-                Text(String(format: "你这张照片是等效 %.0f mm 拍的；更长的焦距在这里用裁切模拟。", base)).font(.caption).foregroundStyle(.secondary)
+                Text(String(format: L("你这张照片是等效 %.0f mm 拍的；更长的焦距在这里用裁切模拟。"), base)).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -333,8 +335,8 @@ struct PerspectiveScene: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .frame(maxHeight: 300)
-            LessonSlider(title: "焦距", value: $focal, range: 16...200, format: { String(format: "%.0f mm", $0) })
-            Text(String(format: "人离相机约 %.0f 米；背景的山看起来有原来的 %.1f 倍大。", distance, max(0.5, mountainScale)))
+            LessonSlider(title: L("焦距"), value: $focal, range: 16...200, format: { String(format: "%.0f mm", $0) })
+            Text(String(format: L("人离相机约 %.0f 米；背景的山看起来有原来的 %.1f 倍大。"), distance, max(0.5, mountainScale)))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }
@@ -378,10 +380,10 @@ private struct BallTrack: View {
 struct FrameRateScene: View {
     var body: some View {
         VStack(spacing: 18) {
-            BallTrack(title: "每秒 12 帧：明显一顿一顿", fps: 12)
-            BallTrack(title: "每秒 24 帧：电影的标准", fps: 24)
-            BallTrack(title: "每秒 60 帧：非常顺滑", fps: 60)
-            BallTrack(title: "60 帧拍、按 24 帧播放：2.5 倍慢动作", fps: 24, slowdown: 2.5)
+            BallTrack(title: L("每秒 12 帧：明显一顿一顿"), fps: 12)
+            BallTrack(title: L("每秒 24 帧：电影的标准"), fps: 24)
+            BallTrack(title: L("每秒 60 帧：非常顺滑"), fps: 60)
+            BallTrack(title: L("60 帧拍、按 24 帧播放：2.5 倍慢动作"), fps: 24, slowdown: 2.5)
         }
     }
 }
@@ -393,10 +395,10 @@ struct ShutterAngleScene: View {
         let shutter = Self.speeds[Int(stop.rounded())]
         let degrees = shutter * 24 * 360
         return VStack(spacing: 18) {
-            BallTrack(title: "24 帧 · 快门 1/\(Int((1 / shutter).rounded())) 秒", fps: 24, shutter: shutter)
-            BallTrack(title: "对照：24 帧 · 快门 1/50 秒（180°）", fps: 24, shutter: 1.0 / 50)
-            LessonSlider(title: "快门", value: $stop, range: 0...Double(Self.speeds.count - 1), format: { "1/\(Int((1 / Self.speeds[Int($0.rounded())]).rounded()))" })
-            Text(String(format: "相当于 %.0f° 快门。", degrees) + (degrees < 90 ? "每帧都太清楚，动作像在跳。" : degrees > 250 ? "拖影很重，画面发糊。" : "拖影适中，动作自然。"))
+            BallTrack(title: L("24 帧 · 快门 1/\(Int((1 / shutter).rounded())) 秒"), fps: 24, shutter: shutter)
+            BallTrack(title: L("对照：24 帧 · 快门 1/50 秒（180°）"), fps: 24, shutter: 1.0 / 50)
+            LessonSlider(title: L("快门"), value: $stop, range: 0...Double(Self.speeds.count - 1), format: { "1/\(Int((1 / Self.speeds[Int($0.rounded())]).rounded()))" })
+            Text(String(format: L("相当于 %.0f° 快门。"), degrees) + (degrees < 90 ? L("每帧都太清楚，动作像在跳。") : degrees > 250 ? L("拖影很重，画面发糊。") : L("拖影适中，动作自然。")))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }
@@ -415,7 +417,7 @@ struct LogCurveScene: View {
                 let box = CGRect(x: 40, y: 10, width: size.width - 60, height: size.height - 44)
                 context.stroke(Path(box), with: .color(.white.opacity(0.15)), lineWidth: 1)
                 func point(_ s: Double, _ v: Double) -> CGPoint { CGPoint(x: box.minX + box.width * (s + 8) / 14, y: box.maxY - box.height * v) }
-                for (curve, color, name) in [(rec709 as (Double) -> Double, Color.white, "普通（Rec.709）"), (log, Color.orange, "Log")] {
+                for (curve, color, name) in [(rec709 as (Double) -> Double, Color.white, L("普通（Rec.709）")), (log, Color.orange, "Log")] {
                     var line = Path()
                     for i in 0...140 { let s = -8 + Double(i) / 10; i == 0 ? line.move(to: point(s, curve(s))) : line.addLine(to: point(s, curve(s))) }
                     context.stroke(line, with: .color(color), lineWidth: 2)
@@ -429,8 +431,8 @@ struct LogCurveScene: View {
                 context.draw(Text("记录的值").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: 20, y: box.minY + 6))
             }
             .frame(maxHeight: 320)
-            LessonSlider(title: "场景亮度", value: $stops, range: -8...6, format: { String(format: "%+.0f 档", $0) })
-            Text(clipped ? "普通模式已经是纯白（顶到头了），Log 还在往上走，细节还在。" : "两种模式都还记得这里的亮度。往右拖，看谁先到顶。")
+            LessonSlider(title: L("场景亮度"), value: $stops, range: -8...6, format: { String(format: L("%+.0f 档"), $0) })
+            Text(clipped ? L("普通模式已经是纯白（顶到头了），Log 还在往上走，细节还在。") : L("两种模式都还记得这里的亮度。往右拖，看谁先到顶。"))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }
@@ -448,10 +450,10 @@ struct LogConversionScene: View {
         var a = BasicAdjustments(); a.saturation = -60 * flat
         let r = photo.render(MediaEdits(adjustments: a, curves: curves))
         return VStack(spacing: 12) {
-            LessonImage(image: r.image, caption: strength < 0.05 ? "模拟的 Log 画面：灰、淡，但什么都在" : strength > 0.95 ? "套用转换 LUT 之后" : nil)
+            LessonImage(image: r.image, caption: strength < 0.05 ? L("模拟的 Log 画面：灰、淡，但什么都在") : strength > 0.95 ? L("套用转换 LUT 之后") : nil)
                 .frame(maxHeight: 300)
             ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), height: 64, showsCaption: false)
-            LessonSlider(title: "LUT 强度", value: $strength, range: 0...1, format: { "\(Int($0 * 100))%" })
+            LessonSlider(title: L("LUT 强度"), value: $strength, range: 0...1, format: { "\(Int($0 * 100))%" })
             Text("Log 的直方图挤在中间；转换 LUT 把它重新铺开，对比和颜色就回来了。")
                 .font(.callout).foregroundStyle(.secondary)
         }

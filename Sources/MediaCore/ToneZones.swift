@@ -7,8 +7,8 @@ public enum ToneZone: Int, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .deepShadows: "最暗部"; case .shadows: "暗部"; case .midtones: "中间调"
-        case .highlights: "亮部"; case .brightest: "最亮部"
+        case .deepShadows: L("最暗部"); case .shadows: L("暗部"); case .midtones: L("中间调")
+        case .highlights: L("亮部"); case .brightest: L("最亮部")
         }
     }
     public var range: ClosedRange<Double> {
@@ -19,11 +19,11 @@ public enum ToneZone: Int, CaseIterable, Sendable {
     }
     public var example: String {
         switch self {
-        case .deepShadows: "头发、黑衣服、夜空"
-        case .shadows: "树荫、背光的脸"
-        case .midtones: "草地、皮肤、灰墙"
-        case .highlights: "天空、白墙、亮处的脸"
-        case .brightest: "太阳、灯、反光"
+        case .deepShadows: L("头发、黑衣服、夜空")
+        case .shadows: L("树荫、背光的脸")
+        case .midtones: L("草地、皮肤、灰墙")
+        case .highlights: L("天空、白墙、亮处的脸")
+        case .brightest: L("太阳、灯、反光")
         }
     }
     public static func zone(of luma: Double) -> ToneZone {

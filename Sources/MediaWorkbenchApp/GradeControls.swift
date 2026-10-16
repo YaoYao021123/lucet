@@ -7,14 +7,14 @@ import SwiftUI
 enum ScopeKind: String, CaseIterable {
     case histogram, waveform, parade, vectorscope
     var title: String {
-        switch self { case .histogram: "直方图"; case .waveform: "波形"; case .parade: "分量"; case .vectorscope: "矢量" }
+        switch self { case .histogram: L("直方图"); case .waveform: L("波形"); case .parade: L("分量"); case .vectorscope: L("矢量") }
     }
     var help: String {
         switch self {
-        case .histogram: "RGB 各亮度级的像素数量。左右两端堆积表示暗部或高光溢出。"
-        case .waveform: "横向对应画面位置，纵向是亮度（0–100）。用于检查曝光与反差。"
-        case .parade: "红、绿、蓝分量波形并排显示。白平衡正确时，中性色在三栏高度一致。"
-        case .vectorscope: "色相为方向、饱和度为距离中心的远近。斜线为肤色参考线。"
+        case .histogram: L("RGB 各亮度级的像素数量。左右两端堆积表示暗部或高光溢出。")
+        case .waveform: L("横向对应画面位置，纵向是亮度（0–100）。用于检查曝光与反差。")
+        case .parade: L("红、绿、蓝分量波形并排显示。白平衡正确时，中性色在三栏高度一致。")
+        case .vectorscope: L("色相为方向、饱和度为距离中心的远近。斜线为肤色参考线。")
         }
     }
 }
@@ -27,7 +27,7 @@ struct ScopePanel: View {
         let kind = editor.scopeKind
         VStack(alignment: .leading, spacing: 4) {
             GlassSegmentedControl(options: ScopeKind.allCases, selection: Binding(get: { editor.scopeKind }, set: { editor.scopeKind = $0 }),
-                                  title: { $0.title }, size: .small, accessibilityTitle: "示波器")
+                                  title: { $0.title }, size: .small, accessibilityTitle: L("示波器"))
                 .frame(maxWidth: 230)
                 .help(kind.help)
             ZStack {
@@ -75,7 +75,7 @@ struct ScopePanel: View {
                 .background(editor.showClipping ? Color.white.opacity(0.15) : .clear, in: RoundedRectangle(cornerRadius: 3))
         }
         .buttonStyle(.plain)
-        .help((shadows ? "暗部" : "高光") + String(format: "溢出 %.1f%% · 点按显示溢出区域（J）", fraction * 100))
+        .help((shadows ? L("暗部") : L("高光")) + String(format: L("溢出 %.1f%% · 点按显示溢出区域（J）"), fraction * 100))
         .padding(2)
     }
 }
@@ -124,7 +124,7 @@ struct WaveformView: View {
             }
             if let image { Image(decorative: image, scale: 1).resizable().interpolation(.medium) }
         }
-        .accessibilityLabel(sections == 1 ? "亮度波形" : "RGB 分量")
+        .accessibilityLabel(sections == 1 ? L("亮度波形") : L("RGB 分量"))
     }
 }
 
@@ -197,7 +197,7 @@ struct ColorWheelControl: View, @MainActor Equatable {
             }
             .onTapGesture(count: 2) { commit(WheelValue()) }
             .onHover { inside in if influence != nil { onHover(inside ? influence : nil) } }
-            .help("双击复位此色轮" + (influence != nil ? "；悬停查看它影响的亮度范围" : ""))
+            .help(L("双击复位此色轮") + (influence != nil ? L("；悬停查看它影响的亮度范围") : ""))
             GeometryReader { geometry in
                 let side = min(geometry.size.width, geometry.size.height)
                 let radius = side / 2
@@ -236,7 +236,7 @@ struct ColorWheelControl: View, @MainActor Equatable {
             .frame(maxWidth: 112)
             .accessibilityElement()
             .accessibilityLabel("\(wheel.title)色轮")
-            .accessibilityValue(String(format: "色彩偏移 %.0f%%", (value.x * value.x + value.y * value.y).squareRoot() * 100))
+            .accessibilityValue(String(format: L("色彩偏移 %.0f%%"), (value.x * value.x + value.y * value.y).squareRoot() * 100))
             HStack(spacing: 4) {
                 Slider(value: Binding(get: { value.master }, set: { commit(WheelValue(x: value.x, y: value.y, master: $0), editing: true) }),
                        in: -1...1, onEditingChanged: { onEditing($0) })
@@ -283,7 +283,7 @@ struct CurveEditor: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 GlassSegmentedControl(options: ToneCurves.Channel.allCases, selection: $channel, title: { $0.title },
-                                      size: .small, accessibilityTitle: "曲线通道")
+                                      size: .small, accessibilityTitle: L("曲线通道"))
                     .frame(width: 140)
                 Spacer()
                 Button("复位通道") { onEditing(true); onChange(channel, ToneCurves.identity); onEditing(false) }

@@ -59,7 +59,7 @@ struct LibraryContextMenu: View {
         Divider()
         Menu("评级") {
             ForEach(0...5, id: \.self) { value in
-                Button(value == 0 ? "无评级" : String(repeating: "★", count: value)) { app.rate(value) }
+                Button(value == 0 ? L("无评级") : String(repeating: "★", count: value)) { app.rate(value) }
             }
         }
         Button("选用") { app.flag(.pick) }
@@ -174,8 +174,8 @@ struct LibrarySidebar: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            Text(library.selection.count > 1 ? "已选 \(library.selection.count) 项" : "⌘/⇧ 点按多选")
-                .font(.callout).foregroundStyle(.secondary)
+            Text(library.selection.count > 1 ? L("已选 \(library.selection.count) 项") : L("⌘/⇧ 点按多选"))
+                .font(.callout).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
             Spacer()
             Menu {
                 LibraryContextMenu(app: app, entry: library.entry(library.anchorID) ?? library.visible[0])
@@ -314,7 +314,7 @@ struct BrowseGrid: View {
 
     private var toolbar: some View {
         HStack(spacing: 12) {
-            Text(library.filter.isActive ? "筛选结果 \(library.visible.count) 项" : "全部 \(library.entries.count) 项")
+            Text(library.filter.isActive ? L("筛选结果 \(library.visible.count) 项") : L("全部 \(library.entries.count) 项"))
                 .font(.callout).foregroundStyle(.secondary)
             if library.filter.isActive {
                 Button("清除筛选") { library.filter = LibraryFilter() }.buttonStyle(.borderless).font(.callout)

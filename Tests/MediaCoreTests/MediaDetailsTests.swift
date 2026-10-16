@@ -42,7 +42,8 @@ struct MediaDetailsTests {
         try #require(CGImageDestinationFinalize(destination))
 
         let details = await MediaDetails.read(url)
-        #expect(details.groups.map(\.title) == ["拍摄", "色彩", "位置", "文件"])
+        #expect(details.groups.map(\.kind) == [.capture, .color, .location, .file])
+        #expect(details.hasExposure)
         #expect(value(details, "拍摄", "拍摄时间") == "2026年9月28日 11:55:48（UTC+08:00）")
         #expect(value(details, "拍摄", "设备") == "Apple iPhone 16 Pro")
         #expect(value(details, "拍摄", "焦距") == "6.8 mm（等效 24 mm）")
@@ -111,7 +112,7 @@ struct MediaDetailsTests {
         try #require(writer.status == .completed)
 
         let details = await MediaDetails.read(url)
-        #expect(details.groups.map(\.title) == ["拍摄", "视频", "色彩", "位置", "文件"])
+        #expect(details.groups.map(\.kind) == [.capture, .video, .color, .location, .file])
         #expect(value(details, "视频", "编码")?.hasPrefix("H.264") == true)
         #expect(value(details, "视频", "帧率") == "30.00 fps")
         #expect(value(details, "视频", "音频") == "无")

@@ -14,13 +14,26 @@ public struct MediaDetails: Sendable, Equatable {
         public init(title: String, value: String) { self.title = title; self.value = value }
     }
     public struct Group: Sendable, Equatable, Identifiable {
-        public let title: String
+        /// Stable identity; the title is localized.
+        public enum Kind: String, Sendable, CaseIterable {
+            case capture, video, liveMotion, color, location, file
+            public var title: String {
+                switch self {
+                case .capture: L("拍摄"); case .video: L("视频"); case .liveMotion: L("Live 动态部分")
+                case .color: L("色彩"); case .location: L("位置"); case .file: L("文件")
+                }
+            }
+        }
+        public let kind: Kind
         public var rows: [Row]
-        public var id: String { title }
+        public var title: String { kind.title }
+        public var id: String { kind.rawValue }
     }
     public var groups: [Group] = []
     public var latitude: Double?
     public var longitude: Double?
+    /// Aperture, shutter or ISO were recorded (the Info tab links to the lessons about them).
+    public var hasExposure = false
 
     public var coordinate: (latitude: Double, longitude: Double)? {
         guard let latitude, let longitude else { return nil }
@@ -29,7 +42,7 @@ public struct MediaDetails: Sendable, Equatable {
 
     /// Plain text for "copy info".
     public var text: String {
-        groups.map { group in ([group.title] + group.rows.map { "\($0.title)：\($0.value)" }).joined(separator: "\n") }
+        groups.map { group in ([group.title] + group.rows.map { L("\($0.title)：\($0.value)") }).joined(separator: "\n") }
             .joined(separator: "\n\n")
     }
 
@@ -39,21 +52,21 @@ public struct MediaDetails: Sendable, Equatable {
     public static func read(_ url: URL, motion: URL? = nil) async -> MediaDetails {
         var details = MediaDetails()
         if LibraryKind.isMovie(url) {
-            await details.addMovie(url, title: "视频")
+            await details.addMovie(url, kind: .video)
         } else {
             details.addImage(url)
-            if let motion { await details.addMovie(motion, title: "Live 动态部分", liveMotion: true) }
+            if let motion { await details.addMovie(motion, kind: .liveMotion) }
         }
         details.addFile(url, motion: motion)
         details.groups.removeAll { $0.rows.isEmpty }
-        let order = ["拍摄", "视频", "Live 动态部分", "色彩", "位置", "文件"]
-        details.groups.sort { (order.firstIndex(of: $0.title) ?? order.count) < (order.firstIndex(of: $1.title) ?? order.count) }
+        let order: [Group.Kind] = [.capture, .video, .liveMotion, .color, .location, .file]
+        details.groups.sort { (order.firstIndex(of: $0.kind) ?? order.count) < (order.firstIndex(of: $1.kind) ?? order.count) }
         return details
     }
 
-    private mutating func add(_ title: String, _ rows: [Row]) {
-        if let index = groups.firstIndex(where: { $0.title == title }) { groups[index].rows += rows }
-        else { groups.append(Group(title: title, rows: rows)) }
+    private mutating func add(_ kind: Group.Kind, _ rows: [Row]) {
+        if let index = groups.firstIndex(where: { $0.kind == kind }) { groups[index].rows += rows }
+        else { groups.append(Group(kind: kind, rows: rows)) }
     }
 
     private static func row(_ title: String, _ value: String?) -> Row? {
@@ -71,61 +84,64 @@ public struct MediaDetails: Sendable, Equatable {
         let gps = p[kCGImagePropertyGPSDictionary] as? [CFString: Any] ?? [:]
 
         var capture: [Row?] = []
-        capture.append(Self.row("拍摄时间", Self.exifDate(exif[kCGImagePropertyExifDateTimeOriginal] as? String,
+        capture.append(Self.row(L("拍摄时间"), Self.exifDate(exif[kCGImagePropertyExifDateTimeOriginal] as? String,
                                                      offset: exif[kCGImagePropertyExifOffsetTimeOriginal] as? String)))
-        capture.append(Self.row("设备", Self.device(make: tiff[kCGImagePropertyTIFFMake] as? String, model: tiff[kCGImagePropertyTIFFModel] as? String)))
-        capture.append(Self.row("镜头", exif[kCGImagePropertyExifLensModel] as? String))
+        capture.append(Self.row(L("设备"), Self.device(make: tiff[kCGImagePropertyTIFFMake] as? String, model: tiff[kCGImagePropertyTIFFModel] as? String)))
+        capture.append(Self.row(L("镜头"), exif[kCGImagePropertyExifLensModel] as? String))
         if let focal = Self.number(exif[kCGImagePropertyExifFocalLength]) {
-            let equivalent = Self.number(exif[kCGImagePropertyExifFocalLenIn35mmFilm]).map { String(format: "（等效 %.0f mm）", $0) } ?? ""
-            capture.append(Self.row("焦距", String(format: "%.1f mm", focal).replacingOccurrences(of: ".0 mm", with: " mm") + equivalent))
+            let equivalent = Self.number(exif[kCGImagePropertyExifFocalLenIn35mmFilm]).map { String(format: L("（等效 %.0f mm）"), $0) } ?? ""
+            capture.append(Self.row(L("焦距"), String(format: "%.1f mm", focal).replacingOccurrences(of: ".0 mm", with: " mm") + equivalent))
         }
-        capture.append(Self.row("光圈", Self.number(exif[kCGImagePropertyExifFNumber]).map { String(format: "ƒ/%.1f", $0) }))
-        capture.append(Self.row("快门", Self.number(exif[kCGImagePropertyExifExposureTime]).map(Self.shutter)))
+        capture.append(Self.row(L("光圈"), Self.number(exif[kCGImagePropertyExifFNumber]).map { String(format: "ƒ/%.1f", $0) }))
+        capture.append(Self.row(L("快门"), Self.number(exif[kCGImagePropertyExifExposureTime]).map(Self.shutter)))
         capture.append(Self.row("ISO", (exif[kCGImagePropertyExifISOSpeedRatings] as? [NSNumber])?.first.map { "\($0.intValue)" }))
-        capture.append(Self.row("曝光补偿", Self.number(exif[kCGImagePropertyExifExposureBiasValue]).map { abs($0) < 0.05 ? "0 EV" : String(format: "%+.1f EV", $0) }))
-        capture.append(Self.row("曝光模式", Self.number(exif[kCGImagePropertyExifExposureProgram]).flatMap { Self.exposureProgram[Int($0)] }))
-        capture.append(Self.row("测光", Self.number(exif[kCGImagePropertyExifMeteringMode]).flatMap { Self.metering[Int($0)] }))
-        capture.append(Self.row("白平衡", Self.number(exif[kCGImagePropertyExifWhiteBalance]).map { $0 == 0 ? "自动" : "手动" }))
-        capture.append(Self.row("闪光灯", Self.number(exif[kCGImagePropertyExifFlash]).map { Int($0) & 1 == 1 ? "已闪光" : "未闪光" }))
-        capture.append(Self.row("软件", tiff[kCGImagePropertyTIFFSoftware] as? String))
-        add("拍摄", capture.compactMap { $0 })
+        capture.append(Self.row(L("曝光补偿"), Self.number(exif[kCGImagePropertyExifExposureBiasValue]).map { abs($0) < 0.05 ? "0 EV" : String(format: "%+.1f EV", $0) }))
+        capture.append(Self.row(L("曝光模式"), Self.number(exif[kCGImagePropertyExifExposureProgram]).flatMap { Self.exposureProgram[Int($0)] }))
+        capture.append(Self.row(L("测光"), Self.number(exif[kCGImagePropertyExifMeteringMode]).flatMap { Self.metering[Int($0)] }))
+        capture.append(Self.row(L("白平衡"), Self.number(exif[kCGImagePropertyExifWhiteBalance]).map { $0 == 0 ? L("自动") : L("手动") }))
+        capture.append(Self.row(L("闪光灯"), Self.number(exif[kCGImagePropertyExifFlash]).map { Int($0) & 1 == 1 ? L("已闪光") : L("未闪光") }))
+        capture.append(Self.row(L("软件"), tiff[kCGImagePropertyTIFFSoftware] as? String))
+        hasExposure = [kCGImagePropertyExifFNumber, kCGImagePropertyExifExposureTime, kCGImagePropertyExifISOSpeedRatings]
+            .contains { exif[$0] != nil }
+        add(.capture, capture.compactMap { $0 })
 
         var color: [Row?] = []
-        color.append(Self.row("色彩空间", p[kCGImagePropertyProfileName] as? String))
-        color.append(Self.row("位深", Self.number(p[kCGImagePropertyDepth]).map { "\(Int($0)) 位 / 通道" }))
+        color.append(Self.row(L("色彩空间"), p[kCGImagePropertyProfileName] as? String))
+        color.append(Self.row(L("位深"), Self.number(p[kCGImagePropertyDepth]).map { L("\(Int($0)) 位 / 通道") }))
         let gainMap = [kCGImageAuxiliaryDataTypeHDRGainMap, kCGImageAuxiliaryDataTypeISOGainMap]
             .contains { CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, $0) != nil }
-        color.append(Self.row("动态范围", gainMap ? "HDR（带增益图）" : "SDR"))
-        add("色彩", color.compactMap { $0 })
+        color.append(Self.row(L("动态范围"), gainMap ? L("HDR（带增益图）") : "SDR"))
+        add(.color, color.compactMap { $0 })
 
         var image: [Row?] = []
         if let w = Self.number(p[kCGImagePropertyPixelWidth]), let h = Self.number(p[kCGImagePropertyPixelHeight]) {
             let orientation = Self.number(p[kCGImagePropertyOrientation]) ?? 1
             let (dw, dh) = (5...8).contains(Int(orientation)) ? (h, w) : (w, h)
-            image.append(Self.row("尺寸", String(format: "%.0f × %.0f（%.1f 百万像素）", dw, dh, dw * dh / 1_000_000)))
+            image.append(Self.row(L("尺寸"), String(format: L("%.0f × %.0f（%.1f 百万像素）"), dw, dh, dw * dh / 1_000_000)))
         }
         if let type = CGImageSourceGetType(source) as String?, let utType = UTType(type) {
-            image.append(Self.row("格式", utType.preferredFilenameExtension?.uppercased() ?? utType.localizedDescription))
+            image.append(Self.row(L("格式"), utType.preferredFilenameExtension?.uppercased() ?? utType.localizedDescription))
         }
-        add("文件", image.compactMap { $0 })
+        add(.file, image.compactMap { $0 })
 
         if let latitude = Self.number(gps[kCGImagePropertyGPSLatitude]), let longitude = Self.number(gps[kCGImagePropertyGPSLongitude]) {
             let lat = (gps[kCGImagePropertyGPSLatitudeRef] as? String) == "S" ? -latitude : latitude
             let lon = (gps[kCGImagePropertyGPSLongitudeRef] as? String) == "W" ? -longitude : longitude
             self.latitude = lat; self.longitude = lon
-            var rows = [Row(title: "坐标", value: Self.coordinateText(lat, lon))]
+            var rows = [Row(title: L("坐标"), value: Self.coordinateText(lat, lon))]
             // Phones without a barometer often record exactly 0 m; that means "unknown".
             if let altitude = Self.number(gps[kCGImagePropertyGPSAltitude]), altitude != 0 {
                 let below = Self.number(gps[kCGImagePropertyGPSAltitudeRef]) == 1
-                rows.append(Row(title: "海拔", value: String(format: "%@%.0f m", below ? "-" : "", altitude)))
+                rows.append(Row(title: L("海拔"), value: String(format: "%@%.0f m", below ? "-" : "", altitude)))
             }
-            add("位置", rows)
+            add(.location, rows)
         }
     }
 
     // MARK: Movies (codec, color, bitrate, audio, device, location)
 
-    private mutating func addMovie(_ url: URL, title: String, liveMotion: Bool = false) async {
+    private mutating func addMovie(_ url: URL, kind: Group.Kind) async {
+        let liveMotion = kind == .liveMotion
         let asset = AVURLAsset(url: url)
         var video: [Row?] = []
         var color: [Row?] = []
@@ -134,36 +150,36 @@ public struct MediaDetails: Sendable, Equatable {
                                                                                 .formatDescriptions, .estimatedDataRate, .timeRange) {
             let display = CGRect(origin: .zero, size: size).applying(transform).standardized.size
             if !liveMotion {
-                add("文件", [Row(title: "尺寸", value: String(format: "%.0f × %.0f", display.width, display.height))])
+                add(.file, [Row(title: L("尺寸"), value: String(format: "%.0f × %.0f", display.width, display.height))])
             }
             let seconds = range.duration.seconds
             if let format = formats.first {
-                video.append(Self.row("编码", Self.videoCodec(format)))
+                video.append(Self.row(L("编码"), Self.videoCodec(format)))
                 let extensions = CMFormatDescriptionGetExtensions(format) as? [String: Any] ?? [:]
                 let primaries = extensions[kCMFormatDescriptionExtension_ColorPrimaries as String] as? String
                 let transfer = extensions[kCMFormatDescriptionExtension_TransferFunction as String] as? String
                 let matrix = extensions[kCMFormatDescriptionExtension_YCbCrMatrix as String] as? String
                 if !liveMotion {
-                    color.append(Self.row("色域", primaries.map(Self.primariesName)))
-                    color.append(Self.row("传递函数", transfer.map(Self.transferName)))
-                    color.append(Self.row("矩阵", matrix.map(Self.primariesName)))
-                    color.append(Self.row("位深", Self.videoBitDepth(format, extensions).map { "\($0) 位" }))
-                    color.append(Self.row("动态范围", transfer.map(Self.isHDR) == true ? "HDR" : "SDR"))
+                    color.append(Self.row(L("色域"), primaries.map(Self.primariesName)))
+                    color.append(Self.row(L("传递函数"), transfer.map(Self.transferName)))
+                    color.append(Self.row(L("矩阵"), matrix.map(Self.primariesName)))
+                    color.append(Self.row(L("位深"), Self.videoBitDepth(format, extensions).map { L("\($0) 位") }))
+                    color.append(Self.row(L("动态范围"), transfer.map(Self.isHDR) == true ? "HDR" : "SDR"))
                 }
             }
-            video.append(Self.row("帧率", fps > 0 ? String(format: "%.2f fps", fps) : nil))
-            video.append(Self.row("时长", seconds.isFinite ? Self.duration(seconds) : nil))
-            if fps > 0, seconds.isFinite { video.append(Self.row("总帧数", "\(Int((seconds * Double(fps)).rounded()))")) }
-            video.append(Self.row("码率", rate > 0 ? String(format: "%.1f Mbps", rate / 1_000_000) : nil))
+            video.append(Self.row(L("帧率"), fps > 0 ? String(format: "%.2f fps", fps) : nil))
+            video.append(Self.row(L("时长"), seconds.isFinite ? Self.duration(seconds) : nil))
+            if fps > 0, seconds.isFinite { video.append(Self.row(L("总帧数"), "\(Int((seconds * Double(fps)).rounded()))")) }
+            video.append(Self.row(L("码率"), rate > 0 ? String(format: "%.1f Mbps", rate / 1_000_000) : nil))
         }
         if let audio = try? await asset.loadTracks(withMediaType: .audio).first,
            let format = try? await audio.load(.formatDescriptions).first {
-            video.append(Self.row("音频", Self.audioSummary(format)))
+            video.append(Self.row(L("音频"), Self.audioSummary(format)))
         } else if !liveMotion {
-            video.append(Row(title: "音频", value: "无"))
+            video.append(Row(title: L("音频"), value: L("无")))
         }
-        add(title, video.compactMap { $0 })
-        if !color.isEmpty { add("色彩", color.compactMap { $0 }) }
+        add(kind, video.compactMap { $0 })
+        if !color.isEmpty { add(.color, color.compactMap { $0 }) }
 
         guard !liveMotion, let items = try? await asset.load(.commonMetadata) else { return }
         func string(_ key: AVMetadataKey) async -> String? {
@@ -172,22 +188,22 @@ public struct MediaDetails: Sendable, Equatable {
         }
         var capture: [Row?] = []
         if let created = try? await asset.load(.creationDate), let date = try? await created.load(.dateValue) {
-            capture.append(Self.row("拍摄时间", Self.dateText(date)))
+            capture.append(Self.row(L("拍摄时间"), Self.dateText(date)))
         } else {
-            capture.append(Self.row("拍摄时间", await string(.commonKeyCreationDate)))
+            capture.append(Self.row(L("拍摄时间"), await string(.commonKeyCreationDate)))
         }
         var device = Self.device(make: await string(.commonKeyMake), model: await string(.commonKeyModel))
         var software = await string(.commonKeySoftware)
         // DJI cameras name themselves only in the encoder tag ("DJI Lito X1").
         if device == nil, let name = software, name.hasPrefix("DJI") { device = name; software = nil }
-        capture.append(Self.row("设备", device))
-        capture.append(Self.row("软件", software))
-        add("拍摄", capture.compactMap { $0 })
+        capture.append(Self.row(L("设备"), device))
+        capture.append(Self.row(L("软件"), software))
+        add(.capture, capture.compactMap { $0 })
         if let iso6709 = await string(.commonKeyLocation), let parsed = Self.parseISO6709(iso6709) {
             latitude = parsed.0; longitude = parsed.1
-            var rows = [Row(title: "坐标", value: Self.coordinateText(parsed.0, parsed.1))]
-            if let altitude = parsed.2 { rows.append(Row(title: "海拔", value: String(format: "%.0f m", altitude))) }
-            add("位置", rows)
+            var rows = [Row(title: L("坐标"), value: Self.coordinateText(parsed.0, parsed.1))]
+            if let altitude = parsed.2 { rows.append(Row(title: L("海拔"), value: String(format: "%.0f m", altitude))) }
+            add(.location, rows)
         }
     }
 
@@ -198,11 +214,11 @@ public struct MediaDetails: Sendable, Equatable {
         var rows: [Row?] = []
         var size = values?.fileSize.map { Int64($0) }
         if let motion, let extra = try? motion.resourceValues(forKeys: [.fileSizeKey]).fileSize { size = (size ?? 0) + Int64(extra) }
-        rows.append(Self.row("大小", size.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) + (motion != nil ? "（含动态部分）" : "") }))
-        rows.append(Self.row("修改时间", values?.contentModificationDate.map(Self.dateText)))
-        rows.append(Self.row("文件夹", url.deletingLastPathComponent().path.replacingOccurrences(of: NSHomeDirectory(), with: "~")))
-        if let motion { rows.append(Self.row("动态文件", motion.lastPathComponent)) }
-        add("文件", rows.compactMap { $0 })
+        rows.append(Self.row(L("大小"), size.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) + (motion != nil ? L("（含动态部分）") : "") }))
+        rows.append(Self.row(L("修改时间"), values?.contentModificationDate.map(Self.dateText)))
+        rows.append(Self.row(L("文件夹"), url.deletingLastPathComponent().path.replacingOccurrences(of: NSHomeDirectory(), with: "~")))
+        if let motion { rows.append(Self.row(L("动态文件"), motion.lastPathComponent)) }
+        add(.file, rows.compactMap { $0 })
     }
 
     // MARK: Formatting helpers
@@ -210,8 +226,8 @@ public struct MediaDetails: Sendable, Equatable {
     static func number(_ value: Any?) -> Double? { (value as? NSNumber)?.doubleValue }
 
     static func shutter(_ seconds: Double) -> String {
-        seconds >= 1 ? String(format: "%.1f 秒", seconds).replacingOccurrences(of: ".0 秒", with: " 秒")
-            : "1/\(Int((1 / seconds).rounded())) 秒"
+        seconds >= 1 ? String(format: L("%.1f 秒"), seconds).replacingOccurrences(of: L(".0 秒"), with: L(" 秒"))
+            : L("1/\(Int((1 / seconds).rounded())) 秒")
     }
 
     static func duration(_ seconds: Double) -> String {
@@ -221,7 +237,7 @@ public struct MediaDetails: Sendable, Equatable {
     }
 
     static func dateText(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(date: .long, time: .standard).locale(Locale(identifier: "zh_CN")))
+        date.formatted(Date.FormatStyle(date: .long, time: .standard).locale(AppLanguage.current.displayLocale))
     }
 
     static func exifDate(_ text: String?, offset: String?) -> String? {
@@ -233,10 +249,11 @@ public struct MediaDetails: Sendable, Equatable {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         guard let date = formatter.date(from: text) else { return text }
         let display = DateFormatter()
-        display.locale = Locale(identifier: "zh_CN")
+        display.locale = AppLanguage.current.displayLocale
         display.timeZone = TimeZone(secondsFromGMT: 0)
-        display.dateFormat = "yyyy年M月d日 HH:mm:ss"
-        return display.string(from: date) + (offset.map { "（UTC\($0)）" } ?? "")
+        display.dateStyle = .long
+        display.timeStyle = .medium
+        return display.string(from: date) + (offset.map { L("（UTC\($0)）") } ?? "")
     }
 
     static func device(make: String?, model: String?) -> String? {
@@ -267,9 +284,9 @@ public struct MediaDetails: Sendable, Equatable {
         return (numbers[0], numbers[1], numbers.count > 2 ? numbers[2] : nil)
     }
 
-    static let exposureProgram: [Int: String] = [1: "手动", 2: "程序自动", 3: "光圈优先", 4: "快门优先", 5: "创意程序",
-                                                 6: "运动程序", 7: "人像模式", 8: "风景模式"]
-    static let metering: [Int: String] = [1: "平均测光", 2: "中央重点", 3: "点测光", 4: "多点测光", 5: "评价测光", 6: "局部测光"]
+    static let exposureProgram: [Int: String] = [1: L("手动"), 2: L("程序自动"), 3: L("光圈优先"), 4: L("快门优先"), 5: L("创意程序"),
+                                                 6: L("运动程序"), 7: L("人像模式"), 8: L("风景模式")]
+    static let metering: [Int: String] = [1: L("平均测光"), 2: L("中央重点"), 3: L("点测光"), 4: L("多点测光"), 5: L("评价测光"), 6: L("局部测光")]
 
     static func fourCC(_ code: FourCharCode) -> String {
         let bytes = [24, 16, 8, 0].map { UInt8((code >> $0) & 0xFF) }
@@ -309,9 +326,9 @@ public struct MediaDetails: Sendable, Equatable {
     }
 
     static func transferName(_ value: String) -> String {
-        let names = [kCMFormatDescriptionTransferFunction_ITU_R_709_2 as String: "Rec.709（SDR）",
-                     kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG as String: "HLG（HDR）",
-                     kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ as String: "PQ（HDR10）",
+        let names = [kCMFormatDescriptionTransferFunction_ITU_R_709_2 as String: L("Rec.709（SDR）"),
+                     kCMFormatDescriptionTransferFunction_ITU_R_2100_HLG as String: L("HLG（HDR）"),
+                     kCMFormatDescriptionTransferFunction_SMPTE_ST_2084_PQ as String: L("PQ（HDR10）"),
                      kCMFormatDescriptionTransferFunction_sRGB as String: "sRGB"]
         return names[value] ?? value
     }
@@ -328,7 +345,7 @@ public struct MediaDetails: Sendable, Equatable {
         if let description = CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee {
             if description.mSampleRate > 0 { parts.append(String(format: "%.1f kHz", description.mSampleRate / 1000).replacingOccurrences(of: ".0 kHz", with: " kHz")) }
             let channels = Int(description.mChannelsPerFrame)
-            parts.append(channels == 1 ? "单声道" : channels == 2 ? "立体声" : "\(channels) 声道")
+            parts.append(channels == 1 ? L("单声道") : channels == 2 ? L("立体声") : L("\(channels) 声道"))
         }
         return parts.joined(separator: " · ")
     }

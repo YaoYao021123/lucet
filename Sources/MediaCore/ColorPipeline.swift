@@ -29,8 +29,8 @@ public struct CreativeLUT: Sendable, Equatable {
         CreativeLUT(cube: cube, name: name, encoding: encoding)
     }
 
-    public static let warm = builtIn(name: "暖调", warm: true)
-    public static let soft = builtIn(name: "柔和", warm: false)
+    public static let warm = builtIn(name: L("暖调"), warm: true)
+    public static let soft = builtIn(name: L("柔和"), warm: false)
     public var isBuiltIn: Bool { id == Self.warm.id || id == Self.soft.id }
 
     private static func builtIn(name: String, warm: Bool) -> CreativeLUT {

@@ -30,8 +30,8 @@ struct MediaTimeline: View {
                 Text("入点 \(timeLabel(editor.clipStart))  出点 \(timeLabel(editor.clipEnd))")
                 Spacer(minLength: 0)
                 Text("封面 \(timeLabel(editor.cover))").foregroundStyle(.primary)
-                Text(String(format: "原片 %.2f 秒 → 输出 %.2f 秒", editor.clipEnd - editor.clipStart, editor.clip.outputDuration)
-                     + (editor.liveIsValid ? "" : " · Live 需 0.5–3 秒"))
+                Text(String(format: L("原片 %.2f 秒 → 输出 %.2f 秒"), editor.clipEnd - editor.clipStart, editor.clip.outputDuration)
+                     + (editor.liveIsValid ? "" : L(" · Live 需 0.5–3 秒")))
             }
             .font(.caption).monospacedDigit().foregroundStyle(.secondary)
             .padding(.horizontal, 22).padding(.bottom, 9)
@@ -62,12 +62,12 @@ private struct TransportBar: View {
 
     private var playback: some View {
         HStack(spacing: 4) {
-            IconButton(title: "上一帧（←）", icon: "backward.frame") { editor.stepFrame(-1) }
-            IconButton(title: "播放 / 暂停（空格）", icon: editor.playing ? "pause.fill" : "play.fill", action: editor.togglePlayback)
-            IconButton(title: "下一帧（→）", icon: "forward.frame") { editor.stepFrame(1) }
+            IconButton(title: L("上一帧（←）"), icon: "backward.frame") { editor.stepFrame(-1) }
+            IconButton(title: L("播放 / 暂停（空格）"), icon: editor.playing ? "pause.fill" : "play.fill", action: editor.togglePlayback)
+            IconButton(title: L("下一帧（→）"), icon: "forward.frame") { editor.stepFrame(1) }
             TimecodeLabel(editor: editor).padding(.horizontal, 6)
-            IconButton(title: zoomSelection ? "显示完整素材" : "放大选取范围", icon: "arrow.left.and.right", active: zoomSelection) { zoomSelection.toggle() }
-            IconButton(title: "静音原声", icon: editor.originalVolume == 0 ? "speaker.slash" : "speaker.wave.2", active: editor.originalVolume == 0) {
+            IconButton(title: zoomSelection ? L("显示完整素材") : L("放大选取范围"), icon: "arrow.left.and.right", active: zoomSelection) { zoomSelection.toggle() }
+            IconButton(title: L("静音原声"), icon: editor.originalVolume == 0 ? "speaker.slash" : "speaker.wave.2", active: editor.originalVolume == 0) {
                 editor.originalVolume = editor.originalVolume == 0 ? 1 : 0
             }
         }
@@ -82,17 +82,17 @@ private struct TransportBar: View {
                 Divider()
                 Button("适配 3 秒 Live", action: editor.fitLiveSpeed)
             } label: {
-                Text(String(format: "速度 %.2g×", editor.playbackSpeed)).monospacedDigit()
+                Text(String(format: L("速度 %.2g×"), editor.playbackSpeed)).monospacedDigit()
             }
             .fixedSize()
             .help("变速后视频与原声同步变化，背景音乐保持原节奏")
-            Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help("以播放头为中心选取 3 秒输出")
-            Button("设为封面", action: editor.setCoverAtPlayhead).glassButton().help("把播放头位置设为 Live 封面（C）")
+            Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help(L("以播放头为中心选取 3 秒输出"))
+            Button("设为封面", action: editor.setCoverAtPlayhead).glassButton().help(L("把播放头位置设为 Live 封面（C）"))
             Button(action: app.makeLive) {
                 Label("制作 Live", systemImage: "livephoto")
             }
             .primaryButton()
-            .help(editor.liveIsValid ? "生成 Live Photo（在后台进行）" : "Live Photo 最长 3 秒；点按可选择如何缩短")
+            .help(editor.liveIsValid ? L("生成 Live Photo（在后台进行）") : L("Live Photo 最长 3 秒；点按可选择如何缩短"))
         }
         .controlSize(.regular)
     }
@@ -243,7 +243,7 @@ private struct Filmstrip: View {
             } else {
                 HStack {
                     if editor.filmstripLoading { ProgressView().controlSize(.mini) }
-                    Text(editor.filmstripLoading ? "正在生成缩略图…" : "视频片段").font(.caption).foregroundStyle(.secondary)
+                    Text(editor.filmstripLoading ? L("正在生成缩略图…") : L("视频片段")).font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity).background(WorkbenchTheme.well)
             }
@@ -259,7 +259,7 @@ private struct TrimHandle: View {
             Capsule().fill(Color.black.opacity(0.7)).frame(width: 1.5, height: 16)
         }
         .frame(width: 22, height: 52).contentShape(Rectangle())
-        .help(isStart ? "拖动调整入点（I）" : "拖动调整出点（O）")
+        .help(isStart ? L("拖动调整入点（I）") : L("拖动调整出点（O）"))
     }
 }
 

@@ -109,7 +109,7 @@ final class ExportQueue {
                     job.state = .finished; job.outputs = result.outputs; job.live = result.live; job.detail = result.summary
                     job.inPhotos = result.inPhotos
                 case .failure(let error):
-                    if cancelled || error is CancellationError { job.state = .cancelled; job.detail = "已取消，原片保留" }
+                    if cancelled || error is CancellationError { job.state = .cancelled; job.detail = L("已取消，原片保留") }
                     else { job.state = .failed(error.localizedDescription) }
                 }
             }

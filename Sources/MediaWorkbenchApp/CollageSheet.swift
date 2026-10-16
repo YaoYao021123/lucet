@@ -80,8 +80,8 @@ private struct CollagePaneRow: View {
                         ForEach(speeds, id: \.self) { speed in Text(String(format: "%g×", speed)).tag(speed) }
                     }.labelsHidden().frame(width: 100).onChange(of: item.speed) { normalizeStart() }
                 }
-                Text(String(format: "源片段 %.2f–%.2f 秒 → 3 秒 · %@", item.start, item.start + 3 * item.speed,
-                    item.edits.lut?.name ?? "已保存的基础调色"))
+                Text(String(format: L("源片段 %.2f–%.2f 秒 → 3 秒 · %@"), item.start, item.start + 3 * item.speed,
+                    item.edits.lut?.name ?? L("已保存的基础调色")))
                     .font(.caption).foregroundStyle(.secondary)
             }.font(.callout)
         }

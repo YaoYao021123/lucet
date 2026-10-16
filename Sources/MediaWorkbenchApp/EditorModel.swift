@@ -183,13 +183,13 @@ final class EditorModel {
 
     var previewLabel: String {
         guard isLoaded else { return "" }
-        if compareMode == .original { return "原片" }
+        if compareMode == .original { return L("原片") }
         // Plain words: most people only need to know when a photo is HDR and what that means here.
-        if isVideo, hdrEffect { return "HDR 高光扩展" }
+        if isVideo, hdrEffect { return L("HDR 高光扩展") }
         if !sourceIsHDR { return "" }
-        if isVideo { return previewNeedsSDR ? "HDR 视频 · 调色时按普通亮度预览" : "HDR 视频" }
-        if edits.hasGrade { return "HDR 照片 · 调色后为普通亮度" }
-        return hdrPreview && screenHeadroom > 1 ? "HDR 照片" : "HDR 照片 · 这块屏幕按普通亮度显示"
+        if isVideo { return previewNeedsSDR ? L("HDR 视频 · 调色时按普通亮度预览") : L("HDR 视频") }
+        if edits.hasGrade { return L("HDR 照片 · 调色后为普通亮度") }
+        return hdrPreview && screenHeadroom > 1 ? L("HDR 照片") : L("HDR 照片 · 这块屏幕按普通亮度显示")
     }
 
     private struct PreviewKey: Equatable {
@@ -237,7 +237,7 @@ final class EditorModel {
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
         history = nil; updateUndoState()
         sourceStamp = nil; companionStamp = nil; analysisCache = nil
-        status = "正在读取素材…"; draftStatus = ""
+        status = L("正在读取素材…"); draftStatus = ""
         documentID = UUID(); session = UUID()
         let token = session
         let proxy = Self.proxyDimension()
@@ -253,7 +253,7 @@ final class EditorModel {
                         _ = try await LivePhotoPipeline.load(imageURL: selected, videoURL: pair)
                         liveCover = try await LivePhotoPipeline.coverTime(in: pair)
                         input = pair
-                    } catch { notice = "Live 配对未通过系统检查，已作为静态图片打开。" }
+                    } catch { notice = L("Live 配对未通过系统检查，已作为静态图片打开。") }
                 }
                 let movieInput = input
                 let meta = input == selected ? info : try await MediaInspector.inspect(input)
@@ -310,9 +310,9 @@ final class EditorModel {
                 history = EditHistory(snapshot); updateUndoState()
                 trackedEdits = edits
                 isLoaded = true; isLoading = false
-                draftStatus = loaded.0 == nil ? "自动保存" : "已恢复上次的编辑"
-                status = notice ?? restoreNotice ?? loaded.2.map { "旧配方未载入：\($0)" }
-                    ?? (loaded.0 != nil ? "已恢复这份素材的编辑。" : isLiveInput ? "已识别 Live Photo，可从动态部分重新制作。" : "")
+                draftStatus = loaded.0 == nil ? L("自动保存") : L("已恢复上次的编辑")
+                status = notice ?? restoreNotice ?? loaded.2.map { L("旧配方未载入：\($0)") }
+                    ?? (loaded.0 != nil ? L("已恢复这份素材的编辑。") : isLiveInput ? L("已识别 Live Photo，可从动态部分重新制作。") : "")
                 markScopesDirty()
                 schedulePreview()  // catch up with anything changed while loading
             } catch {
@@ -320,7 +320,7 @@ final class EditorModel {
                 isLoading = false
                 let missing = !FileManager.default.fileExists(atPath: selected.path)
                 openFailure = missing ? .missing : .unreadable(error.localizedDescription)
-                status = missing ? "找不到原文件" : "无法打开"
+                status = missing ? L("找不到原文件") : L("无法打开")
                 onOpenFailed?(selected, missing)
             }
         }
@@ -353,11 +353,11 @@ final class EditorModel {
         bypass = recipe.bypass; geometry = recipe.geometry; degrees = recipe.degrees
         selectedLUT = lut; strength = recipe.strength; hdrEffect = recipe.hdrEffect; hdrPreview = recipe.hdrPreview
         guard isVideo, var range = recipe.clip else { return nil }
-        guard (try? range.validate(duration: duration)) != nil else { return "保存的片段超出当前素材长度，已使用完整范围。" }
+        guard (try? range.validate(duration: duration)) != nil else { return L("保存的片段超出当前素材长度，已使用完整范围。") }
         var notice: String?
         if let music = range.musicURL, !FileManager.default.fileExists(atPath: music.path) {
             range.musicURL = nil
-            notice = "背景音乐文件不在原位置，已恢复其他编辑。"
+            notice = L("背景音乐文件不在原位置，已恢复其他编辑。")
         }
         clipStart = range.start; clipEnd = range.end; cover = range.cover; playbackSpeed = range.speed
         originalVolume = range.originalVolume; musicURL = range.musicURL; musicVolume = range.musicVolume
@@ -415,12 +415,12 @@ final class EditorModel {
 
     func undo() {
         guard let value = history?.undo() else { return }
-        restore(value); status = "已撤销"
+        restore(value); status = L("已撤销")
     }
 
     func redo() {
         guard let value = history?.redo() else { return }
-        restore(value); status = "已重做"
+        restore(value); status = L("已重做")
     }
 
     private func restore(_ value: EditorSnapshot) {
@@ -459,7 +459,7 @@ final class EditorModel {
     func isStageOn(_ stage: GradeStage) -> Bool { !bypass.contains(stage) }
     func setStage(_ stage: GradeStage, on: Bool) {
         if on { bypass.remove(stage) } else { bypass.insert(stage) }
-        status = on ? "\(stage.title) 已开启" : "\(stage.title) 已关闭（参数保留，可随时开启比较）"
+        status = on ? L("\(stage.title) 已开启") : L("\(stage.title) 已关闭（参数保留，可随时开启比较）")
     }
 
     func resetAll() {
@@ -468,7 +468,7 @@ final class EditorModel {
             geometry = .init(); degrees = 0; selectedLUT = nil; strength = 1; hdrEffect = false
         }
         compareMode = .off
-        status = "已恢复原片画面，可撤销。"
+        status = L("已恢复原片画面，可撤销。")
     }
 
     func resetSection(_ section: AdjustmentSection) {
@@ -477,7 +477,7 @@ final class EditorModel {
             for p in section.parameters { next[p] = 0 }
             adjustments = next
         }
-        status = "已复位\(section.title)，可撤销。"
+        status = L("已复位\(section.title)，可撤销。")
     }
 
     func resetStage(_ stage: GradeStage) {
@@ -501,7 +501,7 @@ final class EditorModel {
 
     func selectLUT(_ lut: CreativeLUT?) {
         selectedLUT = lut
-        status = lut.map { "LUT：\($0.name)" } ?? "已移除 LUT"
+        status = lut.map { L("LUT：\($0.name)") } ?? L("已移除 LUT")
     }
 
     /// Applies a look (preset, pasted settings) as one undo step.
@@ -511,7 +511,7 @@ final class EditorModel {
             bypass = recipe.bypass
             if recipe.lut != nil || lut == nil { selectedLUT = lut; strength = recipe.strength }
         }
-        status = "已应用 \(name)，可撤销。"
+        status = L("已应用 \(name)，可撤销。")
     }
 
     /// Applies a coach suggestion as one undo step and shows before/after.
@@ -525,7 +525,7 @@ final class EditorModel {
             wheels = next.wheels
         }
         if compare, !isVideo { compareMode = .split }
-        status = "已应用：\(suggestion.label)。左右对比查看变化，可撤销（⌘Z）。"
+        status = L("已应用：\(suggestion.label)。左右对比查看变化，可撤销（⌘Z）。")
     }
 
     /// One-click 自动: replaces exposure, tone, white balance and color with values computed from
@@ -541,12 +541,12 @@ final class EditorModel {
         let changed = AdjustmentParameter.allCases.filter { next[$0] != 0 && !AdjustmentSection.detail.parameters.contains($0)
             && !AdjustmentSection.effects.parameters.contains($0) }
         group { adjustments = next }
-        guard !changed.isEmpty else { return "这张照片的明暗和颜色已经很均衡，自动没有改动。" }
+        guard !changed.isEmpty else { return L("这张照片的明暗和颜色已经很均衡，自动没有改动。") }
         let list = changed.prefix(4).map { parameter -> String in
             let value = next[parameter]
             return parameter == .exposure ? String(format: "%@ %+.2f", title(parameter), value) : String(format: "%@ %+d", title(parameter), Int(value))
         }.joined(separator: " · ")
-        return "已自动调整：\(list)\(changed.count > 4 ? " 等" : "")"
+        return L("已自动调整：\(list)\(changed.count > 4 ? L(" 等") : "")")
     }
 
     /// Runs horizon and face detection once per photo for the coach.
@@ -577,7 +577,7 @@ final class EditorModel {
         guard let input = mediaURL, !isVideo, isLoaded else { return }
         if let result = analysisCache { applyStraighten(result); return }
         let token = session
-        status = "正在识别地平线…"
+        status = L("正在识别地平线…")
         analysisTask = Task {
             do {
                 let result = try await ImageStraightener.analyze(input)
@@ -585,7 +585,7 @@ final class EditorModel {
                 analysisCache = result
                 applyStraighten(result)
             } catch {
-                if token == session { status = "自动拉直失败：\(error.localizedDescription)" }
+                if token == session { status = L("自动拉直失败：\(error.localizedDescription)") }
             }
         }
     }
@@ -634,11 +634,11 @@ final class EditorModel {
         guard suspended == 0, isLoaded, let sourceStamp, let url else { return }
         do {
             try drafts.save(currentRecipe(), source: sourceStamp, companion: companionStamp)
-            draftStatus = "已自动保存"
+            draftStatus = L("已自动保存")
             onRecipeSaved?(url)
         } catch {
-            draftStatus = "保存失败"
-            onNotice?(Notice(title: "编辑未能保存", message: error.localizedDescription))
+            draftStatus = L("保存失败")
+            onNotice?(Notice(title: L("编辑未能保存"), message: error.localizedDescription))
         }
     }
 
@@ -648,8 +648,8 @@ final class EditorModel {
             let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try drafts.saveSnapshot(currentRecipe(), name: title.isEmpty ? Date().formatted(date: .abbreviated, time: .shortened) : title,
                                         source: sourceStamp, companion: companionStamp)
-            status = "已保存版本快照。"
-        } catch { onNotice?(Notice(title: "快照未保存", message: error.localizedDescription)) }
+            status = L("已保存版本快照。")
+        } catch { onNotice?(Notice(title: L("快照未保存"), message: error.localizedDescription)) }
     }
 
     func snapshots() -> [SavedSnapshot] { url.map { drafts.snapshots(for: $0) } ?? [] }
@@ -660,8 +660,8 @@ final class EditorModel {
             let recipe = try drafts.restoreSnapshot(value, for: url)
             let lut = try recipe.lut.map { try drafts.loadLUT($0) }
             restoreRecipe(recipe, lut: lut)
-            status = "已恢复快照：\(value.name)，可撤销。"
-        } catch { onNotice?(Notice(title: "无法恢复快照", message: error.localizedDescription)) }
+            status = L("已恢复快照：\(value.name)，可撤销。")
+        } catch { onNotice?(Notice(title: L("无法恢复快照"), message: error.localizedDescription)) }
     }
 
     // MARK: Preview
@@ -701,7 +701,7 @@ final class EditorModel {
                 }
             } catch is CancellationError {
             } catch {
-                if token == session { onNotice?(Notice(title: "预览失败", message: error.localizedDescription)) }
+                if token == session { onNotice?(Notice(title: L("预览失败"), message: error.localizedDescription)) }
             }
             if token == session { previewTask = nil; markScopesDirty() }
         }
@@ -766,8 +766,8 @@ final class EditorModel {
         }
         statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             guard item.status == .failed else { return }
-            let message = item.error?.localizedDescription ?? "视频预览失败。"
-            Task { @MainActor [weak self] in self?.onNotice?(Notice(title: "视频预览失败", message: message)) }
+            let message = item.error?.localizedDescription ?? L("视频预览失败。")
+            Task { @MainActor [weak self] in self?.onNotice?(Notice(title: L("视频预览失败"), message: message)) }
         }
         let target = min(oldPosition / range.speed, max(0, prepared.duration - 0.05))
         await player?.seek(to: CMTime(seconds: target, preferredTimescale: 60000), toleranceBefore: .zero, toleranceAfter: .zero)
@@ -964,7 +964,7 @@ final class EditorModel {
 
     func setCoverAtPlayhead() {
         clipChanged { cover = min(clipEnd - 0.05, max(clipStart, clipStart + position)) }
-        status = "封面设为 \(timeLabel(cover))"
+        status = L("封面设为 \(timeLabel(cover))")
     }
 
     func setSpeed(_ speed: Double) {
@@ -975,7 +975,7 @@ final class EditorModel {
 
     func fitLiveSpeed() {
         setSpeed((clipEnd - clipStart) / 3)
-        status = clip.outputDuration <= 3.001 ? "已压缩为 3 秒 Live，原片保留。" : "范围过长：4× 速度下仍超过 3 秒，请缩短选取范围。"
+        status = clip.outputDuration <= 3.001 ? L("已压缩为 3 秒 Live，原片保留。") : L("范围过长：4× 速度下仍超过 3 秒，请缩短选取范围。")
     }
 
     func selectLiveRange() {
@@ -1018,32 +1018,32 @@ extension EditorModel {
                     : parameter.range.lowerBound == 0 ? "\(Int(value.rounded()))" : String(format: "%+d", Int(value.rounded()))
                 // "曝光 +0.40 EV" under the 曝光 heading reads as just "+0.40 EV".
                 return parameter.title == section.title ? amount : "\(parameter.title) \(amount)"
-            }.joined(separator: "，"))
+            }.joined(separator: L("，")))
         }
         let wheelNames = ColorWheels.Wheel.allCases.filter { !wheels[$0].isNeutral }.map(\.title)
-        if !wheelNames.isEmpty { add("色轮", wheelNames.joined(separator: "、")) }
+        if !wheelNames.isEmpty { add(L("色轮"), wheelNames.joined(separator: L("、"))) }
         let curveNames = ToneCurves.Channel.allCases.filter { !ToneCurves.isIdentity(curves[$0]) }.map(\.title)
-        if !curveNames.isEmpty { add("曲线", curveNames.joined(separator: "、")) }
+        if !curveNames.isEmpty { add(L("曲线"), curveNames.joined(separator: L("、"))) }
         let bands = HueBand.allCases.filter { band in HSLAdjustments.Component.allCases.contains { hsl[band, $0] != 0 } }
-        if !bands.isEmpty { add("HSL", bands.map(\.title).joined(separator: "、")) }
+        if !bands.isEmpty { add("HSL", bands.map(\.title).joined(separator: L("、"))) }
         if let lut = selectedLUT { add("LUT", "\(lut.name)  \(Int((strength * 100).rounded()))%") }
         var shape: [String] = []
-        if degrees != 0 { shape.append(String(format: "拉直 %+.1f°", degrees)) }
-        if geometry.quarterTurns != 0 { shape.append("旋转 \(geometry.quarterTurns * 90)°") }
-        if geometry.mirrored { shape.append("镜像") }
-        if geometry.aspectRatio != 0 || geometry.cropScale != 1 || geometry.horizontal != 0 || geometry.vertical != 0 { shape.append("裁剪") }
-        if !shape.isEmpty { add("几何", shape.joined(separator: "，")) }
-        if hdrEffect { add("HDR", "高光扩展") }
+        if degrees != 0 { shape.append(String(format: L("拉直 %+.1f°"), degrees)) }
+        if geometry.quarterTurns != 0 { shape.append(L("旋转 \(geometry.quarterTurns * 90)°")) }
+        if geometry.mirrored { shape.append(String(localized: "summary.mirrored", defaultValue: "镜像")) } // loc:ignore (defaultValue)
+        if geometry.aspectRatio != 0 || geometry.cropScale != 1 || geometry.horizontal != 0 || geometry.vertical != 0 { shape.append(L("裁剪")) }
+        if !shape.isEmpty { add(L("几何"), shape.joined(separator: L("，"))) }
+        if hdrEffect { add("HDR", L("高光扩展")) }
         if isVideo, duration > 0 {
             var video: [String] = []
-            if clipStart > 0.01 || clipEnd < duration - 0.01 { video.append("裁切 \(timeLabel(clipStart))–\(timeLabel(clipEnd))") }
-            if playbackSpeed != 1 { video.append(String(format: "%g× 速度", playbackSpeed)) }
-            if originalVolume != 1 { video.append("原声 \(Int((originalVolume * 100).rounded()))%") }
-            if let musicURL { video.append("音乐 \(musicURL.deletingPathExtension().lastPathComponent)") }
-            if !video.isEmpty { add("视频", video.joined(separator: "，")) }
+            if clipStart > 0.01 || clipEnd < duration - 0.01 { video.append(L("裁切 \(timeLabel(clipStart))–\(timeLabel(clipEnd))")) }
+            if playbackSpeed != 1 { video.append(String(format: L("%g× 速度"), playbackSpeed)) }
+            if originalVolume != 1 { video.append(L("原声 \(Int((originalVolume * 100).rounded()))%")) }
+            if let musicURL { video.append(L("音乐 \(musicURL.deletingPathExtension().lastPathComponent)")) }
+            if !video.isEmpty { add(L("视频"), video.joined(separator: L("，"))) }
         }
         let off = GradeStage.allCases.filter { bypass.contains($0) }.map(\.title)
-        if !off.isEmpty { add("已关闭", off.joined(separator: "、")) }
+        if !off.isEmpty { add(L("已关闭"), off.joined(separator: L("、"))) }
         return rows
     }
 }

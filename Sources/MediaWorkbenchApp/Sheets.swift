@@ -48,8 +48,8 @@ struct ExportOptionsSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SheetHeader(title: target == .current ? "导出副本" : "导出 \(entries.count) 项",
-                        subtitle: "导出会在后台进行，你可以继续浏览和编辑。原片从不修改。")
+            SheetHeader(title: target == .current ? L("导出副本") : L("导出 \(entries.count) 项"),
+                        subtitle: L("导出会在后台进行，你可以继续浏览和编辑。原片从不修改。"))
             Form {
                 Section {
                     Picker("保存到", selection: $settings.destination) {
@@ -106,7 +106,7 @@ struct ExportOptionsSheet: View {
             HStack {
                 Spacer()
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
-                Button(settings.destination == .photos ? "存到「照片」" : target == .current ? "选择位置…" : "选择文件夹…") {
+                Button(settings.destination == .photos ? L("存到「照片」") : target == .current ? L("选择位置…") : L("选择文件夹…")) {
                     app.exportSettings = settings
                     app.confirmExport(target)
                 }
@@ -132,19 +132,19 @@ struct SyncSheet: View {
     var body: some View {
         let count = app.library.selection.subtracting([app.library.currentID ?? ""]).count
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "同步调色", subtitle: "把当前素材的所选调色复制到另外 \(count) 项。曝光默认不同步（每张往往不同）；裁切、片段、封面、速度与声音保持各自设置。")
+            SheetHeader(title: L("同步调色"), subtitle: L("把当前素材的所选调色复制到另外 \(count) 项。曝光默认不同步（每张往往不同）；裁切、片段、封面、速度与声音保持各自设置。"))
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(AdjustmentSection.allCases, id: \.self) { section in
                     Toggle(isOn: Binding(get: { sections.contains(section) }, set: { if $0 { sections.insert(section) } else { sections.remove(section) } })) {
                         HStack(spacing: 6) {
                             Text(section.title)
-                            Text(section.parameters.map(\.title).joined(separator: "、")).font(.caption).foregroundStyle(.secondary)
+                            Text(section.parameters.map(\.title).joined(separator: L("、"))).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                     .help(section.summary)
                 }
                 ForEach([GradeStage.wheels, .curves, .hsl], id: \.self) { stage in
-                    Toggle(stage == .hsl ? "HSL 色彩混合" : stage.title, isOn: Binding(get: { stages.contains(stage) }, set: { if $0 { stages.insert(stage) } else { stages.remove(stage) } }))
+                    Toggle(stage == .hsl ? L("HSL 色彩混合") : stage.title, isOn: Binding(get: { stages.contains(stage) }, set: { if $0 { stages.insert(stage) } else { stages.remove(stage) } }))
                 }
                 Toggle("风格 LUT 与强度", isOn: $includeLUT)
             }
@@ -174,7 +174,7 @@ struct SnapshotSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "快照与版本", subtitle: "快照保存一个命名版本，重启后仍可恢复。只保存参数，不复制原片。")
+            SheetHeader(title: L("快照与版本"), subtitle: L("快照保存一个命名版本，重启后仍可恢复。只保存参数，不复制原片。"))
             HStack {
                 TextField("版本名称，例如：自然暖调", text: $name).textFieldStyle(.roundedBorder)
                 Button("保存当前版本") { app.editor.saveSnapshot(named: name); name = ""; snapshots = app.editor.snapshots() }
@@ -205,7 +205,7 @@ struct SavePresetSheet: View {
     @UIState private var name = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "存为预设", subtitle: "保存当前的基础调整、色轮、曲线、HSL 与 LUT，可套用到任意照片或视频。")
+            SheetHeader(title: L("存为预设"), subtitle: L("保存当前的基础调整、色轮、曲线、HSL 与 LUT，可套用到任意照片或视频。"))
             TextField("预设名称", text: $name).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
@@ -222,17 +222,17 @@ struct SavePresetSheet: View {
 struct ShortcutsSheet: View {
     let app: AppModel
     private let groups: [(String, [(String, String)])] = [
-        ("浏览", [("G / E", "浏览网格 / 编辑"), ("↑ ↓ ← →", "上一项 / 下一项"), ("⏎ 或 空格", "打开所选"),
-                 ("0 – 5", "评级"), ("P / X / U", "选用 / 排除 / 取消标记"), ("⌘ / ⇧ 点按", "多选"), ("Tab", "隐藏 / 显示两侧面板")]),
-        ("编辑", [("A", "自动调整"), ("\\ 或 M", "对比原片"), ("Y", "左右分屏对比"), ("J", "显示高光 / 暗部溢出"), ("Z 或 空格", "适合窗口 ↔ 100%"),
-                 ("⌘0 / ⌘1 / ⌘+ / ⌘−", "适合 / 实际像素 / 放大 / 缩小"), ("⌘Z / ⇧⌘Z", "撤销 / 重做"),
-                 ("⇧⌘C / ⇧⌘V", "拷贝 / 粘贴调色设置"), ("双击参数名", "恢复默认")]),
-        ("视频", [("空格", "播放 / 暂停"), ("← →", "逐帧"), ("I / O", "设置入点 / 出点"), ("C", "把播放头设为封面")]),
-        ("其他", [("⌘E / ⇧⌘E", "导出当前 / 导出所选"), ("⌘S", "立即保存配方"), ("?", "显示本页")])
+        (L("浏览"), [("G / E", L("浏览网格 / 编辑")), ("↑ ↓ ← →", L("上一项 / 下一项")), (L("⏎ 或 空格"), L("打开所选")),
+                 ("0 – 5", L("评级")), ("P / X / U", L("选用 / 排除 / 取消标记")), (L("⌘ / ⇧ 点按"), L("多选")), ("Tab", L("隐藏 / 显示两侧面板"))]),
+        (L("编辑"), [("A", L("自动调整")), (L("\\ 或 M"), L("对比原片")), ("Y", L("左右分屏对比")), ("J", L("显示高光 / 暗部溢出")), (L("Z 或 空格"), L("适合窗口 ↔ 100%")),
+                 ("⌘0 / ⌘1 / ⌘+ / ⌘−", L("适合 / 实际像素 / 放大 / 缩小")), ("⌘Z / ⇧⌘Z", L("撤销 / 重做")),
+                 ("⇧⌘C / ⇧⌘V", L("拷贝 / 粘贴调色设置")), (L("双击参数名"), L("恢复默认"))]),
+        (L("视频"), [(L("空格"), L("播放 / 暂停")), ("← →", L("逐帧")), ("I / O", L("设置入点 / 出点")), ("C", L("把播放头设为封面"))]),
+        (L("其他"), [("⌘E / ⇧⌘E", L("导出当前 / 导出所选")), ("⌘S", L("立即保存配方")), ("?", L("显示本页"))])
     ]
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SheetHeader(title: "键盘快捷键")
+            SheetHeader(title: L("键盘快捷键"))
             HStack(alignment: .top, spacing: 28) {
                 ForEach(0..<2, id: \.self) { column in
                     VStack(alignment: .leading, spacing: 16) {

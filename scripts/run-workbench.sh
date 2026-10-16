@@ -16,6 +16,11 @@ mkdir -p "$workbench_app/Contents/MacOS" "$workbench_app/Contents/Resources"
 # Pre-generated brand assets are durable source assets, never generated during a build.
 cp "$workbench_root/assets/brand/icons/AppIcon.icns" "$workbench_app/Contents/Resources/AppIcon.icns"
 cp "$workbench_root/assets/brand/runtime/EmptyLibrary-dark.png" "$workbench_app/Contents/Resources/EmptyLibrary-dark.png"
+# Interface languages: Simplified Chinese (source text) and English (Localization/en.lproj).
+for lproj in "$workbench_root"/Localization/*.lproj; do
+    rm -rf "$workbench_app/Contents/Resources/$(basename "$lproj")"
+    cp -R "$lproj" "$workbench_app/Contents/Resources/"
+done
 cp "$workbench_bin_dir/media-workbench" "$workbench_app/Contents/MacOS/media-workbench.new"
 mv -f "$workbench_app/Contents/MacOS/media-workbench.new" "$workbench_app/Contents/MacOS/media-workbench"
 cat > "$workbench_app/Contents/Info.plist" <<'PLIST'
@@ -23,6 +28,8 @@ cat > "$workbench_app/Contents/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>media-workbench</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
 <key>CFBundleIdentifier</key><string>local.mediaworkbench.prototype</string>
 <key>CFBundleName</key><string>Lucet 光集</string>
 <key>CFBundleDisplayName</key><string>Lucet 光集</string>
@@ -33,7 +40,7 @@ cat > "$workbench_app/Contents/Info.plist" <<'PLIST'
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
-<key>NSPhotoLibraryAddUsageDescription</key><string>光集把你导出的照片、视频和 Live Photo 存入「照片」，不会读取或修改你已有的照片。</string>
+<key>NSPhotoLibraryAddUsageDescription</key><string>Lucet saves the photos, videos and Live Photos you export into Photos. It never reads or changes the photos already there.</string>
 </dict></plist>
 PLIST
 if [[ "${1:-}" != "--build-only" ]]; then

@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 enum ColorMode: String, CaseIterable {
     case simple, full
-    var title: String { self == .simple ? "简单" : "完整" }
+    var title: String { self == .simple ? L("简单") : L("完整") }
 }
 
 enum WorkspaceMode: String, Sendable {
@@ -62,7 +62,7 @@ struct Toast: Identifiable {
 
 enum ExportDestination: String, Codable, CaseIterable {
     case photos, folder
-    var title: String { self == .photos ? "「照片」" : "文件夹" }
+    var title: String { self == .photos ? L("「照片」") : L("文件夹") }
 }
 
 struct ExportSettings: Codable, Equatable {
@@ -230,7 +230,7 @@ final class AppModel {
         panel.allowedContentTypes = folders ? [] : [.image, .movie, .mpeg4Movie, .quickTimeMovie]
         // Third-party players can register nonconforming types for standard video extensions.
         panel.allowsOtherFileTypes = true
-        panel.message = folders ? "选择包含照片或视频的文件夹" : "选择照片、视频或文件夹"
+        panel.message = folders ? L("选择包含照片或视频的文件夹") : L("选择照片、视频或文件夹")
         present(panel) { [weak self] urls in self?.importURLs(urls) }
     }
 
@@ -241,7 +241,7 @@ final class AppModel {
             defer { isImporting = false }
             do {
                 let collected = try await Task.detached(priority: .userInitiated) { try LibraryFiles.collect(urls) }.value
-                guard !collected.files.isEmpty else { show("没有找到支持的照片或视频。"); return }
+                guard !collected.files.isEmpty else { show(L("没有找到支持的照片或视频。")); return }
                 let ids = library.add(collected.files, liveCompanions: collected.liveStills)
                 if collected.files.count == 1, let id = ids.first {
                     open(id)
@@ -249,9 +249,9 @@ final class AppModel {
                     library.filter = LibraryFilter()
                     if let first = ids.first { library.select(first) }
                     mode = .browse
-                    show("已添加 \(collected.files.count) 项" + (collected.truncated ? "（已达上限，仅读取部分）" : "") + "。按 ↑↓←→ 浏览，⏎ 进入编辑。")
+                    show(L("已添加 \(collected.files.count) 项") + (collected.truncated ? L("（已达上限，仅读取部分）") : "") + L("。按 ↑↓←→ 浏览，⏎ 进入编辑。"))
                 }
-            } catch { fail("导入失败", error) }
+            } catch { fail(L("导入失败"), error) }
         }
     }
 
@@ -288,14 +288,14 @@ final class AppModel {
         let ids = ratingTargets
         guard !ids.isEmpty else { return }
         library.setRating(rating, for: ids)
-        editor.status = rating == 0 ? "已清除评级" : "评级 " + String(repeating: "★", count: rating)
+        editor.status = rating == 0 ? L("已清除评级") : L("评级 ") + String(repeating: "★", count: rating)
     }
 
     func flag(_ flag: LibraryFlag) {
         let ids = ratingTargets
         guard !ids.isEmpty else { return }
         library.setFlag(flag, for: ids)
-        editor.status = flag == .pick ? "已选用" : flag == .reject ? "已排除" : "已取消标记"
+        editor.status = flag == .pick ? L("已选用") : flag == .reject ? L("已排除") : L("已取消标记")
     }
 
     func removeSelectionFromLibrary() {
@@ -303,7 +303,7 @@ final class AppModel {
         guard !ids.isEmpty else { return }
         if let current = library.currentID, ids.contains(current) { editor.close(); mode = .browse }
         library.remove(ids)
-        show("已从素材库移除 \(ids.count) 项；原文件未改动。")
+        show(L("已从素材库移除 \(ids.count) 项；原文件未改动。"))
     }
 
     func removeFromLibrary(_ id: String) {
@@ -318,8 +318,8 @@ final class AppModel {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.image, .movie]
-        panel.message = "找到「\(entry.name)」现在的位置（它可能被移动或重命名了）"
-        panel.prompt = "选择"
+        panel.message = L("找到「\(entry.name)」现在的位置（它可能被移动或重命名了）")
+        panel.prompt = L("选择")
         var folder = entry.url.deletingLastPathComponent()
         while !FileManager.default.fileExists(atPath: folder.path), folder.pathComponents.count > 1 { folder.deleteLastPathComponent() }
         panel.directoryURL = folder
@@ -346,9 +346,9 @@ final class AppModel {
         }
         if reopen { open(newID) }
         var message = result == .differentFile
-            ? "已重新关联。这和之前编辑的不是同一个文件，旧的编辑没有套用。"
-            : "已找到「\(url.lastPathComponent)」\(result == .moved ? "，编辑和版本都已保留" : "")。"
-        if found > 0 { message += "同一文件夹里另外 \(found) 项也一并找回。" }
+            ? L("已重新关联。这和之前编辑的不是同一个文件，旧的编辑没有套用。")
+            : L("已找到「\(url.lastPathComponent)」\(result == .moved ? L("，编辑和版本都已保留") : "")。")
+        if found > 0 { message += L("同一文件夹里另外 \(found) 项也一并找回。") }
         show(message)
     }
 
@@ -362,7 +362,7 @@ final class AppModel {
     func importLUT() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "cube") ?? .plainText]
-        panel.message = "选择 .cube 创意 LUT"
+        panel.message = L("选择 .cube 创意 LUT")
         present(panel) { [weak self] urls in
             guard let self, let url = urls.first else { return }
             let drafts = self.drafts
@@ -370,7 +370,7 @@ final class AppModel {
                 do {
                     let lut = try await Task.detached(priority: .userInitiated) { () -> CreativeLUT in
                         let size = (try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
-                        guard size <= 100_000_000 else { throw VideoWorkError.failed("LUT 超过 100 MB") }
+                        guard size <= 100_000_000 else { throw VideoWorkError.failed(L("LUT 超过 100 MB")) }
                         let cube = try CubeLUT(data: Data(contentsOf: url))
                         let lut = CreativeLUT(cube: cube, name: cube.title ?? url.deletingPathExtension().lastPathComponent)
                         let reference = try drafts.storeLUT(lut)
@@ -379,8 +379,8 @@ final class AppModel {
                     }.value
                     self.lutLibrary = drafts.importedLUTs()
                     self.editor.selectLUT(lut)
-                    self.show("已导入 \(lut.name)。相机 Log 素材请先套用对应的转换 LUT。")
-                } catch { self.fail("无法导入 LUT", error) }
+                    self.show(L("已导入 \(lut.name)。相机 Log 素材请先套用对应的转换 LUT。"))
+                } catch { self.fail(L("无法导入 LUT"), error) }
             }
         }
     }
@@ -391,7 +391,7 @@ final class AppModel {
             do {
                 let lut = try await Task.detached(priority: .userInitiated) { try drafts.loadLUT(reference) }.value
                 editor.selectLUT(lut)
-            } catch { fail("无法载入 LUT", error) }
+            } catch { fail(L("无法载入 LUT"), error) }
         }
     }
 
@@ -405,7 +405,7 @@ final class AppModel {
                 try drafts.rememberImportedLUT(reference)
                 lutLibrary = drafts.importedLUTs()
                 editor.selectLUT(next)
-            } catch { fail("无法切换 LUT 色彩空间", error) }
+            } catch { fail(L("无法切换 LUT 色彩空间"), error) }
         }
     }
 
@@ -415,7 +415,7 @@ final class AppModel {
     func completeLesson(_ lesson: Lesson) {
         learner.lessonsDone.insert(lesson.id)
         if let concept = lesson.concept { learner.update(concept) { $0.tried += 1 } }
-        show("完成「\(lesson.title)」。", seconds: 3)
+        show(L("完成「\(lesson.title)」。"), seconds: 3)
     }
 
     func autoEnhance() {
@@ -423,10 +423,10 @@ final class AppModel {
         let simple = colorMode == .simple
         guard let summary = editor.applyAuto(title: { parameter in
             simple ? SimpleControl.all.first { $0.parameter == parameter }?.title ?? parameter.title : parameter.title
-        }) else { show("正在分析画面，请稍后再试。", seconds: 2); return }
+        }) else { show(L("正在分析画面，请稍后再试。"), seconds: 2); return }
         show(summary, actions: [
-            .init(title: "对比") { [weak self] in self?.editor.compareMode = self?.editor.isVideo == true ? .original : .split },
-            .init(title: "撤销") { [weak self] in self?.editor.undo() }
+            .init(title: L("对比")) { [weak self] in self?.editor.compareMode = self?.editor.isVideo == true ? .original : .split },
+            .init(title: L("撤销")) { [weak self] in self?.editor.undo() }
         ])
     }
 
@@ -436,8 +436,8 @@ final class AppModel {
         Task {
             do {
                 let lut = try await Task.detached { try preset.recipe.lut.map { try drafts.loadLUT($0) } }.value
-                editor.applyLook(preset.recipe, lut: lut, name: "预设「\(preset.name)」")
-            } catch { fail("无法应用预设", error) }
+                editor.applyLook(preset.recipe, lut: lut, name: L("预设「\(preset.name)」"))
+            } catch { fail(L("无法应用预设"), error) }
         }
     }
 
@@ -446,14 +446,14 @@ final class AppModel {
             var recipe = EditRecipe().applyingLook(from: try editor.currentRecipe())
             recipe.hdrPreview = true
             let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            try drafts.savePreset(GradePreset(name: title.isEmpty ? "我的预设" : String(title.prefix(40)), recipe: recipe))
+            try drafts.savePreset(GradePreset(name: title.isEmpty ? L("我的预设") : String(title.prefix(40)), recipe: recipe))
             presets = drafts.presets()
-            show("已存为预设，可在任意照片或视频上一键套用。")
-        } catch { fail("预设未保存", error) }
+            show(L("已存为预设，可在任意照片或视频上一键套用。"))
+        } catch { fail(L("预设未保存"), error) }
     }
 
     func deletePreset(_ preset: GradePreset) {
-        do { try drafts.deletePreset(preset); presets = drafts.presets() } catch { fail("无法删除预设", error) }
+        do { try drafts.deletePreset(preset); presets = drafts.presets() } catch { fail(L("无法删除预设"), error) }
     }
 
     // MARK: Copy / paste / sync
@@ -463,20 +463,20 @@ final class AppModel {
         do {
             clipboard = (try editor.currentRecipe(), editor.selectedLUT)
             hasClipboard = true
-            show("已拷贝调色设置（不含裁切、片段与声音）。⇧⌘V 粘贴到当前或所选素材。")
-        } catch { fail("无法拷贝设置", error) }
+            show(L("已拷贝调色设置（不含裁切、片段与声音）。⇧⌘V 粘贴到当前或所选素材。"))
+        } catch { fail(L("无法拷贝设置"), error) }
     }
 
     func pasteSettings() {
         guard let (recipe, lut) = clipboard else { return }
         let others = library.selection.subtracting([library.currentID ?? ""])
         if mode == .edit || others.isEmpty {
-            if editor.isLoaded { editor.applyLook(recipe, lut: lut, name: "粘贴的设置") }
+            if editor.isLoaded { editor.applyLook(recipe, lut: lut, name: L("粘贴的设置")) }
             return
         }
-        writeLook(recipe, to: library.entries.filter { others.contains($0.id) }, label: "粘贴")
+        writeLook(recipe, to: library.entries.filter { others.contains($0.id) }, label: L("粘贴"))
         if let current = library.currentID, library.selection.contains(current), editor.isLoaded {
-            editor.applyLook(recipe, lut: lut, name: "粘贴的设置")
+            editor.applyLook(recipe, lut: lut, name: L("粘贴的设置"))
         }
     }
 
@@ -486,10 +486,10 @@ final class AppModel {
         do {
             let source = try editor.currentRecipe()
             let targets = library.selectedEntries.filter { $0.id != library.currentID }
-            writeLook(source, to: targets, label: "同步") { before in
+            writeLook(source, to: targets, label: L("同步")) { before in
                 before.applying(from: source, sections: sections, includeLUT: includeLUT, stages: stages)
             }
-        } catch { fail("无法同步", error) }
+        } catch { fail(L("无法同步"), error) }
     }
 
     /// Writes recipes for other files in the background, remembering the batch for undo.
@@ -515,8 +515,8 @@ final class AppModel {
             }.value
             lastBatch = changes
             for item in changes { thumbnails.invalidate(item.stamp.path) }
-            let suffix = skipped > 0 ? "；\(skipped) 项离线或已变化，已跳过" : ""
-            show("已\(label)到 \(changes.count) 项\(suffix)。", actions: [Toast.Action(title: "撤回") { self.undoBatch() }], seconds: 8)
+            let suffix = skipped > 0 ? L("；\(skipped) 项离线或已变化，已跳过") : ""
+            show(L("已\(label)到 \(changes.count) 项\(suffix)。"), actions: [Toast.Action(title: L("撤回")) { self.undoBatch() }], seconds: 8)
         }
     }
 
@@ -543,7 +543,7 @@ final class AppModel {
                 let lut = try? restored.lut.map { try drafts.loadLUT($0) }
                 editor.restoreRecipe(restored, lut: lut ?? nil)
             }
-            show("已撤回 \(count) 项；之后又单独修改过的素材保持不变。")
+            show(L("已撤回 \(count) 项；之后又单独修改过的素材保持不变。"))
         }
     }
 
@@ -580,22 +580,22 @@ final class AppModel {
         let settings = exportSettings
         let edits = editor.edits, clip = editor.clip, video = editor.isVideo
         let name = source.deletingPathExtension().lastPathComponent + "." + (video ? "mov" : settings.image.format.fileExtension)
-        let id = exports.enqueue(share ? "共享 \(name)" : "存到「照片」· \(name)") { report in
+        let id = exports.enqueue(share ? L("共享 \(name)") : L("存到「照片」· \(name)")) { report in
             let folder = try PhotosSaver.stagingFolder()
             let output = folder.appendingPathComponent(name)
             if video {
                 try await VideoPipeline.export(input, to: output, clip: clip, edits: edits, codec: settings.codec) { report($0, nil) }
             } else {
-                report(nil, "正在渲染…")
+                report(nil, L("正在渲染…"))
                 try await Task.detached(priority: .userInitiated) {
                     try ImageExporter.export(input, to: output, edits: edits, options: settings.image)
                 }.value
             }
-            if share { return ExportQueue.Result(outputs: [output], live: nil, summary: "已准备好共享") }
+            if share { return ExportQueue.Result(outputs: [output], live: nil, summary: L("已准备好共享")) }
             defer { try? FileManager.default.removeItem(at: folder) }
-            report(nil, "正在存入「照片」…")
+            report(nil, L("正在存入「照片」…"))
             try await PhotosSaver.save([video ? .video(output) : .photo(output)])
-            return ExportQueue.Result(outputs: [], live: nil, summary: "已存到「照片」", inPhotos: true)
+            return ExportQueue.Result(outputs: [], live: nil, summary: L("已存到「照片」"), inPhotos: true)
         }
         if share { shareJobs.insert(id) }
     }
@@ -611,16 +611,16 @@ final class AppModel {
         guard !entries.isEmpty else { return }
         editor.flushDraft()
         let settings = exportSettings, store = drafts
-        exports.enqueue("存到「照片」· \(entries.count) 项") { report in
+        exports.enqueue(L("存到「照片」· \(entries.count) 项")) { report in
             let folder = try PhotosSaver.stagingFolder()
             defer { try? FileManager.default.removeItem(at: folder) }
             let batch = folder.appendingPathComponent("export")
             let result = try await Self.runBatchExport(entries, to: batch, settings: settings, store: store, report: report)
             let items = PhotosSaver.items(in: batch)
-            report(nil, "正在存入「照片」…")
+            report(nil, L("正在存入「照片」…"))
             try await PhotosSaver.save(items)
             return ExportQueue.Result(outputs: [], live: nil,
-                                      summary: result.summary.replacingOccurrences(of: "（见导出记录）", with: "") + "，已存到「照片」", inPhotos: true)
+                                      summary: result.summary.replacingOccurrences(of: L("（见导出记录）"), with: "") + L("，已存到「照片」"), inPhotos: true)
         }
     }
 
@@ -629,7 +629,7 @@ final class AppModel {
         let settings = exportSettings
         let video = editor.isVideo
         let panel = NSSavePanel()
-        let stem = source.deletingPathExtension().lastPathComponent + "-编辑"
+        let stem = source.deletingPathExtension().lastPathComponent + L("-编辑")
         if video {
             panel.allowedContentTypes = [.quickTimeMovie]
             panel.nameFieldStringValue = stem + ".mov"
@@ -637,7 +637,7 @@ final class AppModel {
             panel.allowedContentTypes = [settings.image.format.type]
             panel.nameFieldStringValue = stem + "." + settings.image.format.fileExtension
         }
-        panel.message = "另存编辑副本；原片不会被修改。"
+        panel.message = L("另存编辑副本；原片不会被修改。")
         present(panel) { [weak self] urls in
             if let output = urls.first { self?.enqueueCurrentExport(to: output) }
         }
@@ -648,16 +648,16 @@ final class AppModel {
         guard let input = editor.mediaURL, editor.isLoaded else { return }
         let settings = exportSettings
         let edits = editor.edits, clip = editor.clip, video = editor.isVideo
-        exports.enqueue("导出 \(output.lastPathComponent)") { report in
+        exports.enqueue(L("导出 \(output.lastPathComponent)")) { report in
             if video {
                 try await Self.exportVideo(input, to: output, clip: clip, edits: edits, codec: settings.codec, report: report)
             } else {
-                report(nil, "正在渲染…")
+                report(nil, L("正在渲染…"))
                 try await Task.detached(priority: .userInitiated) {
                     try ImageExporter.export(input, to: output, edits: edits, options: settings.image, allowReplacing: true)
                 }.value
             }
-            return ExportQueue.Result(outputs: [output], live: nil, summary: "已保存")
+            return ExportQueue.Result(outputs: [output], live: nil, summary: L("已保存"))
         }
     }
 
@@ -685,38 +685,38 @@ final class AppModel {
             // Offer the fix instead of only explaining the rule.
             let seconds = editor.clip.outputDuration
             let alert = NSAlert()
-            alert.messageText = "Live Photo 最长 3 秒"
-            alert.informativeText = String(format: "现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。", seconds)
-            alert.addButton(withTitle: "选取播放头附近 3 秒")
-            alert.addButton(withTitle: "整段加速到 3 秒")
-            alert.addButton(withTitle: "取消")
+            alert.messageText = L("Live Photo 最长 3 秒")
+            alert.informativeText = String(format: L("现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。"), seconds)
+            alert.addButton(withTitle: L("选取播放头附近 3 秒"))
+            alert.addButton(withTitle: L("整段加速到 3 秒"))
+            alert.addButton(withTitle: L("取消"))
             switch alert.runModal() {
             case .alertFirstButtonReturn: editor.selectLiveRange()
             case .alertSecondButtonReturn: editor.fitLiveSpeed()
             default: return
             }
             guard editor.liveIsValid else { return }
-            show("已调整为 \(String(format: "%.1f", editor.clip.outputDuration)) 秒，再点一次「制作 Live」即可。", seconds: 4)
+            show(L("已调整为 \(String(format: "%.1f", editor.clip.outputDuration)) 秒，再点一次「制作 Live」即可。"), seconds: 4)
             return
         }
         if exportSettings.destination == .photos {
             guard let input = editor.mediaURL else { return }
             let edits = editor.edits, clip = editor.clip
             let name = source.deletingPathExtension().lastPathComponent + "-Live"
-            exports.enqueue("制作 Live · 存到「照片」") { report in
+            exports.enqueue(L("制作 Live · 存到「照片」")) { report in
                 let folder = try PhotosSaver.stagingFolder()
                 defer { try? FileManager.default.removeItem(at: folder) }
                 let resources = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits) { report($0, nil) }
                 _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
-                report(nil, "正在存入「照片」…")
+                report(nil, L("正在存入「照片」…"))
                 try await PhotosSaver.save([.live(image: resources.imageURL, video: resources.videoURL)])
-                return ExportQueue.Result(outputs: [], live: nil, summary: "已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone", inPhotos: true)
+                return ExportQueue.Result(outputs: [], live: nil, summary: L("已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone"), inPhotos: true)
             }
             return
         }
         let panel = NSSavePanel()
         panel.nameFieldStringValue = source.deletingPathExtension().lastPathComponent + "-Live"
-        panel.message = editor.hdrEffect ? "新建 Live 文件夹：HEIC 增益图封面 + 10-bit HLG 视频 + 参数记录。" : "新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。"
+        panel.message = editor.hdrEffect ? L("新建 Live 文件夹：HEIC 增益图封面 + 10-bit HLG 视频 + 参数记录。") : L("新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。")
         present(panel) { [weak self] urls in
             if let output = urls.first { self?.enqueueLive(to: output) }
         }
@@ -725,10 +725,10 @@ final class AppModel {
     func enqueueLive(to output: URL) {
         guard let input = editor.mediaURL, editor.isVideo, editor.liveIsValid else { return }
         let edits = editor.edits, clip = editor.clip
-        exports.enqueue("制作 Live · \(output.lastPathComponent)") { report in
+        exports.enqueue(L("制作 Live · \(output.lastPathComponent)")) { report in
             let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits) { report($0, nil) }
             _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
-            return ExportQueue.Result(outputs: [output], live: resources, summary: "系统配对检查通过")
+            return ExportQueue.Result(outputs: [output], live: resources, summary: L("系统配对检查通过"))
         }
     }
 
@@ -740,13 +740,13 @@ final class AppModel {
         let settings = exportSettings, store = drafts
         let panel = NSOpenPanel()
         panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
-        panel.prompt = "导出到这里"
-        panel.message = "将新建一个文件夹保存 \(entries.count) 项副本；原片不会被修改。"
+        panel.prompt = L("导出到这里")
+        panel.message = L("将新建一个文件夹保存 \(entries.count) 项副本；原片不会被修改。")
         present(panel) { [weak self] urls in
             guard let self, let directory = urls.first else { return }
             let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false)).replacingOccurrences(of: ":", with: "")
-            let destination = directory.appendingPathComponent("光集导出-" + stamp)
-            self.exports.enqueue("导出 \(entries.count) 项") { report in
+            let destination = directory.appendingPathComponent(L("光集导出-") + stamp)
+            self.exports.enqueue(L("导出 \(entries.count) 项")) { report in
                 try await Self.runBatchExport(entries, to: destination, settings: settings, store: store, report: report)
             }
         }
@@ -756,11 +756,11 @@ final class AppModel {
                                                    store: DraftStore, report: @escaping ExportQueue.Report) async throws -> ExportQueue.Result {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
         var completed = 0, skipped = 0
-        var log = ["光集批量导出记录", "原片保留；下列路径仅记录本次结果。", ""]
+        var log = [L("光集批量导出记录"), L("原片保留；下列路径仅记录本次结果。"), ""]
         var luts: [String: CreativeLUT] = [:]
         defer {
-            log.append("完成 \(completed) 项；跳过或失败 \(skipped) 项。")
-            try? log.joined(separator: "\n").write(to: destination.appendingPathComponent("导出记录.txt"), atomically: true, encoding: .utf8)
+            log.append(L("完成 \(completed) 项；跳过或失败 \(skipped) 项。"))
+            try? log.joined(separator: "\n").write(to: destination.appendingPathComponent(L("导出记录.txt")), atomically: true, encoding: .utf8)
         }
         for (index, entry) in entries.enumerated() {
             try Task.checkCancellation()
@@ -801,19 +801,19 @@ final class AppModel {
                     try ImageExporter.export(input, to: destination.appendingPathComponent(name), edits: edits, options: settings.image)
                 } else {
                     skipped += 1
-                    log.append("跳过 · \(entry.name) · 静态照片没有动态片段")
+                    log.append(L("跳过 · \(entry.name) · 静态照片没有动态片段"))
                     continue
                 }
                 completed += 1
-                log.append("完成 · \(entry.name) → \(name)")
+                log.append(L("完成 · \(entry.name) → \(name)"))
             } catch {
                 if Task.isCancelled { throw CancellationError() }
                 skipped += 1
-                log.append("失败 · \(entry.name) · \(error.localizedDescription)")
+                log.append(L("失败 · \(entry.name) · \(error.localizedDescription)"))
             }
         }
         return ExportQueue.Result(outputs: [destination], live: nil,
-                                  summary: "完成 \(completed) 项" + (skipped > 0 ? "，跳过 \(skipped) 项（见导出记录）" : ""))
+                                  summary: L("完成 \(completed) 项") + (skipped > 0 ? L("，跳过 \(skipped) 项（见导出记录）") : ""))
     }
 
     private nonisolated static func unique(_ stem: String, ext: String? = nil, in folder: URL) -> String {
@@ -831,16 +831,16 @@ final class AppModel {
         case .finished where sharing:
             presentShare(job.outputs)
         case .finished where job.inPhotos:
-            show("\(job.title) · \(job.detail)", actions: [.init(title: "打开「照片」") { PhotosSaver.openPhotos() }], seconds: 8)
+            show("\(job.title) · \(job.detail)", actions: [.init(title: L("打开「照片」")) { PhotosSaver.openPhotos() }], seconds: 8)
         case .finished:
-            var actions = [Toast.Action(title: "在 Finder 中显示") { [weak self] in self?.exports.reveal(job) },
-                           Toast.Action(title: "共享…") { [weak self] in self?.presentShare(job.live.map { [$0.imageURL] } ?? job.outputs) }]
+            var actions = [Toast.Action(title: L("在 Finder 中显示")) { [weak self] in self?.exports.reveal(job) },
+                           Toast.Action(title: L("共享…")) { [weak self] in self?.presentShare(job.live.map { [$0.imageURL] } ?? job.outputs) }]
             if let live = job.live {
-                actions.insert(Toast.Action(title: "预览 Live") { [weak self] in self?.sheet = .livePreview(live) }, at: 0)
+                actions.insert(Toast.Action(title: L("预览 Live")) { [weak self] in self?.sheet = .livePreview(live) }, at: 0)
             }
             show("\(job.title) · \(job.detail)", actions: actions, seconds: 8)
         case .failed(let message):
-            alert = AppAlert(title: "\(job.title) 失败", message: message)
+            alert = AppAlert(title: L("\(job.title) 失败"), message: message)
         default: break
         }
     }
@@ -851,7 +851,7 @@ final class AppModel {
         editor.flushDraft()
         let entries = library.actionTargets
         guard (1...3).contains(entries.count) else {
-            alert = AppAlert(title: "拼图 Live", message: "请先在素材库选择 1–3 个视频或 Live Photo。")
+            alert = AppAlert(title: L("拼图 Live"), message: L("请先在素材库选择 1–3 个视频或 Live Photo。"))
             return
         }
         let store = drafts
@@ -865,7 +865,7 @@ final class AppModel {
                         input = movie; info = try await MediaInspector.inspect(movie)
                     }
                     guard info.kind == .video, let duration = info.durationSeconds, duration >= 1.5 else {
-                        throw VideoWorkError.failed("\(entry.name)：拼图需要至少 1.5 秒的视频或 Live 动态资源。")
+                        throw VideoWorkError.failed(L("\(entry.name)：拼图需要至少 1.5 秒的视频或 Live 动态资源。"))
                     }
                     let recipe = try store.load(entry.url) ?? EditRecipe()
                     let lut = try recipe.lut.map { try store.loadLUT($0) }
@@ -878,7 +878,7 @@ final class AppModel {
                 }
                 collageDrafts = items
                 sheet = .collage
-            } catch { fail("无法准备拼图", error) }
+            } catch { fail(L("无法准备拼图"), error) }
         }
     }
 
@@ -887,19 +887,19 @@ final class AppModel {
             LiveCollagePane(url: $0.url, clip: .init(start: $0.start, end: $0.start + 3 * $0.speed, cover: $0.start + 1.5 * $0.speed,
                                                       originalVolume: 0, speed: $0.speed), edits: $0.edits)
         }
-        do { _ = try LiveCollagePipeline.validate(panes) } catch { fail("拼图设置无效", error); return }
+        do { _ = try LiveCollagePipeline.validate(panes) } catch { fail(L("拼图设置无效"), error); return }
         sheet = nil
         Task {
             try? await Task.sleep(for: .milliseconds(250))
             let panel = NSSavePanel()
-            panel.nameFieldStringValue = "光集-\(panes.count)画面-Live"
-            panel.message = "新建 Live 文件夹：静音 SDR，3 秒，各画面独立调色与变速。"
+            panel.nameFieldStringValue = L("光集-\(panes.count)画面-Live")
+            panel.message = L("新建 Live 文件夹：静音 SDR，3 秒，各画面独立调色与变速。")
             present(panel) { urls in
                 guard let output = urls.first else { return }
-                self.exports.enqueue("拼图 Live · \(panes.count) 画面") { report in
+                self.exports.enqueue(L("拼图 Live · \(panes.count) 画面")) { report in
                     let resources = try await LiveCollagePipeline.export(panes, to: output) { report($0, nil) }
                     _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
-                    return ExportQueue.Result(outputs: [output], live: resources, summary: "系统配对检查通过")
+                    return ExportQueue.Result(outputs: [output], live: resources, summary: L("系统配对检查通过"))
                 }
             }
         }
@@ -939,9 +939,9 @@ final class AppModel {
             }
         }
         switch feedback {
-        case .helpful: show("谢谢！以后会多讲「\(concept.title)」相关的内容。")
-        case .known: show("已标记为已了解：「\(concept.title)」会讲得更简短。")
-        case .mute: show("不再提示「\(concept.title)」。可在「学习」页底部恢复。")
+        case .helpful: show(L("谢谢！以后会多讲「\(concept.title)」相关的内容。"))
+        case .known: show(L("已标记为已了解：「\(concept.title)」会讲得更简短。"))
+        case .mute: show(L("不再提示「\(concept.title)」。可在「学习」页底部恢复。"))
         }
     }
 

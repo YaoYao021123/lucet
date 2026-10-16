@@ -32,7 +32,7 @@ public enum ImageExporter {
         guard output.isFileURL, output.standardizedFileURL != url.standardizedFileURL else { throw VideoWorkError.outputExists }
         guard output.pathExtension.lowercased() == options.format.fileExtension
                 || (options.format == .jpeg && output.pathExtension.lowercased() == "jpeg") else {
-            throw VideoWorkError.failed("文件扩展名需与导出格式 \(options.format.title) 一致。")
+            throw VideoWorkError.failed(L("文件扩展名需与导出格式 \(options.format.title) 一致。"))
         }
         if !allowReplacing, FileManager.default.fileExists(atPath: output.path) { throw VideoWorkError.outputExists }
         let input = try ImageGradeSession.decode(url)
@@ -59,7 +59,7 @@ public enum ImageExporter {
 
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, options.format.type.identifier as CFString, 1, nil) else {
-            throw VideoWorkError.failed("系统不支持写入 \(options.format.title)。")
+            throw VideoWorkError.failed(L("系统不支持写入 \(options.format.title)。"))
         }
         CGImageDestinationAddImage(destination, bitmap, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
@@ -89,7 +89,7 @@ public enum ImageExporter {
         }
         if var tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
             tiff.removeValue(forKey: kCGImagePropertyTIFFOrientation)
-            tiff[kCGImagePropertyTIFFSoftware] = "光集"
+            tiff[kCGImagePropertyTIFFSoftware] = L("光集")
             result[kCGImagePropertyTIFFDictionary] = tiff
         }
         for key in [kCGImagePropertyIPTCDictionary, kCGImagePropertyExifAuxDictionary] {

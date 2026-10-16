@@ -8,12 +8,12 @@ public enum GradeStage: String, CaseIterable, Codable, Sendable {
 
     public var title: String {
         switch self {
-        case .basic: "基础"
-        case .wheels: "色轮"
-        case .curves: "曲线"
+        case .basic: L("基础")
+        case .wheels: L("色轮")
+        case .curves: L("曲线")
         case .hsl: "HSL"
         case .lut: "LUT"
-        case .detail: "细节"
+        case .detail: L("细节")
         }
     }
 }
@@ -70,7 +70,7 @@ public struct ColorWheels: Codable, Equatable, Sendable {
     public enum Wheel: String, CaseIterable, Sendable {
         case lift, gamma, gain, offset
         public var title: String {
-            switch self { case .lift: "暗部"; case .gamma: "中间调"; case .gain: "亮部"; case .offset: "整体" }
+            switch self { case .lift: L("暗部"); case .gamma: L("中间调"); case .gain: L("亮部"); case .offset: L("整体") }
         }
         public var subtitle: String {
             switch self { case .lift: "Lift"; case .gamma: "Gamma"; case .gain: "Gain"; case .offset: "Offset" }
@@ -156,7 +156,7 @@ public struct ToneCurves: Codable, Equatable, Sendable {
             guard (2...16).contains(points.count), points.first?.x == 0, points.last?.x == 1,
                   points.allSatisfy({ $0.x.isFinite && $0.y.isFinite && (0...1).contains($0.x) && (0...1).contains($0.y) }),
                   zip(points, points.dropFirst()).allSatisfy({ $0.x < $1.x }) else {
-                throw VideoWorkError.failed("曲线参数无效。")
+                throw VideoWorkError.failed(L("曲线参数无效。"))
             }
         }
     }
@@ -213,8 +213,8 @@ public enum HueBand: Int, CaseIterable, Codable, Sendable {
     case red, orange, yellow, green, aqua, blue, purple, magenta
     public var title: String {
         switch self {
-        case .red: "红"; case .orange: "橙"; case .yellow: "黄"; case .green: "绿"
-        case .aqua: "青"; case .blue: "蓝"; case .purple: "紫"; case .magenta: "洋红"
+        case .red: L("红"); case .orange: L("橙"); case .yellow: L("黄"); case .green: L("绿")
+        case .aqua: L("青"); case .blue: L("蓝"); case .purple: L("紫"); case .magenta: L("洋红")
         }
     }
     /// Hue center in degrees, matching the kernel table.
@@ -229,7 +229,7 @@ public struct HSLAdjustments: Codable, Equatable, Sendable {
 
     public enum Component: String, CaseIterable, Sendable {
         case hue, saturation, luminance
-        public var title: String { switch self { case .hue: "色相"; case .saturation: "饱和度"; case .luminance: "明亮度" } }
+        public var title: String { switch self { case .hue: L("色相"); case .saturation: L("饱和度"); case .luminance: L("明亮度") } }
     }
     public subscript(band: HueBand, component: Component) -> Double {
         get {
@@ -252,7 +252,7 @@ public struct HSLAdjustments: Codable, Equatable, Sendable {
     public func validate() throws {
         guard hue.count == 8, saturation.count == 8, luminance.count == 8,
               (hue + saturation + luminance).allSatisfy({ $0.isFinite && (-100...100).contains($0) }) else {
-            throw VideoWorkError.failed("HSL 参数无效。")
+            throw VideoWorkError.failed(L("HSL 参数无效。"))
         }
     }
 }
@@ -346,7 +346,7 @@ enum GradeKernels {
               let output = kernel.apply(extent: image.extent, arguments: [encoded, vector(k.lift), vector(k.gain),
                                                                           vector(k.inverseGamma), vector(k.offset)]),
               let result = output.matchedToWorkingSpace(from: encodedSpace) else {
-            throw VideoWorkError.failed("色轮滤镜不可用。")
+            throw VideoWorkError.failed(L("色轮滤镜不可用。"))
         }
         return result
     }
@@ -371,7 +371,7 @@ enum GradeKernels {
         guard let kernel = hslKernel, let encoded = image.matchedFromWorkingSpace(to: encodedSpace),
               let output = kernel.apply(extent: image.extent, arguments: [encoded, h.0, h.1, s.0, s.1, l.0, l.1]),
               let result = output.matchedToWorkingSpace(from: encodedSpace) else {
-            throw VideoWorkError.failed("HSL 滤镜不可用。")
+            throw VideoWorkError.failed(L("HSL 滤镜不可用。"))
         }
         return result
     }

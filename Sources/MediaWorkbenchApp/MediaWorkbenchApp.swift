@@ -23,7 +23,10 @@ struct MediaWorkbenchApp: App {
         }
         .defaultSize(width: 1440, height: 900)
         .windowToolbarStyle(.unified)
-        .commands { WorkbenchCommands(app: app) }
+        .commands {
+            WorkbenchCommands(app: app)
+            LanguageCommands()
+        }
     }
 }
 
@@ -34,15 +37,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let app = AppModel.current, app.exports.activeCount > 0, DebugSnapshot.directory == nil else { return .terminateNow }
             let count = app.exports.activeCount
             let alert = NSAlert()
-            alert.messageText = "还有 \(count) 个导出没有完成"
-            alert.informativeText = "现在退出会中断导出。可以等它们完成后自动退出，你的原片不受影响。"
-            alert.addButton(withTitle: "完成后退出")
-            alert.addButton(withTitle: "继续使用")
-            alert.addButton(withTitle: "停止导出并退出")
+            alert.messageText = L("还有 \(count) 个导出没有完成")
+            alert.informativeText = L("现在退出会中断导出。可以等它们完成后自动退出，你的原片不受影响。")
+            alert.addButton(withTitle: L("完成后退出"))
+            alert.addButton(withTitle: L("继续使用"))
+            alert.addButton(withTitle: L("停止导出并退出"))
             switch alert.runModal() {
             case .alertFirstButtonReturn:
                 app.exports.onIdle = { NSApp.terminate(nil) }
-                app.show("导出完成后光集会自动退出。", actions: [.init(title: "不退出") { app.exports.onIdle = nil }], seconds: 8)
+                app.show(L("导出完成后光集会自动退出。"), actions: [.init(title: L("不退出")) { app.exports.onIdle = nil }], seconds: 8)
             case .alertThirdButtonReturn:
                 app.exports.onIdle = { NSApp.terminate(nil) }
                 app.exports.cancelAll()
@@ -66,7 +69,7 @@ struct WorkbenchCommands: Commands {
             Button("导入 LUT…", action: app.importLUT)
         }
         CommandGroup(replacing: .saveItem) {
-            Button("保存配方") { editor.flushDraft(); editor.status = "已保存 · 原片保留" }
+            Button("保存配方") { editor.flushDraft(); editor.status = L("已保存 · 原片保留") }
                 .keyboardShortcut("s").disabled(!editor.isLoaded)
             Button("快照与版本…") { app.sheet = .snapshots }.disabled(!editor.isLoaded)
             Divider()
@@ -93,7 +96,7 @@ struct WorkbenchCommands: Commands {
             Divider()
             Menu("评级") {
                 ForEach(0...5, id: \.self) { value in
-                    Button(value == 0 ? "无评级" : String(repeating: "★", count: value)) { app.rate(value) }
+                    Button(value == 0 ? L("无评级") : String(repeating: "★", count: value)) { app.rate(value) }
                 }
             }
             Button("选用") { app.flag(.pick) }

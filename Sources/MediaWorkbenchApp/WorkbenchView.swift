@@ -58,14 +58,14 @@ struct WorkbenchView: View {
 
     private var title: String {
         if app.mode == .edit, let url = editor.url { return url.lastPathComponent }
-        return "Lucet 光集"
+        return L("Lucet 光集")
     }
 
     private var subtitle: String {
         if app.mode == .edit, let index = app.library.visibleIndex(of: app.library.currentID) {
             return "\(index + 1) / \(app.library.visible.count)"
         }
-        return app.library.entries.isEmpty ? "照片 · 视频 · Live Photo" : "素材库 · \(app.library.entries.count) 项"
+        return app.library.entries.isEmpty ? L("照片 · 视频 · Live Photo") : L("素材库 · \(app.library.entries.count) 项")
     }
 }
 
@@ -167,17 +167,17 @@ private struct CanvasHUD: View {
         if editor.isLoaded {
             VStack {
                 HStack(alignment: .top) {
-                    if editor.compareMode == .split { label("原片") }
+                    if editor.compareMode == .split { label(L("原片")) }
                     Spacer()
-                    let text = editor.compareMode == .split ? "调整后" : editor.previewLabel
+                    let text = editor.compareMode == .split ? L("调整后") : editor.previewLabel
                     if !text.isEmpty { label(text) }
                 }
                 Spacer()
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 6) {
-                        if let influence = editor.influence, !editor.isVideo { label("彩色部分 = 「\(influence.title)」影响的区域") }
-                        if editor.isLoadingFullResolution { label("正在载入原尺寸…") }
-                        if editor.showClipping { label("溢出：红 = 高光  蓝 = 暗部") }
+                        if let influence = editor.influence, !editor.isVideo { label(L("彩色部分 = 「\(influence.title)」影响的区域")) }
+                        if editor.isLoadingFullResolution { label(L("正在载入原尺寸…")) }
+                        if editor.showClipping { label(L("溢出：红 = 高光  蓝 = 暗部")) }
                     }
                     Spacer()
                 }
@@ -199,22 +199,22 @@ private struct CanvasControls: View {
     var body: some View {
         HStack(spacing: 2) {
             if !editor.isVideo {
-                control(editor.zoomPercent.map { "\($0)%" } ?? "适合", help: "适合窗口 ↔ 100%（Z 或双击画面）") { editor.toggleZoom() }
+                control(editor.zoomPercent.map { "\($0)%" } ?? L("适合"), help: L("适合窗口 ↔ 100%（Z 或双击画面）")) { editor.toggleZoom() }
                     .monospacedDigit()
-                icon("minus.magnifyingglass", help: "缩小（⌘−）") { editor.zoom(by: 1 / 1.5) }
-                icon("plus.magnifyingglass", help: "放大（⌘+）") { editor.zoom(by: 1.5) }
+                icon("minus.magnifyingglass", help: L("缩小（⌘−）")) { editor.zoom(by: 1 / 1.5) }
+                icon("plus.magnifyingglass", help: L("放大（⌘+）")) { editor.zoom(by: 1.5) }
                 Divider().frame(height: 16).padding(.horizontal, 4)
-                icon("square.split.2x1", active: editor.compareMode == .split, help: "左右分屏对比（Y）") {
+                icon("square.split.2x1", active: editor.compareMode == .split, help: L("左右分屏对比（Y）")) {
                     editor.compareMode = editor.compareMode == .split ? .off : .split
                 }
             }
-            icon("circle.lefthalf.filled", active: editor.compareMode == .original, help: "查看原片（\\ 或 M）") {
+            icon("circle.lefthalf.filled", active: editor.compareMode == .original, help: L("查看原片（\\ 或 M）")) {
                 editor.compareMode = editor.compareMode == .original ? .off : .original
             }
             if !editor.isVideo {
-                icon("exclamationmark.triangle", active: editor.showClipping, help: "高光 / 暗部溢出（J）") { editor.showClipping.toggle() }
+                icon("exclamationmark.triangle", active: editor.showClipping, help: L("高光 / 暗部溢出（J）")) { editor.showClipping.toggle() }
             }
-            icon("grid", active: editor.showGrid, help: "三分网格") { editor.showGrid.toggle() }
+            icon("grid", active: editor.showGrid, help: L("三分网格")) { editor.showGrid.toggle() }
         }
         .padding(.horizontal, 8).padding(.vertical, 5)
         .hudBackground()
@@ -351,7 +351,7 @@ private struct ExportJobsButton: View {
             }
             .frame(width: 20)
         }
-        .help(exports.activeCount > 0 ? "\(exports.activeCount) 项导出进行中" : "导出记录")
+        .help(exports.activeCount > 0 ? L("\(exports.activeCount) 项导出进行中") : L("导出记录"))
         .popover(isPresented: $showing, arrowEdge: .bottom) { ExportJobsList(exports: exports) }
     }
 }
@@ -407,11 +407,11 @@ private struct ExportJobsList: View {
 
     private func detail(_ job: ExportQueue.Job) -> String {
         switch job.state {
-        case .waiting: "等待中"
-        case .running: job.detail.isEmpty ? "进行中" : job.detail
+        case .waiting: L("等待中")
+        case .running: job.detail.isEmpty ? L("进行中") : job.detail
         case .finished: job.detail
         case .failed(let message): message
-        case .cancelled: "已取消"
+        case .cancelled: L("已取消")
         }
     }
 }

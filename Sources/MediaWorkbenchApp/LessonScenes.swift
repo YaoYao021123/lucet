@@ -37,7 +37,7 @@ struct PixelScene: View {
                 context.fill(Path(cell), with: .color(Color(red: block.r, green: block.g, blue: block.b).opacity(mosaic)))
                 context.stroke(Path(cell), with: .color(.white.opacity(0.25 * grid)), lineWidth: 0.5)
             }
-            caption(&context, size, mosaic > 0.5 ? "每一格只有一种颜色：这就是像素（这里放大了很多倍）。" : "")
+            caption(&context, size, mosaic > 0.5 ? L("每一格只有一种颜色：这就是像素（这里放大了很多倍）。") : "")
         case .brightnessOnly:
             let grey = ease(t / 1.2)
             for (i, block) in photo.blocks.enumerated() {
@@ -130,7 +130,7 @@ struct ZoneExplorerScene: View {
         let shares = ToneZone.shares(photo.histogram)
         VStack(spacing: 14) {
             LessonImage(image: zone.map { photo.zoneMask($0) } ?? photo.thumbnail,
-                        caption: zone.map { "彩色的地方属于「\($0.title)」，比如\($0.example)。" } ?? "点下面的区域试试。")
+                        caption: zone.map { L("彩色的地方属于「\($0.title)」，比如\($0.example)。") } ?? L("点下面的区域试试。"))
                 .frame(maxHeight: 330)
                 .animation(.easeInOut(duration: 0.2), value: zone)
             ZoneHistogram(histogram: photo.histogram, height: 70, selectedZone: zone)
@@ -168,7 +168,7 @@ struct KeyStylesScene: View {
         .onAppear {
             var low = BasicAdjustments(); low.exposure = -1.1; low.contrast = 15
             var high = BasicAdjustments(); high.exposure = 0.9; high.shadows = 30; high.contrast = -10
-            renders = [("暗调：大部分在左边", low), ("原图", BasicAdjustments()), ("亮调：大部分在右边", high)].map { name, a in
+            renders = [(L("暗调：大部分在左边"), low), (L("原图"), BasicAdjustments()), (L("亮调：大部分在右边"), high)].map { name, a in
                 let r = photo.render(a)
                 return (name, r.image, LessonPhoto.histogram(of: r.pixels))
             }
@@ -186,10 +186,10 @@ struct ClippingScene: View {
         let clip = photo.clipping(r.pixels)
         return VStack(spacing: 12) {
             LessonImage(image: mark ? clip.image : r.image,
-                        caption: String(format: "纯白 %.1f%% · 纯黑 %.1f%%", clip.white * 100, clip.black * 100))
+                        caption: String(format: L("纯白 %.1f%% · 纯黑 %.1f%%"), clip.white * 100, clip.black * 100))
                 .frame(maxHeight: 330)
             ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), height: 70, showsCaption: false)
-            LessonSlider(title: "曝光", value: $exposure, range: -3...3, format: { String(format: "%+.1f EV", $0) })
+            LessonSlider(title: L("曝光"), value: $exposure, range: -3...3, format: { String(format: "%+.1f EV", $0) })
             Toggle("标出纯白（红）和纯黑（蓝）", isOn: $mark).toggleStyle(.checkbox).font(.callout)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -235,10 +235,10 @@ struct ExposureBrightnessScene: View {
             }
             .frame(maxHeight: 300)
             ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), height: 64, showsCaption: false)
-            LessonSlider(title: "曝光", value: $exposure, range: -2...2, format: { String(format: "%+.1f EV", $0) })
-            LessonSlider(title: "亮度", value: $brightness, range: -100...100)
-            Text(exposure > 0.3 ? "看右上角：曝光让亮的地方先碰到顶（变成纯白）。"
-                 : brightness > 20 ? "亮度把整条线往上挪，暗的和亮的差不多一起变化。" : "分别拖动两个滑块，比较右边线的形状。")
+            LessonSlider(title: L("曝光"), value: $exposure, range: -2...2, format: { String(format: "%+.1f EV", $0) })
+            LessonSlider(title: L("亮度"), value: $brightness, range: -100...100)
+            Text(exposure > 0.3 ? L("看右上角：曝光让亮的地方先碰到顶（变成纯白）。")
+                 : brightness > 20 ? L("亮度把整条线往上挪，暗的和亮的差不多一起变化。") : L("分别拖动两个滑块，比较右边线的形状。"))
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -257,7 +257,7 @@ struct ToneControlScene: View {
             GlassSegmentedControl(options: controls, selection: $control, title: { $0.title }, size: .small)
                 .frame(maxWidth: 320)
             LessonImage(image: showArea ? photo.influence(control, on: r.pixels) : r.image,
-                        caption: showArea ? "彩色 = 「\(control.title)」会改变的地方" : nil)
+                        caption: showArea ? L("彩色 = 「\(control.title)」会改变的地方") : nil)
                 .frame(maxHeight: 290)
             ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), focus: control, height: 64)
             LessonSlider(title: control.title, value: Binding(get: { values[control] ?? 0 }, set: { values[control] = $0 }), range: -100...100)
@@ -275,11 +275,11 @@ struct CurveScene: View {
     @UIState private var shape = 0
 
     private static let presets: [(String, [CurvePoint])] = [
-        ("原样", [CurvePoint(x: 0, y: 0), CurvePoint(x: 1, y: 1)]),
-        ("变亮", [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.5, y: 0.63), CurvePoint(x: 1, y: 1)]),
-        ("变暗", [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.5, y: 0.37), CurvePoint(x: 1, y: 1)]),
-        ("S 形：对比更强", [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.25, y: 0.17), CurvePoint(x: 0.75, y: 0.83), CurvePoint(x: 1, y: 1)]),
-        ("反 S：更柔和", [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.25, y: 0.33), CurvePoint(x: 0.75, y: 0.67), CurvePoint(x: 1, y: 1)]),
+        (L("原样"), [CurvePoint(x: 0, y: 0), CurvePoint(x: 1, y: 1)]),
+        (L("变亮"), [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.5, y: 0.63), CurvePoint(x: 1, y: 1)]),
+        (L("变暗"), [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.5, y: 0.37), CurvePoint(x: 1, y: 1)]),
+        (L("S 形：对比更强"), [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.25, y: 0.17), CurvePoint(x: 0.75, y: 0.83), CurvePoint(x: 1, y: 1)]),
+        (L("反 S：更柔和"), [CurvePoint(x: 0, y: 0), CurvePoint(x: 0.25, y: 0.33), CurvePoint(x: 0.75, y: 0.67), CurvePoint(x: 1, y: 1)]),
     ]
 
     var body: some View {
@@ -355,7 +355,7 @@ struct CurveScene: View {
 private let fStops: [Double] = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16]
 private let shutterStops: [Double] = [1.0 / 1000, 1.0 / 500, 1.0 / 250, 1.0 / 125, 1.0 / 60, 1.0 / 30, 1.0 / 15, 1.0 / 8, 1.0 / 4]
 private let isoStops: [Int] = [100, 200, 400, 800, 1600, 3200, 6400, 12800]
-private func shutterLabel(_ t: Double) -> String { t >= 1 ? String(format: "%.0f 秒", t) : "1/\(Int((1 / t).rounded())) 秒" }
+private func shutterLabel(_ t: Double) -> String { t >= 1 ? String(format: L("%.0f 秒"), t) : L("1/\(Int((1 / t).rounded())) 秒") }
 private func stopLabel(_ f: Double) -> String { f < 10 ? String(format: "ƒ/%.1f", f).replacingOccurrences(of: ".0", with: "") : String(format: "ƒ/%.0f", f) }
 
 struct ApertureScene: View {
@@ -397,12 +397,12 @@ struct ApertureScene: View {
                 context.draw(Text("侧面看：进来的光").font(.caption).foregroundStyle(.secondary), at: CGPoint(x: (lensX + sensorX) / 2, y: mid + barrel + 14))
             }
             .frame(maxHeight: 300)
-            Text(String(format: "开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm", focal, f, diameter)).font(.title3.monospacedDigit())
-            Text(f == 1.4 ? "最大的开口，进光最多。" : String(format: "进来的光只有 ƒ/1.4 的 1/%.0f。", lessLight))
+            Text(String(format: L("开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm"), focal, f, diameter)).font(.title3.monospacedDigit())
+            Text(f == 1.4 ? L("最大的开口，进光最多。") : String(format: L("进来的光只有 ƒ/1.4 的 1/%.0f。"), lessLight))
                 .font(.callout).foregroundStyle(.secondary)
-            LessonSlider(title: "光圈", value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
+            LessonSlider(title: L("光圈"), value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
             if let capture = photo.capture, let fn = capture.fNumber {
-                Text("你这张照片用的是 \(stopLabel(fn))" + (capture.focalLengthMM.map { String(format: "，焦距 %.1f mm，开口约 %.1f mm。", $0, $0 / fn) } ?? "。"))
+                Text(L("你这张照片用的是 \(stopLabel(fn))") + (capture.focalLengthMM.map { String(format: L("，焦距 %.1f mm，开口约 %.1f mm。"), $0, $0 / fn) } ?? L("。")))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -460,8 +460,8 @@ struct DepthOfFieldScene: View {
                 .frame(maxWidth: .infinity)
             }
             .frame(maxHeight: 320)
-            LessonSlider(title: "光圈", value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
-            Text(f <= 2.8 ? "开口大：只有人是清楚的，背景的灯变成柔和的光斑。" : f >= 8 ? "开口小：从近处的花到远处的树都清楚，适合风景。" : "中间档：主体清楚，背景略有虚化。")
+            LessonSlider(title: L("光圈"), value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
+            Text(f <= 2.8 ? L("开口大：只有人是清楚的，背景的灯变成柔和的光斑。") : f >= 8 ? L("开口小：从近处的花到远处的树都清楚，适合风景。") : L("中间档：主体清楚，背景略有虚化。"))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }
@@ -496,8 +496,8 @@ struct ShutterScene: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .frame(maxHeight: 320)
-            LessonSlider(title: "快门", value: $stop, range: 0...Double(shutterStops.count - 1), format: { shutterLabel(shutterStops[Int($0.rounded())]) })
-            Text(time <= 1.0 / 500 ? "快门很快：运动被冻结，但画面变暗了。" : time >= 1.0 / 30 ? "快门慢：画面变亮，但运动的东西拖出了影子。" : "中间档：亮度合适，运动略有拖影。")
+            LessonSlider(title: L("快门"), value: $stop, range: 0...Double(shutterStops.count - 1), format: { shutterLabel(shutterStops[Int($0.rounded())]) })
+            Text(time <= 1.0 / 500 ? L("快门很快：运动被冻结，但画面变暗了。") : time >= 1.0 / 30 ? L("快门慢：画面变亮，但运动的东西拖出了影子。") : L("中间档：亮度合适，运动略有拖影。"))
                 .font(.callout).foregroundStyle(.secondary)
             if let focal = photo.capture?.focalLength35mm, let shot = photo.capture?.exposureTime {
                 Text("你这张照片用了 \(shutterLabel(shot))；按等效焦距 \(Int(focal)) mm，手持时最好快于 1/\(Int(focal)) 秒。")
@@ -534,9 +534,9 @@ struct ISOScene: View {
         // A dim room: at ISO 100 it is 3 stops too dark; each ISO step makes up one stop.
         let image = noisy(photo, iso: iso, exposure: log2(Double(iso) / 800))
         return VStack(spacing: 14) {
-            LessonImage(image: image, caption: "同样的弱光，只改变 ISO").frame(maxHeight: 340)
+            LessonImage(image: image, caption: L("同样的弱光，只改变 ISO")).frame(maxHeight: 340)
             LessonSlider(title: "ISO", value: $stop, range: 0...Double(isoStops.count - 1), format: { "\(isoStops[Int($0.rounded())])" })
-            Text(iso <= 200 ? "ISO 低：干净，但光不够时太暗。" : iso >= 3200 ? "ISO 高：亮了，但颗粒（噪点）也明显了。" : "中间档：亮度和噪点的折中。")
+            Text(iso <= 200 ? L("ISO 低：干净，但光不够时太暗。") : iso >= 3200 ? L("ISO 高：亮了，但颗粒（噪点）也明显了。") : L("中间档：亮度和噪点的折中。"))
                 .font(.callout).foregroundStyle(.secondary)
             if let shot = photo.capture?.isoValue {
                 Text("你这张照片用的是 ISO \(shot)。").font(.caption).foregroundStyle(.secondary)
@@ -560,22 +560,22 @@ struct ExposureTriangleScene: View {
                 LessonImage(image: image).frame(maxWidth: .infinity)
                 VStack(alignment: .leading, spacing: 10) {
                     meter(ev)
-                    effect("背景虚化", 1 - Double(a) / 7, a <= 2 ? "背景虚" : a >= 5 ? "前后都清楚" : "略虚")
-                    effect("拖影风险", Double(s) / 8, s >= 5 ? "容易糊" : s <= 2 ? "冻结运动" : "一般")
-                    effect("噪点", Double(i) / 7, i >= 5 ? "明显" : i <= 1 ? "干净" : "轻微")
+                    effect(L("背景虚化"), 1 - Double(a) / 7, a <= 2 ? L("背景虚") : a >= 5 ? L("前后都清楚") : L("略虚"))
+                    effect(L("拖影风险"), Double(s) / 8, s >= 5 ? L("容易糊") : s <= 2 ? L("冻结运动") : L("一般"))
+                    effect(L("噪点"), Double(i) / 7, i >= 5 ? L("明显") : i <= 1 ? L("干净") : L("轻微"))
                 }
                 .frame(width: 200)
             }
             .frame(maxHeight: 300)
-            LessonSlider(title: "光圈", value: $aperture, range: 0...7, format: { stopLabel(fStops[Int($0.rounded())]) })
-            LessonSlider(title: "快门", value: $shutter, range: 0...8, format: { shutterLabel(shutterStops[Int($0.rounded())]) })
+            LessonSlider(title: L("光圈"), value: $aperture, range: 0...7, format: { stopLabel(fStops[Int($0.rounded())]) })
+            LessonSlider(title: L("快门"), value: $shutter, range: 0...8, format: { shutterLabel(shutterStops[Int($0.rounded())]) })
             LessonSlider(title: "ISO", value: $iso, range: 0...7, format: { "\(isoStops[Int($0.rounded())])" })
         }
     }
 
     private func meter(_ ev: Double) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(abs(ev) < 0.5 ? "亮度正好" : ev > 0 ? String(format: "亮了 %.0f 档", ev) : String(format: "暗了 %.0f 档", -ev))
+            Text(abs(ev) < 0.5 ? L("亮度正好") : ev > 0 ? String(format: L("亮了 %.0f 档"), ev) : String(format: L("暗了 %.0f 档"), -ev))
                 .font(.callout.weight(.semibold))
             GeometryReader { proxy in
                 let x = proxy.size.width * (min(3, max(-3, ev)) + 3) / 6

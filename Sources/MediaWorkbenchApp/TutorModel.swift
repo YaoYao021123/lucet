@@ -83,7 +83,7 @@ final class TutorModel {
     }
 
     var isReady: Bool { settings.enabled && hasKey }
-    var modelTitle: String { sampleMode ? "示例回答（离线）" : ClaudePhotoTutor.models.first { $0.id == settings.model }?.title ?? settings.model }
+    var modelTitle: String { sampleMode ? L("示例回答（离线）") : ClaudePhotoTutor.models.first { $0.id == settings.model }?.title ?? settings.model }
 
     func saveKey(_ key: String) {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)

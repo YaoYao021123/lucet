@@ -19,12 +19,14 @@ struct ZoneHistogram: View {
                 .background(Color.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 6))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             labels
-            if showsCaption { Text(caption).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            // English captions run longer; keep two lines reserved so hovering doesn't shift the panel.
+            if showsCaption { Text(caption).font(.caption).foregroundStyle(.secondary)
+                .lineLimit(AppLanguage.current == .chinese ? 1 : 2, reservesSpace: AppLanguage.current != .chinese)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .animation(.easeOut(duration: 0.15), value: focus) }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("亮度分布：" + caption)
+        .accessibilityLabel(L("亮度分布：") + caption)
     }
 
     private var active: Set<ToneZone> {
@@ -36,17 +38,18 @@ struct ZoneHistogram: View {
     private var caption: String {
         guard let focus else {
             let shares = ToneZone.shares(histogram)
-            guard let main = shares.max(by: { $0.value < $1.value }) else { return "左暗右亮；山峰在哪里，照片的大部分就在哪里。" }
-            return "左暗右亮。这张照片的大部分在「\(main.key.title)」（\(Int((main.value * 100).rounded()))%）。"
+            guard let main = shares.max(by: { $0.value < $1.value }) else { return L("左暗右亮；山峰在哪里，照片的大部分就在哪里。") }
+            return L("左暗右亮。这张照片的大部分在「\(main.key.title)」（\(Int((main.value * 100).rounded()))%）。")
         }
         let zones = ToneZone.allCases.filter { active.contains($0) }.map(\.title)
-        if focus == .brightness { return "亮度：整体一起移动，所有区域同等变化。" }
-        if focus == .contrast { return "对比度：两端向外拉开（或收拢），中间调基本不动。" }
-        return "\(title(focus))：主要改变「\(zones.joined(separator: "」「"))」，阴影部分是它作用的范围。"
+        if focus == .brightness { return L("亮度：整体一起移动，所有区域同等变化。") }
+        if focus == .contrast { return L("对比度：两端向外拉开（或收拢），中间调基本不动。") }
+        let quoted = zones.map { L("「\($0)」") }.joined(separator: AppLanguage.current == .chinese ? "" : ", ")
+        return L("\(title(focus))：主要改变\(quoted)，阴影部分是它作用的范围。")
     }
 
     private func title(_ p: AdjustmentParameter) -> String {
-        SimpleControl.all.first { $0.parameter == p }.map { "\($0.title)（\(p.title)）" } ?? p.title
+        SimpleControl.all.first { $0.parameter == p }.map { L("\($0.title)（\(p.title)）") } ?? p.title
     }
 
     private var labels: some View {
@@ -58,7 +61,7 @@ struct ZoneHistogram: View {
                     .foregroundStyle(active.contains(zone) ? Color.primary : Color.secondary.opacity(0.8))
                     .fixedSize()
                     .position(x: proxy.size.width * mid, y: 6)
-                    .help("\(zone.title)：\(zone.example)")
+                    .help(L("\(zone.title)：\(zone.example)"))
             }
         }
         .frame(height: 12)
@@ -137,7 +140,7 @@ struct ZoneLabels: View {
                     .foregroundStyle(on ? Color.primary : Color.secondary.opacity(0.8))
                     .fixedSize()
                     .position(x: 4 + width * mid, y: 6)
-                    .help("\(zone.title)：\(zone.example)")
+                    .help(L("\(zone.title)：\(zone.example)"))
             }
         }
         .frame(height: 12)

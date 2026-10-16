@@ -44,14 +44,14 @@ public struct EditRecipe: Codable, Equatable, Sendable {
     }
     public func validate() throws {
         guard (1...Self.currentVersion).contains(version), adjustments == adjustments.sanitized, wheels.isValid, degrees.isFinite, (-10...10).contains(degrees),
-              strength.isFinite, (0...1).contains(strength) else { throw VideoWorkError.failed("配方参数无效或版本不支持。") }
+              strength.isFinite, (0...1).contains(strength) else { throw VideoWorkError.failed(L("配方参数无效或版本不支持。")) }
         try geometry.validate()
         try curves.validate()
         try hsl.validate()
         if let clip { try clip.validate(duration: clip.end) }
         if let lut {
             guard lut.file.count == 69, lut.file.hasSuffix(".cube"),
-                  lut.file.dropLast(5).allSatisfy({ $0.isHexDigit }) else { throw VideoWorkError.failed("LUT 引用无效。") }
+                  lut.file.dropLast(5).allSatisfy({ $0.isHexDigit }) else { throw VideoWorkError.failed(L("LUT 引用无效。")) }
         }
     }
     /// Copy chosen color groups only. Geometry, sound, range and HDR remain local.
@@ -96,7 +96,7 @@ public struct SourceStamp: Codable, Equatable, Sendable {
         let values = try FileManager.default.attributesOfItem(atPath: url.path)
         guard values[.type] as? FileAttributeType == .typeRegular,
               let bytes = (values[.size] as? NSNumber)?.intValue, let modified = values[.modificationDate] as? Date else {
-            throw VideoWorkError.failed("无法读取原件身份信息。")
+            throw VideoWorkError.failed(L("无法读取原件身份信息。"))
         }
         path = url.standardizedFileURL.path; self.bytes = bytes; self.modified = modified
     }
@@ -136,9 +136,9 @@ public struct DraftStore: Sendable {
         var recipe = EditRecipe(); recipe.lut = reference; try recipe.validate()
         let url = root.appendingPathComponent("luts").appendingPathComponent(reference.file)
         let bytes = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard bytes < 100_000_000 else { throw VideoWorkError.failed("保存的 LUT 过大。") }
+        guard bytes < 100_000_000 else { throw VideoWorkError.failed(L("保存的 LUT 过大。")) }
         let data = try Data(contentsOf: url)
-        guard Self.digest(data) + ".cube" == reference.file else { throw VideoWorkError.failed("保存的 LUT 校验失败。") }
+        guard Self.digest(data) + ".cube" == reference.file else { throw VideoWorkError.failed(L("保存的 LUT 校验失败。")) }
         let lut = CreativeLUT(cube: try CubeLUT(data: data), name: reference.name, encoding: reference.encoding)
         LUTCache.shared.remember(lut, as: reference)
         return lut
@@ -147,7 +147,7 @@ public struct DraftStore: Sendable {
         try recipe.validate()
         guard try SourceStamp(URL(fileURLWithPath: source.path)) == source,
               try companion.map({ try SourceStamp(URL(fileURLWithPath: $0.path)) == $0 }) ?? true else {
-            throw VideoWorkError.failed("原件已变化，配方未自动覆盖；请重新打开素材。")
+            throw VideoWorkError.failed(L("原件已变化，配方未自动覆盖；请重新打开素材。"))
         }
         let target = location(for: URL(fileURLWithPath: source.path))
         try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -159,11 +159,11 @@ public struct DraftStore: Sendable {
         let target = location(for: source)
         guard FileManager.default.fileExists(atPath: target.path) else { return nil }
         let bytes = try target.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard bytes < 1_000_000 else { throw VideoWorkError.failed("配方文件过大。") }
+        guard bytes < 1_000_000 else { throw VideoWorkError.failed(L("配方文件过大。")) }
         let record = try JSONDecoder().decode(DraftRecord.self, from: Data(contentsOf: target))
         guard record.source == (try SourceStamp(source)),
               try record.companion.map({ try SourceStamp(URL(fileURLWithPath: $0.path)) == $0 }) ?? true else {
-            throw VideoWorkError.failed("原件或 Live 动态部分已变化，未套用旧配方。")
+            throw VideoWorkError.failed(L("原件或 Live 动态部分已变化，未套用旧配方。"))
         }
         try record.recipe.validate()
         return record
@@ -293,7 +293,7 @@ extension DraftStore {
     public func restoreSnapshot(_ snapshot: SavedSnapshot, for source: URL) throws -> EditRecipe {
         guard try SourceStamp(source) == snapshot.record.source,
               try snapshot.record.companion.map({ try SourceStamp(URL(fileURLWithPath: $0.path)) == $0 }) ?? true else {
-            throw VideoWorkError.failed("原件或 Live 动态部分已变化，未恢复快照。")
+            throw VideoWorkError.failed(L("原件或 Live 动态部分已变化，未恢复快照。"))
         }
         try snapshot.record.recipe.validate()
         return snapshot.record.recipe
@@ -351,22 +351,22 @@ public struct GradePreset: Codable, Identifiable, Equatable, Sendable {
             return GradePreset(id: UUID(uuidString: id)!, name: name, recipe: recipe, createdAt: .distantPast, builtIn: true)
         }
         return [
-            preset("6C1D0001-0000-4000-8000-000000000001", "自然增强") {
+            preset("6C1D0001-0000-4000-8000-000000000001", L("自然增强")) {
                 $0.adjustments.vibrance = 25; $0.adjustments.contrast = 10; $0.adjustments.shadows = 15
                 $0.adjustments.highlights = -15; $0.adjustments.definition = 15
             },
-            preset("6C1D0001-0000-4000-8000-000000000002", "青橙电影") {
+            preset("6C1D0001-0000-4000-8000-000000000002", L("青橙电影")) {
                 $0.adjustments.contrast = 15; $0.adjustments.saturation = -5
                 $0.wheels.lift = WheelValue(x: 0.35, y: -0.25, master: 0)
                 $0.wheels.gain = WheelValue(x: -0.3, y: 0.25, master: 0)
                 $0.hsl[.orange, .saturation] = 12; $0.hsl[.blue, .hue] = -15
             },
-            preset("6C1D0001-0000-4000-8000-000000000003", "柔和胶片") {
+            preset("6C1D0001-0000-4000-8000-000000000003", L("柔和胶片")) {
                 $0.curves.master = [CurvePoint(x: 0, y: 0.06), CurvePoint(x: 0.25, y: 0.24),
                                     CurvePoint(x: 0.75, y: 0.78), CurvePoint(x: 1, y: 0.95)]
                 $0.adjustments.saturation = -12; $0.adjustments.warmth = 8
             },
-            preset("6C1D0001-0000-4000-8000-000000000004", "黑白") {
+            preset("6C1D0001-0000-4000-8000-000000000004", L("黑白")) {
                 $0.adjustments.saturation = -100; $0.adjustments.contrast = 20; $0.adjustments.definition = 20
             }
         ]

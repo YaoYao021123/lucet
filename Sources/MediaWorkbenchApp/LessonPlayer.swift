@@ -107,7 +107,7 @@ struct LessonPlayer: View {
                 .buttonStyle(.plain)
             }
             if let chosen {
-                Text((chosen == correct ? "答对了。" : "再看看画面。") + question.explanation)
+                Text((chosen == correct ? L("答对了。") : L("再看看画面。")) + question.explanation)
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -181,7 +181,7 @@ struct LessonSlider: View {
     var format: (Double) -> String = { String(format: "%+.0f", $0) }
     var body: some View {
         HStack(spacing: 10) {
-            Text(title).font(.callout).frame(width: 64, alignment: .leading)
+            Text(title).font(.callout).frame(width: .label(64), alignment: .leading)
             Slider(value: $value, in: range).controlSize(.small).tint(WorkbenchTheme.control)
             Text(format(value)).font(.callout.monospacedDigit()).frame(width: 64, alignment: .trailing)
         }

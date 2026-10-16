@@ -71,11 +71,12 @@ struct ParameterRow: View, @MainActor Equatable {
             Text(title)
                 .foregroundStyle(value == neutral ? .secondary : .primary)
                 .lineLimit(1)
-                .frame(width: labelWidth, alignment: .leading)
+                .minimumScaleFactor(0.85)
+                .frame(width: .label(labelWidth), alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) { reset() }
                 .onHover { inside in if influence != nil { onHover(inside ? influence : nil) } }
-                .help((help.map { $0 + "\n" } ?? "") + (influence != nil ? "悬停名称可在画面上查看影响范围；" : "") + "双击名称恢复默认")
+                .help((help.map { $0 + "\n" } ?? "") + (influence != nil ? L("悬停名称可在画面上查看影响范围；") : "") + L("双击名称恢复默认"))
             slider
             HStack(spacing: 2) {
                 TextField("", value: Binding(get: { value }, set: { next in if next.isFinite { onChange(clamp(next)) } }),
@@ -190,8 +191,8 @@ struct InspectorSection<Content: View>: View {
                             .frame(width: 20, height: 18)
                     }
                     .buttonStyle(.borderless)
-                    .help(isOn.wrappedValue ? "隐藏此步骤的效果以比较（参数保留）" : "显示此步骤的效果")
-                    .accessibilityLabel("\(title)：\(isOn.wrappedValue ? "开启" : "关闭")")
+                    .help(isOn.wrappedValue ? L("隐藏此步骤的效果以比较（参数保留）") : L("显示此步骤的效果"))
+                    .accessibilityLabel("\(title)：\(isOn.wrappedValue ? String(localized: "state.on", defaultValue: "开启") : String(localized: "state.off", defaultValue: "关闭"))") // loc:ignore (defaultValue)
                 }
             }
             if !collapsed {
@@ -290,4 +291,11 @@ func durationLabel(_ seconds: Double) -> String {
     let total = Int(seconds.rounded())
     return total >= 3600 ? String(format: "%d:%02d:%02d", total / 3600, (total / 60) % 60, total % 60)
         : String(format: "%d:%02d", total / 60, total % 60)
+}
+
+extension CGFloat {
+    /// Label columns are sized for 2–4 Chinese characters; English words need more room.
+    static func label(_ chinese: CGFloat) -> CGFloat {
+        AppLanguage.current == .chinese ? chinese : (chinese * 1.65).rounded()
+    }
 }

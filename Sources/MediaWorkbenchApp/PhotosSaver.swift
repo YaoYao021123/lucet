@@ -16,7 +16,7 @@ enum PhotosSaver {
         guard !items.isEmpty else { return }
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else {
-            throw VideoWorkError.failed("光集没有存入「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集，或改为保存到文件夹。")
+            throw VideoWorkError.failed(L("光集没有存入「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集，或改为保存到文件夹。"))
         }
         try await PHPhotoLibrary.shared().performChanges {
             for item in items {
@@ -54,7 +54,7 @@ enum PhotosSaver {
 
     /// A private scratch folder for exports headed to Photos; removed after import.
     static func stagingFolder() throws -> URL {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("光集-照片-\(UUID().uuidString)", isDirectory: true)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(L("光集-照片-\(UUID().uuidString)"), isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder
     }

@@ -94,9 +94,9 @@ struct PhotoTutorTests {
                 dict.values.forEach(walk)
             } else if let array = node as? [Any] { array.forEach(walk) }
         }
-        walk(ClaudePhotoTutor.answerSchema)
-        #expect(try JSONSerialization.data(withJSONObject: ClaudePhotoTutor.answerSchema, options: .sortedKeys)
-                == JSONSerialization.data(withJSONObject: ClaudePhotoTutor.answerSchema, options: .sortedKeys))
+        walk(ClaudePhotoTutor.answerSchema(.english))
+        #expect(try JSONSerialization.data(withJSONObject: ClaudePhotoTutor.answerSchema(.english), options: .sortedKeys)
+                == JSONSerialization.data(withJSONObject: ClaudePhotoTutor.answerSchema(.english), options: .sortedKeys))
     }
 
     @Test func followUpsAppendWithoutEditingEarlierTurns() throws {

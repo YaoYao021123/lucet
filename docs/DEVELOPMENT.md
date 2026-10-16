@@ -7,7 +7,7 @@
 ```sh
 bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh             # 98 项测试
+bash scripts/test-workbench.sh             # 101 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
 bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zip（临时签名，未公证）
 ```
@@ -22,6 +22,17 @@ swift run media-probe analyze <图片>        # 画面统计与教练提示
 swift run media-probe auto <图片> [对比.jpg] # 「自动」的取值，可输出前后对比图
 swift run --configuration release media-benchmark
 ```
+
+## 界面语言（简体中文 / English）
+
+界面跟随系统语言；菜单栏「Lucet 光集 › Language · 语言」可以单独切换（会重新打开 App）。
+
+- **中文就是 key**：代码里写中文原文。SwiftUI 的 `Text("…")`、`Button("…")` 等自动查表；其他地方（模型、提示、错误信息）用 `L("…")`（MediaCore 的 `Localization.swift`），插值写法照常：`L("已添加 \(n) 项")`。
+- **英文**在 `Localization/en.lproj/Localizable.strings`；需要单复数的放在同目录的 `Localizable.stringsdict`。`Info.plist` 的文字在各语言的 `InfoPlist.strings`。
+- **检查**：`python3 scripts/localize.py check` 用编译器导出代码实际查找的全部 key（`-emit-localized-strings`，不需要完整 Xcode），列出：没有包进 `L()` 的中文、缺英文的 key、占位符不一致的译文、已不用的译文。必须保持中文的行（例如发给 API 的内容）在行尾加 `// loc:ignore`。
+- **新增文字的流程**：写中文 → `check` 列出缺的 key → 把英文写进 JSON（`{"中文": "English"}`）→ `python3 scripts/localize.py merge 文件.json`（按源文件分组重写 .strings）。
+- 同一个中文在不同位置需要不同英文时（如筛选里的「照片」= Photos，类型里的「照片」= Photo），用显式 key：`String(localized: "filter.photos", defaultValue: "照片")`。
+- 看英文界面：`"$(bash scripts/dev-build.sh)" -AppleLanguages '(en)'`，截图模式同样适用。测试环境没有语言包，`L()` 返回中文原文，所以测试里的中文断言不受影响。
 
 ## 发布
 

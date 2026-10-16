@@ -41,7 +41,7 @@ struct InsightStrip: View {
                         Text(top.title).font(.caption.weight(.semibold)).lineLimit(1)
                     }
                     .buttonStyle(.plain)
-                    .help(top.observation + "\n点按查看讲解")
+                    .help(top.observation + L("\n点按查看讲解"))
                     Spacer(minLength: 4)
                     if top.influence != nil || top.showsClipping {
                         Button("显示") { showArea(top) }.buttonStyle(.borderless).font(.caption)
@@ -76,7 +76,7 @@ struct LearnPanel: View {
         let state = CoachState(app: app)
         let profile = app.learner
         VStack(alignment: .leading, spacing: 0) {
-            InspectorSection("这张照片", help: "根据这张照片当前的样子给出建议；修改后会实时更新。") {
+            InspectorSection(L("这张照片"), help: L("根据这张照片当前的样子给出建议；修改后会实时更新。")) {
                 VStack(alignment: .leading, spacing: 6) {
                     if editor.scopes == nil {
                         Text("正在分析画面…").font(.caption).foregroundStyle(.secondary)
@@ -88,13 +88,13 @@ struct LearnPanel: View {
                         InsightCard(app: app, insight: insight)
                     }
                     if state.insights.count > 3 {
-                        Button(showAll ? "收起" : "还有 \(state.insights.count - 3) 条") { showAll.toggle() }
+                        Button(showAll ? L("收起") : L("还有 \(state.insights.count - 3) 条")) { showAll.toggle() }
                             .buttonStyle(.borderless).font(.caption)
                     }
                     if !state.resolved.isEmpty {
                         VStack(alignment: .leading, spacing: 2) {
                             ForEach(state.resolved) { item in
-                                Label("已改善：" + item.title, systemImage: "checkmark.circle.fill")
+                                Label(L("已改善：") + item.title, systemImage: "checkmark.circle.fill")
                                     .foregroundStyle(WorkbenchTheme.pick)
                             }
                         }
@@ -104,15 +104,15 @@ struct LearnPanel: View {
             }
             LessonList(app: app)
             AskSection(app: app)
-            InspectorSection("我的学习", help: "选择水平和感兴趣的方向，讲解和推荐会随之调整。") {
+            InspectorSection(L("我的学习"), help: L("选择水平和感兴趣的方向，讲解和推荐会随之调整。")) {
                 VStack(alignment: .leading, spacing: 6) {
                     if !profile.onboarded {
                         Text("告诉我你的水平和想学什么，讲解会更适合你。").font(.caption).foregroundStyle(.secondary)
                     }
                     GlassSegmentedControl(options: LearningLevel.allCases,
                                           selection: Binding(get: { profile.level }, set: { app.learner.level = $0; app.learner.onboarded = true }),
-                                          title: { $0.title }, size: .small, accessibilityTitle: "学习水平")
-                        .frame(maxWidth: 200)
+                                          title: { $0.title }, size: .small, accessibilityTitle: L("学习水平"))
+                        .frame(maxWidth: AppLanguage.current == .chinese ? 200 : .infinity)
                     FlowLayout(spacing: 4) {
                         ForEach(LearningTopic.allCases, id: \.self) { topic in
                             let on = profile.topics.contains(topic)
@@ -133,7 +133,7 @@ struct LearnPanel: View {
                         .toggleStyle(.checkbox).font(.caption)
                 }
             }
-            InspectorSection("学习路径", help: "按你选的方向排列；在照片上演示过或常用的技巧会打勾。") {
+            InspectorSection(L("学习路径"), help: L("按你选的方向排列；在照片上演示过或常用的技巧会打勾。")) {
                 VStack(alignment: .leading, spacing: 2) {
                     let path = profile.path
                     ProgressView(value: Double(profile.learnedInPath), total: Double(max(1, path.count)))
@@ -193,13 +193,13 @@ struct InsightCard: View {
             }
             HStack(spacing: 6) {
                 if insight.influence != nil || insight.showsClipping {
-                    Button(areaOn ? "隐藏区域" : "显示区域") {
+                    Button(areaOn ? L("隐藏区域") : L("显示区域")) {
                         if insight.showsClipping { editor.showClipping.toggle() }
                         else { editor.pinnedInfluence = areaOn ? nil : insight.influence }
                     }
                 }
                 if let suggestion = insight.suggestion {
-                    Button(suggestion.changesEdits ? "试一试" : suggestion.label) { app.trySuggestion(suggestion, concept: insight.concept) }
+                    Button(suggestion.changesEdits ? L("试一试") : suggestion.label) { app.trySuggestion(suggestion, concept: insight.concept) }
                         .help("作为一步应用，左右对比查看效果；⌘Z 撤销")
                 }
                 if learned, !showWhy {
@@ -240,7 +240,7 @@ struct ConceptRow: View {
                     Text(concept.explanation(for: app.learner.level))
                         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     if let demo = concept.demo {
-                        Label("演示：" + demo.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
+                        Label(L("演示：") + demo.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
                     }
                     HStack(spacing: 6) {
                         if let demo = concept.demo {
@@ -250,7 +250,7 @@ struct ConceptRow: View {
                         }
                         if let influence = concept.influence, !app.editor.isVideo {
                             let on = app.editor.pinnedInfluence == influence
-                            Button(on ? "隐藏区域" : "看它影响哪里") { app.editor.pinnedInfluence = on ? nil : influence }
+                            Button(on ? L("隐藏区域") : L("看它影响哪里")) { app.editor.pinnedInfluence = on ? nil : influence }
                         }
                         if !learned { Button("已了解") { app.feedback(.known, on: concept) }.buttonStyle(.borderless) }
                     }
@@ -269,7 +269,7 @@ struct AskSection: View {
     var tutor: TutorModel { app.tutor }
 
     var body: some View {
-        InspectorSection("问问这张照片", help: "用 AI 回答关于这张照片的任何问题；回答会结合画面和你的水平。只有你提问时才会发送数据。") {
+        InspectorSection(L("问问这张照片"), help: L("用 AI 回答关于这张照片的任何问题；回答会结合画面和你的水平。只有你提问时才会发送数据。")) {
             if tutor.isReady {
                 conversation
             } else {
@@ -314,7 +314,7 @@ struct AskSection: View {
                 Text("这段对话已经很长了，开始新对话可以更聚焦。").font(.caption).foregroundStyle(.secondary)
             }
             HStack(spacing: 8) {
-                Text(tutor.modelTitle + " · 发送" + (tutor.settings.sendPreview ? "预览图、" : "") + "画面统计与参数")
+                Text(tutor.modelTitle + L(" · 发送") + (tutor.settings.sendPreview ? L("预览图、") : "") + L("画面统计与参数"))
                     .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                 Spacer(minLength: 4)
                 if !tutor.turns.isEmpty { Button("新对话", action: tutor.reset).buttonStyle(.borderless).font(.caption2) }
@@ -325,16 +325,16 @@ struct AskSection: View {
 
     /// Starter questions adapted to the photo's top tip, the level and the chosen topics.
     private var quickQuestions: [String] {
-        var list = ["这张照片最该先调什么？"]
-        if let top = CoachState(app: app).insights.first { list.append("「\(top.title)」是怎么回事？") }
+        var list = [L("这张照片最该先调什么？")]
+        if let top = CoachState(app: app).insights.first { list.append(L("「\(top.title)」是怎么回事？")) }
         let profile = app.learner
-        if profile.topics.contains(.portrait) { list.append("肤色怎么调得更自然？") }
-        if profile.topics.contains(.landscape) { list.append("天空怎么更有层次？") }
-        if profile.topics.contains(.cinematic) { list.append("怎么调出电影感？") }
+        if profile.topics.contains(.portrait) { list.append(L("肤色怎么调得更自然？")) }
+        if profile.topics.contains(.landscape) { list.append(L("天空怎么更有层次？")) }
+        if profile.topics.contains(.cinematic) { list.append(L("怎么调出电影感？")) }
         switch profile.level {
-        case .beginner: list.append("直方图怎么看？")
-        case .intermediate: list.append("这张适合用曲线吗？")
-        case .advanced: list.append("从示波器看，这张还有什么问题？")
+        case .beginner: list.append(L("直方图怎么看？"))
+        case .intermediate: list.append(L("这张适合用曲线吗？"))
+        case .advanced: list.append(L("从示波器看，这张还有什么问题？"))
         }
         return Array(list.prefix(4))
     }
@@ -352,7 +352,7 @@ private struct TurnView: View {
                     .padding(.horizontal, 8).padding(.vertical, 5)
                     .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                     .fixedSize(horizontal: false, vertical: true)
-                    .help(turn.sentPreview ? "已附带当时的预览图" : "未附带预览图")
+                    .help(turn.sentPreview ? L("已附带当时的预览图") : L("未附带预览图"))
             }
             if let answer = turn.answer {
                 Text(answer.answer).font(.caption).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
@@ -388,7 +388,7 @@ struct LessonList: View {
     let app: AppModel
     var body: some View {
         let done = app.learner.lessonsDone
-        InspectorSection("互动课", help: "几分钟一课：用动画和你的照片讲清原理，边看边动手。") {
+        InspectorSection(L("互动课"), help: L("几分钟一课：用动画和你的照片讲清原理，边看边动手。")) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("已完成 \(Lesson.catalog.filter { done.contains($0.id) }.count) / \(Lesson.catalog.count) 课")
                     .font(.caption2).foregroundStyle(.secondary)

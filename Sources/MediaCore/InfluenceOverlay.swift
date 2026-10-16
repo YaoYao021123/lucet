@@ -11,19 +11,19 @@ public enum InfluenceKind: Hashable, Sendable, Codable {
 
     public var title: String {
         switch self {
-        case .highlights: "高光"
-        case .shadows: "阴影"
-        case .whites: "白色"
-        case .blacks: "黑色"
-        case .midtones: "中间调"
-        case .brilliance: "鲜明度"
-        case .lift: "暗部（Lift）"
-        case .gain: "亮部（Gain）"
-        case .hue(let band): "\(band.title)色系"
-        case .skin: "肤色"
-        case .sky: "天空"
-        case .neutral: "接近中性灰的区域"
-        case .saturated: "饱和度过高的区域"
+        case .highlights: L("高光")
+        case .shadows: L("阴影")
+        case .whites: L("白色")
+        case .blacks: L("黑色")
+        case .midtones: L("中间调")
+        case .brilliance: L("鲜明度")
+        case .lift: L("暗部（Lift）")
+        case .gain: L("亮部（Gain）")
+        case .hue(let band): L("\(band.title)色系")
+        case .skin: L("肤色")
+        case .sky: L("天空")
+        case .neutral: L("接近中性灰的区域")
+        case .saturated: L("饱和度过高的区域")
         }
     }
 

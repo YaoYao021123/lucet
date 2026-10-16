@@ -20,7 +20,7 @@ public enum HDRExpansion {
     }()
     public static func image(_ sdr: CIImage) throws -> CIImage {
         guard let kernel, let result = kernel.apply(extent: sdr.extent, arguments: [sdr]) else {
-            throw VideoWorkError.failed("HDR 高光扩展不可用")
+            throw VideoWorkError.failed(L("HDR 高光扩展不可用"))
         }
         return result
     }
@@ -47,9 +47,9 @@ public enum HDRExpansion {
             }
         }
         guard copied, CGImageDestinationFinalize(destination) else {
-            throw VideoWorkError.failed("HDR 封面增益图写入失败")
+            throw VideoWorkError.failed(L("HDR 封面增益图写入失败"))
         }
         let decoded = try ImageGradeSession.decode(url)
-        guard decoded.contentHeadroom > 1 else { throw VideoWorkError.failed("HDR 封面未保留亮度范围") }
+        guard decoded.contentHeadroom > 1 else { throw VideoWorkError.failed(L("HDR 封面未保留亮度范围")) }
     }
 }

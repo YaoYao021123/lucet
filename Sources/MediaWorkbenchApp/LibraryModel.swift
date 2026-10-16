@@ -62,12 +62,12 @@ struct LibraryEntry: Codable, Hashable, Identifiable, Sendable {
 struct LibraryFilter: Equatable, Sendable {
     enum Kind: String, CaseIterable, Sendable {
         case all, photos, videos
-        var title: String { switch self { case .all: "全部类型"; case .photos: "照片"; case .videos: "视频" } }
+        var title: String { switch self { case .all: L("全部类型"); case .photos: String(localized: "filter.photos", defaultValue: "照片"); case .videos: String(localized: "filter.videos", defaultValue: "视频") } } // loc:ignore (defaultValue)
     }
     enum Flags: String, CaseIterable, Sendable {
         case all, picked, hideRejected, rejected
         var title: String {
-            switch self { case .all: "全部标记"; case .picked: "仅已选用"; case .hideRejected: "隐藏已排除"; case .rejected: "仅已排除" }
+            switch self { case .all: L("全部标记"); case .picked: L("仅已选用"); case .hideRejected: L("隐藏已排除"); case .rejected: L("仅已排除") }
         }
     }
     var kind = Kind.all
