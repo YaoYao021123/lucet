@@ -88,6 +88,8 @@ struct WorkbenchCommands: Commands {
             Button("粘贴调色设置", action: app.pasteSettings).keyboardShortcut("v", modifiers: [.command, .shift]).disabled(!app.hasClipboard)
             Button("同步调色到所选…") { app.sheet = .sync }.disabled(!editor.isLoaded)
             Button("存为预设…") { app.sheet = .savePreset }.disabled(!editor.isLoaded)
+            Button("匹配另一张照片的色调…") { app.sheet = .matchLook }.disabled(!editor.isLoaded || editor.isVideo)
+            Button("导出调色为 LUT…", action: app.exportGradeLUT).disabled(!editor.isLoaded)
             Button("撤回上次同步", action: app.undoBatch).disabled(app.lastBatch.isEmpty)
         }
         CommandMenu("照片") {

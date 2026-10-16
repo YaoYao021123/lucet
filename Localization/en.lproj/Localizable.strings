@@ -1,6 +1,19 @@
 /* English for Lucet 光集. Keys are the Simplified Chinese source text.
    Maintained with scripts/localize.py (merge / check). */
 
+/* AppModel+Looks.swift */
+"还没有调色，没有可导出的 LUT。" = "There are no adjustments yet, so there's no LUT to export.";
+"导出调色为 LUT：可在 DaVinci Resolve、Final Cut Pro、Premiere 等软件里套用到 Rec.709 / sRGB 素材。" = "Export the adjustments as a LUT to use on Rec.709 / sRGB footage in DaVinci Resolve, Final Cut Pro, Premiere and other apps.";
+"已导出 LUT。降噪、清晰度、锐度和暗角依赖周围像素，不在 LUT 里。" = "LUT exported. Noise reduction, clarity, sharpness and vignette depend on neighboring pixels, so they aren't in the LUT.";
+"在 Finder 中显示" = "Show in Finder";
+"无法导出 LUT" = "Couldn't export the LUT";
+"匹配：%@" = "Match: %@";
+"无法读取「%@」。" = "Couldn't read “%@”.";
+"无法分析画面颜色。" = "Couldn't analyze the image's colors.";
+"已向「%@」的色调靠拢。在「风格 LUT」里用强度调整多少。" = "Moved toward the colors of “%@”. Use Strength under “Creative LUT” to set how much.";
+"撤销" = "Undo";
+"无法匹配色调" = "Couldn't match the colors";
+
 /* AppModel.swift */
 "完整" = "Full";
 "简单" = "Simple";
@@ -31,7 +44,6 @@
 "完成「%@」。" = "Finished “%@”.";
 "正在分析画面，请稍后再试。" = "Still analyzing the image. Try again in a moment.";
 "对比" = "Compare";
-"撤销" = "Undo";
 "预设「%@」" = "Preset “%@”";
 "无法应用预设" = "Couldn't apply the preset";
 "我的预设" = "My Preset";
@@ -82,7 +94,6 @@
 "完成 %lld 项" = "%lld done";
 "，跳过 %lld 项（见导出记录）" = ", %lld skipped (see export history)";
 "打开「照片」" = "Open Photos";
-"在 Finder 中显示" = "Show in Finder";
 "共享…" = "Share…";
 "预览 Live" = "Preview Live";
 "%@ 失败" = "%@ failed";
@@ -367,11 +378,15 @@
 "删除预设「%@」" = "Delete Preset “%@”";
 "存为预设" = "Save as Preset";
 "把当前调色存为自己的预设" = "Save the current look as your own preset";
+"匹配色调" = "Match Colors";
+"让这张照片的整体色调向另一张靠拢" = "Move this photo's overall colors toward another photo's";
 "套用「%@」（可撤销）" = "Apply “%@” (undoable)";
 "无" = "None";
 "内置" = "Built-in";
 "已导入" = "Imported";
 "导入 .cube LUT…" = "Import .cube LUT…";
+"匹配另一张照片的色调…" = "Match Another Photo's Colors…";
+"把当前调色导出为 .cube…" = "Export Current Adjustments as .cube…";
 "选择或导入创意 LUT" = "Choose or import a creative LUT";
 "强度" = "Strength";
 "输入色彩空间" = "Input color space";
@@ -792,6 +807,7 @@
 "同步调色…" = "Sync Adjustments…";
 "导出…" = "Export…";
 "拼图 Live…" = "Collage Live…";
+"让当前照片匹配它的色调" = "Match Current Photo to Its Colors";
 "从素材库移除" = "Remove from Library";
 "素材库" = "Library";
 "添加照片或视频…" = "Add Photos or Videos…";
@@ -961,6 +977,7 @@
 "拷贝调色设置" = "Copy Adjustments";
 "同步调色到所选…" = "Sync Adjustments to Selected…";
 "存为预设…" = "Save as Preset…";
+"导出调色为 LUT…" = "Export Adjustments as LUT…";
 "撤回上次同步" = "Undo Last Sync";
 "上一项" = "Previous";
 "下一项" = "Next";
@@ -1258,6 +1275,9 @@
 "sk-ant-…" = "sk-ant-…";
 "在 console.anthropic.com 创建密钥。费用按你的 Anthropic 账户计费；中国大陆网络可能无法直接访问。" = "Create a key at console.anthropic.com. Usage is billed to your Anthropic account. The service may not be directly reachable from mainland China.";
 "模型" = "Model";
+"匹配另一张照片的色调" = "Match Another Photo's Colors";
+"选一张你喜欢它颜色的照片（按它现在调好的样子）。这张照片的整体明暗和颜色会向它靠拢，结果是一个 LUT，可以用强度调整，也可以撤销。" = "Pick a photo whose colors you like (as it looks with its current edits). This photo's overall brightness and color move toward it. The result is a LUT, so you can adjust its strength or undo it.";
+"方法：在 Lab 色彩空间里对齐两张照片的平均值和分布（Reinhard 色彩迁移）。" = "How it works: the two photos' averages and spread are aligned in Lab color space (Reinhard color transfer).";
 
 /* StraighteningPlan.swift */
 "画幅或校正角度无效，当前支持 ±45°。" = "Invalid aspect ratio or angle; up to ±45° is supported.";

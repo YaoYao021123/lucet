@@ -77,6 +77,7 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "match": app.matchLook(to: URL(fileURLWithPath: argument).standardizedFileURL.path)
         case "focus": app.editor.focusParameter = AdjustmentParameter(rawValue: argument)
         case "lesson":
             // "id" or "id@step"

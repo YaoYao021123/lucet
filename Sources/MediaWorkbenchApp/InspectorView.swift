@@ -281,6 +281,17 @@ struct PresetStrip: View {
                         }
                     }
                     .buttonStyle(.plain).help("把当前调色存为自己的预设")
+                    if !editor.isVideo, !app.matchCandidates.isEmpty {
+                        Button { app.sheet = .matchLook } label: {
+                            VStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3]))
+                                    .overlay(Image(systemName: "eyedropper.halffull").foregroundStyle(.secondary))
+                                    .aspectRatio(4 / 3, contentMode: .fit)
+                                Text("匹配色调").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain).help("让这张照片的整体色调向另一张靠拢")
+                    }
                 }
                 .task(id: renderKey(frame)) { await render(frame) }
             } else {
@@ -377,6 +388,9 @@ struct LUTControls: View {
                     }
                     Divider()
                     Button("导入 .cube LUT…", action: app.importLUT)
+                    Button("匹配另一张照片的色调…") { app.sheet = .matchLook }.disabled(editor.isVideo)
+                    Divider()
+                    Button("把当前调色导出为 .cube…", action: app.exportGradeLUT)
                 } label: {
                     Text(lut?.name ?? L("无")).lineLimit(1)
                 }

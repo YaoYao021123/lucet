@@ -70,6 +70,9 @@ struct LibraryContextMenu: View {
         Button("同步调色…") { app.sheet = .sync }.disabled(!app.editor.isLoaded || app.library.selection.subtracting([app.library.currentID ?? ""]).isEmpty)
         Button("导出…") { app.exportSelection() }
         Button("拼图 Live…") { app.openCollage() }
+        if app.editor.isLoaded, !app.editor.isVideo, !entry.isVideo, entry.id != app.library.currentID {
+            Button("让当前照片匹配它的色调") { app.matchLook(to: entry.id) }
+        }
         Divider()
         Button("在 Finder 中显示") { app.revealSelection() }
         Button("从素材库移除") { app.removeSelectionFromLibrary() }

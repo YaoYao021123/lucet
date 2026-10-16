@@ -27,6 +27,7 @@ enum ActiveSheet: Identifiable {
     case tutorSettings
     case livePreview(LivePhotoResources)
     case lesson(String)
+    case matchLook
 
     var id: String {
         switch self {
@@ -39,6 +40,7 @@ enum ActiveSheet: Identifiable {
         case .tutorSettings: "tutor"
         case .livePreview(let resources): "live-\(resources.identifier)"
         case .lesson(let id): "lesson-\(id)"
+        case .matchLook: "match-look"
         }
     }
 }
@@ -204,7 +206,7 @@ final class AppModel {
     // MARK: Panels
 
     /// Window-attached panels; repeated clicks while one is open are ignored.
-    private func present(_ panel: NSSavePanel, completion: @escaping @MainActor ([URL]) -> Void) {
+    func present(_ panel: NSSavePanel, completion: @escaping @MainActor ([URL]) -> Void) {
         guard !panelOpen else { return }
         panelOpen = true
         NSApplication.shared.activate()

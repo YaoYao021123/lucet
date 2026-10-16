@@ -20,6 +20,7 @@ struct SheetContent: View {
         case .tutorSettings: TutorSettingsSheet(tutor: app.tutor)
         case .lesson(let id): if let lesson = Lesson.lesson(id) { LessonPlayer(app: app, lesson: lesson) }
         case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
+        case .matchLook: MatchLookSheet(app: app)
         }
     }
 }
@@ -340,5 +341,41 @@ struct TutorSettingsSheet: View {
         }
         .padding(22)
         .frame(width: 520)
+    }
+}
+
+// MARK: - Match look
+
+/// Pick a photo whose colors you like; the current photo moves toward them as a LUT.
+struct MatchLookSheet: View {
+    let app: AppModel
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SheetHeader(title: L("匹配另一张照片的色调"),
+                        subtitle: L("选一张你喜欢它颜色的照片（按它现在调好的样子）。这张照片的整体明暗和颜色会向它靠拢，结果是一个 LUT，可以用强度调整，也可以撤销。"))
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120, maximum: 160), spacing: 10)], spacing: 12) {
+                    ForEach(app.matchCandidates) { entry in
+                        Button { app.matchLook(to: entry.id) } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ThumbnailImage(entry: entry, store: app.thumbnails)
+                                    .aspectRatio(4 / 3, contentMode: .fit)
+                                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                                Text(entry.url.lastPathComponent).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(height: 360)
+            HStack {
+                Text("方法：在 Lab 色彩空间里对齐两张照片的平均值和分布（Reinhard 色彩迁移）。").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(22).frame(width: 640)
     }
 }
