@@ -210,6 +210,7 @@
 
 /* EditRecipe.swift */
 "配方参数无效或版本不支持。" = "The recipe has invalid settings or an unsupported version.";
+"局部调整的参数无效。" = "Invalid local adjustment settings.";
 "LUT 引用无效。" = "Invalid LUT reference.";
 "无法读取原件身份信息。" = "Couldn't read the original's identity.";
 "保存的 LUT 过大。" = "The saved LUT is too large.";
@@ -285,6 +286,7 @@
 "原声 %lld%%" = "Original audio %lld%%";
 "音乐 %@" = "Music %@";
 "视频" = "Video";
+"局部调整" = "Local Adjustments";
 "已关闭" = "Turned off";
 
 /* ExportQueue.swift */
@@ -873,6 +875,44 @@
 "媒体样本写入失败" = "Writing media samples failed";
 "配对读取失败" = "Reading the pairing failed";
 "配对未完成" = "The pairing didn't finish";
+
+/* LocalAdjustmentViews.swift */
+"最多 %lld 个局部调整。" = "Up to %lld local adjustments.";
+"在画面上涂抹要调整的地方；按住 ⌥ 擦除。" = "Paint over the areas to adjust; hold ⌥ to erase.";
+"已添加%@。拖动画面上的控制点调整范围。" = "Added a %@. Drag the handles on the picture to set where it applies.";
+"只调整画面的一部分：渐变适合压暗天空，椭圆适合提亮主体，画笔可以涂出任何地方。" = "Adjust just part of the picture: a gradient suits darkening a sky, an ellipse brightening a subject, and the brush can paint any area.";
+"只调整画面的一部分：比如用渐变压暗天空、用椭圆提亮人物，或者用画笔涂出要改的地方。" = "Adjust just part of the picture: darken the sky with a gradient, brighten a person with an ellipse, or paint over what you want to change with the brush.";
+"渐变：从一条线开始逐渐过渡到另一条线，常用来压暗天空。" = "Gradient: fades from one line to another, often used to darken a sky.";
+"椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。" = "Ellipse: adjusts inside (or outside) an ellipse, often used to brighten a subject or darken the surroundings.";
+"画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。" = "Brush: adjusts wherever you paint; hold ⌥ to erase.";
+"显示此局部调整" = "Show this local adjustment";
+"隐藏此局部调整以比较" = "Hide this local adjustment to compare";
+"删除" = "Delete";
+"还没有涂抹" = "Nothing painted yet";
+"未调整" = "Not adjusted";
+"显示蒙版" = "Show mask";
+"把这一层作用的范围标成红色" = "Show where this layer applies in red";
+"反转" = "Invert";
+"改为调整范围之外的部分" = "Adjust everything outside the area instead";
+"涂抹" = "Paint";
+"擦除" = "Erase";
+"画笔大小" = "Brush size";
+"清除笔触" = "Clear Strokes";
+"羽化" = "Feather";
+"在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。" = "Drag the two dots on the picture: the solid-line side gets the full effect and the dashed-line side none. Drag the middle dot to move both.";
+"拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。" = "Drag the center to move the ellipse and the edge dots to resize it; Feather softens the edge.";
+"在画面上涂抹；按住 ⌥ 临时擦除。" = "Paint on the picture; hold ⌥ to erase for a moment.";
+"完全生效的一侧" = "Full-effect side";
+"过渡结束的一侧" = "End of the fade";
+"整体移动" = "Move both";
+"移动" = "Move";
+"改变宽度" = "Change width";
+"改变高度" = "Change height";
+
+/* LocalAdjustments.swift */
+"椭圆" = "Ellipse";
+"渐变" = "Gradient";
+"画笔" = "Brush";
 
 /* MediaDetails.swift */
 "Live 动态部分" = "Live Photo motion";

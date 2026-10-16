@@ -23,8 +23,7 @@ enum CompareImageLoader {
         guard let base = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
         guard let recipe = try? drafts.load(url) else { return base }
         let lut = recipe.lut.flatMap { try? drafts.loadLUT($0) }
-        let edits = MediaEdits(degrees: recipe.degrees, lut: lut, strength: recipe.strength, adjustments: recipe.adjustments,
-                               geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves, hsl: recipe.hsl, bypass: recipe.bypass)
+        let edits = MediaEdits(recipe: recipe, lut: lut)
         guard edits.hasGrade || edits.hasGeometry else { return base }
         return (try? ColorPipeline.grade(CIImage(cgImage: base), edits: edits))
             .flatMap { try? ColorPipeline.geometry($0, edits: edits) }

@@ -1,0 +1,374 @@
+import AppKit
+import MediaCore
+import SwiftUI
+
+// 局部调整: the inspector section (layers and their sliders) and the canvas handles.
+
+extension EditorModel {
+    var selectedLocal: LocalAdjustment? { locals.first { $0.id == selectedLocalID } }
+
+    /// The picture's size before rotation and crop (any scale), for mapping mask handles.
+    var sourcePixelSize: CGSize? { frame?.original.extent.size }
+
+    func addLocal(_ shape: LocalAdjustment.Shape) {
+        guard locals.count < LocalAdjustment.maximumLayers else {
+            status = L("最多 \(LocalAdjustment.maximumLayers) 个局部调整。"); return
+        }
+        let layer = LocalAdjustment(shape: shape)
+        locals.append(layer)
+        selectedLocalID = layer.id
+        // A fresh brush layer has no strokes yet; the red tint shows where you paint.
+        showMask = shape == .brush
+        status = shape == .brush ? L("在画面上涂抹要调整的地方；按住 ⌥ 擦除。")
+            : L("已添加\(shape.title)。拖动画面上的控制点调整范围。")
+    }
+
+    func updateLocal(_ id: UUID, _ change: (inout LocalAdjustment) -> Void) {
+        guard let index = locals.firstIndex(where: { $0.id == id }) else { return }
+        var next = locals
+        change(&next[index])
+        locals = next
+    }
+
+    func removeLocal(_ id: UUID) {
+        locals.removeAll { $0.id == id }
+        if selectedLocalID == id { selectedLocalID = locals.last?.id }
+        if locals.isEmpty { showMask = false }
+    }
+}
+
+struct LocalAdjustmentSection: View {
+    let editor: EditorModel
+    var number: Int?
+    var isOn: Binding<Bool>?
+
+    var body: some View {
+        InspectorSection(L("局部调整"), number: number, isOn: isOn,
+                         help: L("只调整画面的一部分：渐变适合压暗天空，椭圆适合提亮主体，画笔可以涂出任何地方。"),
+                         onReset: editor.locals.isEmpty ? nil : { editor.resetStage(.local) }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    ForEach(LocalAdjustment.Shape.allCases, id: \.self) { shape in
+                        Button { editor.addLocal(shape) } label: {
+                            Label(shape.title, systemImage: shape.symbol).frame(maxWidth: .infinity)
+                        }
+                        .glassButton().controlSize(.small)
+                        .help(Self.hint(shape))
+                    }
+                }
+                if editor.locals.isEmpty {
+                    Text("只调整画面的一部分：比如用渐变压暗天空、用椭圆提亮人物，或者用画笔涂出要改的地方。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                } else {
+                    VStack(spacing: 2) {
+                        ForEach(Array(editor.locals.enumerated()), id: \.element.id) { index, layer in
+                            row(layer, number: index + 1)
+                        }
+                    }
+                }
+                if let layer = editor.selectedLocal {
+                    LocalLayerControls(editor: editor, layer: layer)
+                }
+            }
+        }
+    }
+
+    static func hint(_ shape: LocalAdjustment.Shape) -> String {
+        switch shape {
+        case .linear: L("渐变：从一条线开始逐渐过渡到另一条线，常用来压暗天空。")
+        case .radial: L("椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。")
+        case .brush: L("画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。")
+        }
+    }
+
+    private func row(_ layer: LocalAdjustment, number: Int) -> some View {
+        let selected = layer.id == editor.selectedLocalID
+        return HStack(spacing: 8) {
+            Image(systemName: layer.shape.symbol).frame(width: 16).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: "\(layer.title) \(number)").font(.callout.weight(selected ? .semibold : .regular))
+                Text(summary(layer)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button { editor.updateLocal(layer.id) { $0.enabled.toggle() } } label: {
+                Image(systemName: layer.enabled ? "eye" : "eye.slash")
+            }
+            .buttonStyle(.borderless).foregroundStyle(.secondary)
+            .help(layer.enabled ? L("隐藏此局部调整以比较") : L("显示此局部调整"))
+            Button { editor.removeLocal(layer.id) } label: { Image(systemName: "trash") }
+                .buttonStyle(.borderless).foregroundStyle(.secondary).help("删除")
+        }
+        .padding(.horizontal, 6).padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 6).fill(selected ? WorkbenchTheme.selection : Color.clear))
+        .contentShape(Rectangle())
+        .onTapGesture { editor.selectedLocalID = selected ? nil : layer.id }
+        .opacity(layer.enabled ? 1 : 0.55)
+    }
+
+    private func summary(_ layer: LocalAdjustment) -> String {
+        let changed = LocalAdjustment.parameters.filter { layer.adjustments[$0] != 0 }.prefix(2).map { p in
+            p == .exposure ? String(format: "%@ %+.2f", p.title, layer.adjustments[p]) : String(format: "%@ %+.0f", p.title, layer.adjustments[p])
+        }
+        if layer.shape == .brush, layer.strokes.isEmpty { return L("还没有涂抹") }
+        return changed.isEmpty ? L("未调整") : changed.joined(separator: " · ")
+    }
+}
+
+/// Mask options and sliders for the selected layer.
+private struct LocalLayerControls: View {
+    let editor: EditorModel
+    let layer: LocalAdjustment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            WorkbenchTheme.hairline.frame(height: 1).padding(.vertical, 2)
+            Text(hint).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 14) {
+                Toggle("显示蒙版", isOn: Binding(get: { editor.showMask }, set: { editor.showMask = $0 }))
+                    .help("把这一层作用的范围标成红色")
+                Toggle("反转", isOn: Binding(get: { layer.invert }, set: { value in editor.updateLocal(layer.id) { $0.invert = value } }))
+                    .help("改为调整范围之外的部分")
+            }
+            .toggleStyle(.checkbox).font(.callout)
+            if layer.shape == .brush {
+                Picker("", selection: Binding(get: { editor.brushErase }, set: { editor.brushErase = $0 })) {
+                    Text("涂抹").tag(false)
+                    Text("擦除").tag(true)
+                }
+                .pickerStyle(.segmented).labelsHidden().controlSize(.small)
+                ParameterRow(title: L("画笔大小"), value: (editor.brushRadius * 200).rounded(), range: 1...50, neutral: 8,
+                             onChange: { editor.brushRadius = $0 / 200 })
+                if !layer.strokes.isEmpty {
+                    Button("清除笔触") { editor.updateLocal(layer.id) { $0.strokes = [] } }.buttonStyle(.borderless).font(.callout)
+                }
+            }
+            if layer.shape != .linear {
+                ParameterRow(title: L("羽化"), value: (layer.feather * 100).rounded(), range: 0...100, suffix: "%", neutral: 35,
+                             onChange: { value in editor.updateLocal(layer.id) { $0.feather = value / 100 } }, onEditing: editor.beginEditing)
+            }
+            VStack(spacing: 1) {
+                ForEach(LocalAdjustment.parameters) { parameter in
+                    ParameterRow(title: parameter.title, value: layer.adjustments[parameter], range: parameter.range,
+                                 step: parameter == .exposure ? 0.05 : 1, decimals: parameter == .exposure ? 2 : 0,
+                                 suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
+                                 onChange: { value in editor.updateLocal(layer.id) { $0.adjustments[parameter] = value } },
+                                 onEditing: editor.beginEditing)
+                }
+            }
+        }
+    }
+
+    private var hint: String {
+        switch layer.shape {
+        case .linear: L("在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。")
+        case .radial: L("拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。")
+        case .brush: L("在画面上涂抹；按住 ⌥ 临时擦除。")
+        }
+    }
+}
+
+// MARK: - Canvas handles
+
+/// Draws the selected layer's handles over the fitted canvas and edits them by dragging.
+struct LocalMaskOverlay: View {
+    let editor: EditorModel
+    let layer: LocalAdjustment
+    let mapping: GeometryMapping
+
+    @UIState private var dragBase: LocalAdjustment?
+    @UIState private var painting: [CGPoint] = []
+    @UIState private var paintingErase = false
+    @UIState private var pointer: CGPoint?
+
+    private enum Handle { case start, end, middle, center, radiusX, radiusY }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let shown = displayRect(in: proxy.size)
+            ZStack(alignment: .topLeading) {
+                switch layer.shape {
+                case .linear: linear(shown, size: proxy.size)
+                case .radial: radial(shown)
+                case .brush: brush(shown)
+                }
+            }
+        }
+    }
+
+    // MARK: Coordinates
+
+    /// Where the canvas draws the picture when fitted (it keeps a 12 pt margin on each side).
+    private func displayRect(in size: CGSize) -> CGRect {
+        let pixels = mapping.outputSize
+        let scale = max(0.001, min((size.width - 24) / max(1, pixels.width), (size.height - 24) / max(1, pixels.height)))
+        let shown = CGSize(width: pixels.width * scale, height: pixels.height * scale)
+        return CGRect(x: (size.width - shown.width) / 2, y: (size.height - shown.height) / 2, width: shown.width, height: shown.height)
+    }
+
+    private func view(_ p: CGPoint, _ shown: CGRect) -> CGPoint {
+        let o = mapping.toOutput(p)
+        return CGPoint(x: shown.minX + o.x * shown.width, y: shown.minY + o.y * shown.height)
+    }
+
+    private func source(_ v: CGPoint, _ shown: CGRect) -> CGPoint {
+        mapping.toSource(CGPoint(x: (v.x - shown.minX) / shown.width, y: (v.y - shown.minY) / shown.height))
+    }
+
+    private func handle(_ symbol: String = "circle.fill", size: CGFloat = 14) -> some View {
+        Circle().fill(Color.white).frame(width: size, height: size)
+            .overlay(Circle().strokeBorder(Color.black.opacity(0.5), lineWidth: 1))
+            .shadow(color: .black.opacity(0.5), radius: 2)
+            .frame(width: 30, height: 30).contentShape(Circle())
+    }
+
+    private func drag(_ which: Handle, _ shown: CGRect) -> some Gesture {
+        DragGesture(minimumDistance: 1)
+            .onChanged { value in
+                if dragBase == nil { dragBase = layer; editor.beginEditing(true) }
+                guard let base = dragBase else { return }
+                let id = layer.id
+                switch which {
+                case .start:
+                    let p = source(view(base.start, shown) + value.translation, shown)
+                    editor.updateLocal(id) { $0.start = p }
+                case .end:
+                    let p = source(view(base.end, shown) + value.translation, shown)
+                    editor.updateLocal(id) { $0.end = p }
+                case .middle:
+                    let s = source(view(base.start, shown) + value.translation, shown)
+                    let e = source(view(base.end, shown) + value.translation, shown)
+                    editor.updateLocal(id) { $0.start = s; $0.end = e }
+                case .center:
+                    let c = source(view(base.center, shown) + value.translation, shown)
+                    editor.updateLocal(id) { $0.center = c }
+                case .radiusX, .radiusY:
+                    let edge = which == .radiusX ? CGPoint(x: base.center.x + base.radii.width, y: base.center.y)
+                                                 : CGPoint(x: base.center.x, y: base.center.y - base.radii.height)
+                    let p = source(view(edge, shown) + value.translation, shown)
+                    editor.updateLocal(id) {
+                        if which == .radiusX { $0.radii.width = min(2, max(0.01, abs(p.x - base.center.x))) }
+                        else { $0.radii.height = min(2, max(0.01, abs(p.y - base.center.y))) }
+                    }
+                }
+            }
+            .onEnded { _ in dragBase = nil; editor.beginEditing(false) }
+    }
+
+    // MARK: Linear
+
+    private func linear(_ shown: CGRect, size: CGSize) -> some View {
+        let s = view(layer.start, shown), e = view(layer.end, shown)
+        let dx = e.x - s.x, dy = e.y - s.y, length = max(1, hypot(dx, dy))
+        let normal = CGPoint(x: -dy / length * 3000, y: dx / length * 3000)
+        let middle = CGPoint(x: (s.x + e.x) / 2, y: (s.y + e.y) / 2)
+        return ZStack(alignment: .topLeading) {
+            Group {
+                Path { path in path.move(to: s - normal); path.addLine(to: s + normal) }
+                    .stroke(Color.white, lineWidth: 1.5)
+                Path { path in path.move(to: e - normal); path.addLine(to: e + normal) }
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+                Path { path in path.move(to: s); path.addLine(to: e) }
+                    .stroke(Color.white.opacity(0.7), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.6), radius: 1.5)
+            .mask(Rectangle().frame(width: shown.width, height: shown.height).position(x: shown.midX, y: shown.midY))
+            .allowsHitTesting(false)
+            handle().position(s).gesture(drag(.start, shown)).help("完全生效的一侧")
+            handle().position(e).gesture(drag(.end, shown)).help("过渡结束的一侧")
+            handle(size: 10).position(middle).gesture(drag(.middle, shown)).help("整体移动")
+        }
+    }
+
+    // MARK: Radial
+
+    private func radial(_ shown: CGRect) -> some View {
+        func ellipse(_ scale: Double) -> Path {
+            Path { path in
+                for step in 0...72 {
+                    let t = Double(step) / 72 * 2 * .pi
+                    let p = view(CGPoint(x: layer.center.x + layer.radii.width * scale * cos(t),
+                                         y: layer.center.y + layer.radii.height * scale * sin(t)), shown)
+                    if step == 0 { path.move(to: p) } else { path.addLine(to: p) }
+                }
+            }
+        }
+        let center = view(layer.center, shown)
+        let right = view(CGPoint(x: layer.center.x + layer.radii.width, y: layer.center.y), shown)
+        let top = view(CGPoint(x: layer.center.x, y: layer.center.y - layer.radii.height), shown)
+        return ZStack(alignment: .topLeading) {
+            Group {
+                ellipse(1).stroke(Color.white, lineWidth: 1.5)
+                if layer.feather > 0.02 {
+                    ellipse(max(0.02, 1 - layer.feather)).stroke(Color.white.opacity(0.8), style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                }
+            }
+            .shadow(color: .black.opacity(0.6), radius: 1.5)
+            .allowsHitTesting(false)
+            handle().position(center).gesture(drag(.center, shown)).help("移动")
+            handle(size: 10).position(right).gesture(drag(.radiusX, shown)).help("改变宽度")
+            handle(size: 10).position(top).gesture(drag(.radiusY, shown)).help("改变高度")
+        }
+    }
+
+    // MARK: Brush
+
+    private func brush(_ shown: CGRect) -> some View {
+        let source = mapping.sourceSize
+        let viewPerSource = shown.width / max(1, mapping.outputSize.width) * mapping.scale
+        let radius = CGFloat(editor.brushRadius) * min(source.width, source.height) * viewPerSource
+        return ZStack(alignment: .topLeading) {
+            if painting.count > 0 {
+                Path { path in
+                    let points = painting.map { view($0, shown) }
+                    path.move(to: points[0])
+                    for p in points.dropFirst() { path.addLine(to: p) }
+                    if points.count == 1 { path.addLine(to: points[0]) }
+                }
+                .stroke(paintingErase ? Color.black.opacity(0.45) : Color.red.opacity(0.45),
+                        style: StrokeStyle(lineWidth: radius * 2, lineCap: .round, lineJoin: .round))
+                .allowsHitTesting(false)
+            }
+            if let pointer {
+                Circle().strokeBorder(Color.white, lineWidth: 1.2)
+                    .background(Circle().strokeBorder(Color.black.opacity(0.5), lineWidth: 2.5))
+                    .frame(width: radius * 2, height: radius * 2)
+                    .position(pointer)
+                    .allowsHitTesting(false)
+            }
+            Rectangle().fill(Color.clear)
+                .frame(width: shown.width, height: shown.height)
+                .contentShape(Rectangle())
+                .position(x: shown.midX, y: shown.midY)
+                .onContinuousHover { phase in
+                    if case .active(let location) = phase {
+                        pointer = CGPoint(x: location.x + shown.minX, y: location.y + shown.minY)
+                        NSCursor.crosshair.set()
+                    } else { pointer = nil; NSCursor.arrow.set() }
+                }
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let location = CGPoint(x: value.location.x + shown.minX, y: value.location.y + shown.minY)
+                        pointer = location
+                        if painting.isEmpty { paintingErase = editor.brushErase || NSEvent.modifierFlags.contains(.option) }
+                        let point = self.source(location, shown)
+                        // Skip points closer than a quarter of the brush, so long strokes stay small.
+                        if let last = painting.last, hypot(view(last, shown).x - location.x, view(last, shown).y - location.y) < max(1.5, radius / 4) { return }
+                        if painting.count < 1024 { painting.append(point) }
+                    }
+                    .onEnded { _ in
+                        let points = painting, erase = paintingErase, radius = editor.brushRadius
+                        painting = []
+                        guard !points.isEmpty else { return }
+                        editor.updateLocal(layer.id) { layer in
+                            let used = layer.strokes.reduce(0) { $0 + $1.points.count }
+                            guard used + points.count <= LocalAdjustment.maximumPoints else { return }
+                            layer.strokes.append(BrushStroke(points: points, radius: radius, erase: erase))
+                        }
+                    })
+        }
+    }
+}
+
+private func + (a: CGPoint, b: CGSize) -> CGPoint { CGPoint(x: a.x + b.width, y: a.y + b.height) }
+private func + (a: CGPoint, b: CGPoint) -> CGPoint { CGPoint(x: a.x + b.x, y: a.y + b.y) }
+private func - (a: CGPoint, b: CGPoint) -> CGPoint { CGPoint(x: a.x - b.x, y: a.y - b.y) }

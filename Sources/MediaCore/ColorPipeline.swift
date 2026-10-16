@@ -58,14 +58,26 @@ public struct MediaEdits: Sendable, Equatable {
     public var hsl: HSLAdjustments
     /// Stages switched off in the inspector. Bypassed stages keep their values.
     public var bypass: Set<GradeStage>
+    /// Local adjustment layers, applied after the global grade and before geometry.
+    public var locals: [LocalAdjustment]
+    /// Preview only: tints this layer's mask red. Never saved or exported.
+    public var maskOverlay: UUID?
 
     public init(degrees: Double = 0, lut: CreativeLUT? = nil, strength: Double = 1, hdrEffect: Bool = false,
                 adjustments: BasicAdjustments = .init(), geometry: GeometryAdjustments = .init(),
                 wheels: ColorWheels = .init(), curves: ToneCurves = .init(), hsl: HSLAdjustments = .init(),
-                bypass: Set<GradeStage> = []) {
+                bypass: Set<GradeStage> = [], locals: [LocalAdjustment] = [], maskOverlay: UUID? = nil) {
         self.degrees = degrees; self.lut = lut; self.strength = strength; self.hdrEffect = hdrEffect
         self.adjustments = adjustments.sanitized; self.geometry = geometry
         self.wheels = wheels.sanitized; self.curves = curves; self.hsl = hsl; self.bypass = bypass
+        self.locals = locals; self.maskOverlay = maskOverlay
+    }
+
+    /// The edits a saved recipe describes (its LUT already loaded).
+    public init(recipe: EditRecipe, lut: CreativeLUT?, isVideo: Bool = false) {
+        self.init(degrees: recipe.degrees, lut: lut, strength: recipe.strength, hdrEffect: isVideo && recipe.hdrEffect,
+                  adjustments: recipe.adjustments, geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
+                  hsl: recipe.hsl, bypass: recipe.bypass, locals: recipe.locals)
     }
 
     public func isActive(_ stage: GradeStage) -> Bool { !bypass.contains(stage) }
@@ -78,6 +90,8 @@ public struct MediaEdits: Sendable, Equatable {
             || (isActive(.wheels) && !wheels.isNeutral)
             || (isActive(.curves) && !curves.isIdentity)
             || (isActive(.hsl) && !hsl.isNeutral)
+            || (isActive(.local) && locals.contains(where: \.hasEffect))
+            || maskOverlay != nil
     }
     public var hasLUT: Bool { lut != nil && strength > 0 && isActive(.lut) }
     public var hasGrade: Bool { hasLUT || hasAdjustments }
@@ -120,6 +134,7 @@ public enum ColorPipeline {
             result = BasicColorPipeline.sharpen(result, a, reference: reference)
             result = BasicColorPipeline.vignette(result, a, reference: reference)
         }
+        result = try applyLocals(result.cropped(to: reference), edits: edits, reference: reference)
         return result.cropped(to: reference)
     }
 

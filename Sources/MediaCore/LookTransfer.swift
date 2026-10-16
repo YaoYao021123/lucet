@@ -34,6 +34,7 @@ public enum LUTBaker {
         precondition((2...65).contains(size))
         var colorOnly = edits
         colorOnly.bypass.insert(.detail)
+        colorOnly.locals = []
         colorOnly.degrees = 0
         colorOnly.geometry = .init()
         let points = CubeLUT.lattice(size)

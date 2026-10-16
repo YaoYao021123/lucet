@@ -4,7 +4,7 @@ import Foundation
 /// The fixed processing order, shown in the inspector like a node chain.
 /// Each stage can be bypassed to inspect its contribution.
 public enum GradeStage: String, CaseIterable, Codable, Sendable {
-    case basic, wheels, curves, hsl, lut, detail
+    case basic, wheels, curves, hsl, lut, detail, local
 
     public var title: String {
         switch self {
@@ -14,6 +14,7 @@ public enum GradeStage: String, CaseIterable, Codable, Sendable {
         case .hsl: "HSL"
         case .lut: "LUT"
         case .detail: L("细节")
+        case .local: L("局部调整")
         }
     }
 }

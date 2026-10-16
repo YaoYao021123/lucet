@@ -79,6 +79,15 @@ enum DebugSnapshot {
         case "auto": app.autoEnhance()
         case "match": app.matchLook(to: URL(fileURLWithPath: argument).standardizedFileURL.path)
         case "groups": app.mode = .browse; app.showGroups = argument != "off"
+        case "local": if let shape = LocalAdjustment.Shape(rawValue: argument) { app.editor.addLocal(shape) }
+        case "localmask": app.editor.showMask = argument != "off"
+        case "localstroke":
+            // "x1,y1,x2,y2,…" normalized, added to the selected layer
+            let v = argument.split(separator: ",").compactMap { Double($0) }
+            let points = stride(from: 0, to: v.count - 1, by: 2).map { CGPoint(x: v[$0], y: v[$0 + 1]) }
+            if let id = app.editor.selectedLocalID, !points.isEmpty {
+                app.editor.updateLocal(id) { $0.strokes.append(BrushStroke(points: points, radius: app.editor.brushRadius)) }
+            }
         case "compare":
             // "a.jpg,b.jpg" or "zoom:a.jpg,b.jpg"
             let zoom = argument.hasPrefix("zoom:")

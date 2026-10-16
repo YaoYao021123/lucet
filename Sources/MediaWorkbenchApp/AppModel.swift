@@ -789,10 +789,7 @@ final class AppModel {
                     _ = try await LivePhotoPipeline.load(imageURL: entry.url, videoURL: movie)
                     input = movie; info = try await MediaInspector.inspect(movie); liveInput = true
                 }
-                let edits = MediaEdits(degrees: recipe.degrees, lut: lut, strength: recipe.strength,
-                                       hdrEffect: info.kind == .video && recipe.hdrEffect, adjustments: recipe.adjustments,
-                                       geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
-                                       hsl: recipe.hsl, bypass: recipe.bypass)
+                let edits = MediaEdits(recipe: recipe, lut: lut, isVideo: info.kind == .video)
                 let stem = entry.url.deletingPathExtension().lastPathComponent
                 var name = stem
                 if info.kind == .video {
@@ -879,9 +876,7 @@ final class AppModel {
                     }
                     let recipe = try store.load(entry.url) ?? EditRecipe()
                     let lut = try recipe.lut.map { try store.loadLUT($0) }
-                    let edits = MediaEdits(degrees: recipe.degrees, lut: lut, strength: recipe.strength, adjustments: recipe.adjustments,
-                                           geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
-                                           hsl: recipe.hsl, bypass: recipe.bypass)
+                    let edits = MediaEdits(recipe: recipe, lut: lut)
                     let speed = min(recipe.clip?.speed ?? 1, duration / 3)
                     let start = min(max(0, recipe.clip?.start ?? 0), max(0, duration - 3 * speed))
                     items.append(.init(url: input, duration: duration, start: start, speed: speed, edits: edits))

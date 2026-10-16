@@ -72,6 +72,15 @@ final class EditorModel {
     var wheels = ColorWheels() { didSet { if wheels != oldValue { editsChanged() } } }
     var curves = ToneCurves() { didSet { if curves != oldValue { editsChanged() } } }
     var hsl = HSLAdjustments() { didSet { if hsl != oldValue { editsChanged() } } }
+    /// Local adjustment layers (gradient, ellipse, brush).
+    var locals: [LocalAdjustment] = [] { didSet { if locals != oldValue { editsChanged() } } }
+    /// The layer whose handles and sliders are shown; not part of the edit.
+    var selectedLocalID: UUID? { didSet { if selectedLocalID != oldValue, showMask { refreshPreview() } } }
+    /// Tints the selected layer's mask red in the preview.
+    var showMask = false { didSet { if showMask != oldValue { refreshPreview(); if !showMask { markScopesDirty() } } } }
+    /// Brush settings for painting local masks (tools, not part of the edit).
+    var brushRadius = 0.04
+    var brushErase = false
     var bypass: Set<GradeStage> = [] { didSet { if bypass != oldValue { editsChanged() } } }
     var geometry = GeometryAdjustments() { didSet { if geometry != oldValue { editsChanged() } } }
     var degrees = 0.0 { didSet { if degrees != oldValue { editsChanged() } } }
@@ -173,7 +182,14 @@ final class EditorModel {
 
     var edits: MediaEdits {
         MediaEdits(degrees: degrees, lut: selectedLUT, strength: strength, hdrEffect: isVideo && hdrEffect,
-                   adjustments: adjustments, geometry: geometry, wheels: wheels, curves: curves, hsl: hsl, bypass: bypass)
+                   adjustments: adjustments, geometry: geometry, wheels: wheels, curves: curves, hsl: hsl, bypass: bypass,
+                   locals: locals)
+    }
+    /// `edits` plus the red mask tint, for drawing only (never saved, never an undo step).
+    private var overlayEdits: MediaEdits {
+        var result = edits
+        if showMask, let id = selectedLocalID, locals.contains(where: { $0.id == id }) { result.maskOverlay = id }
+        return result
     }
     var clip: ClipSettings {
         ClipSettings(start: clipStart, end: clipEnd, cover: cover, originalVolume: originalVolume,
@@ -222,7 +238,7 @@ final class EditorModel {
         cancelWork()
         teardownPlayer()
         suspended += 1
-        adjustments = .init(); wheels = .init(); curves = .init(); hsl = .init(); bypass = []
+        adjustments = .init(); wheels = .init(); curves = .init(); hsl = .init(); bypass = []; locals = []; selectedLocalID = nil; showMask = false
         geometry = .init(); degrees = 0; selectedLUT = nil; strength = 1; hdrEffect = false; hdrPreview = true
         clipStart = 0; clipEnd = 0; cover = 0; playbackSpeed = 1
         originalVolume = 1; musicURL = nil; musicVolume = 0.5
@@ -350,7 +366,7 @@ final class EditorModel {
     @discardableResult
     private func apply(_ recipe: EditRecipe, lut: CreativeLUT?) -> String? {
         adjustments = recipe.adjustments; wheels = recipe.wheels; curves = recipe.curves; hsl = recipe.hsl
-        bypass = recipe.bypass; geometry = recipe.geometry; degrees = recipe.degrees
+        bypass = recipe.bypass; geometry = recipe.geometry; degrees = recipe.degrees; locals = recipe.locals
         selectedLUT = lut; strength = recipe.strength; hdrEffect = recipe.hdrEffect; hdrPreview = recipe.hdrPreview
         guard isVideo, var range = recipe.clip else { return nil }
         guard (try? range.validate(duration: duration)) != nil else { return L("保存的片段超出当前素材长度，已使用完整范围。") }
@@ -377,6 +393,13 @@ final class EditorModel {
     }
 
     // MARK: Change tracking
+
+    /// Redraws without recording an edit (mask display).
+    private func refreshPreview() {
+        guard isLoaded, suspended == 0 else { return }
+        revision += 1
+        schedulePreview()
+    }
 
     private func editsChanged() {
         guard suspended == 0 else { return }
@@ -427,7 +450,7 @@ final class EditorModel {
         defer { trackedEdits = edits }
         suspended += 1
         let e = value.edits
-        adjustments = e.adjustments; wheels = e.wheels; curves = e.curves; hsl = e.hsl; bypass = e.bypass
+        adjustments = e.adjustments; wheels = e.wheels; curves = e.curves; hsl = e.hsl; bypass = e.bypass; locals = e.locals
         geometry = e.geometry; degrees = e.degrees; selectedLUT = e.lut; strength = e.strength
         hdrEffect = e.hdrEffect; hdrPreview = value.hdrPreview
         if let clip = value.clip {
@@ -464,7 +487,7 @@ final class EditorModel {
 
     func resetAll() {
         group {
-            adjustments = .init(); wheels = .init(); curves = .init(); hsl = .init(); bypass = []
+            adjustments = .init(); wheels = .init(); curves = .init(); hsl = .init(); bypass = []; locals = []
             geometry = .init(); degrees = 0; selectedLUT = nil; strength = 1; hdrEffect = false
         }
         compareMode = .off
@@ -491,6 +514,7 @@ final class EditorModel {
             case .curves: curves = .init()
             case .hsl: hsl = .init()
             case .lut: selectedLUT = nil; strength = 1
+            case .local: locals = []
             case .detail:
                 var next = adjustments
                 for p in AdjustmentSection.detail.parameters + AdjustmentSection.effects.parameters { next[p] = 0 }
@@ -601,6 +625,7 @@ final class EditorModel {
         var recipe = EditRecipe()
         recipe.adjustments = adjustments; recipe.wheels = wheels; recipe.curves = curves; recipe.hsl = hsl
         recipe.bypass = bypass; recipe.geometry = geometry; recipe.degrees = degrees; recipe.strength = strength
+        recipe.locals = locals
         recipe.hdrEffect = hdrEffect; recipe.hdrPreview = hdrPreview; recipe.clip = isVideo ? clip : nil
         if let lut = selectedLUT { recipe.lut = try drafts.storeLUT(lut) }
         return recipe
@@ -668,7 +693,7 @@ final class EditorModel {
 
     /// The edits the image preview renders: the crop is left out while the crop frame is edited.
     private var previewEdits: MediaEdits {
-        var result = edits
+        var result = overlayEdits
         if cropEditing {
             result.geometry.cropScale = 1; result.geometry.aspectRatio = 0
             result.geometry.horizontal = 0; result.geometry.vertical = 0
@@ -710,7 +735,7 @@ final class EditorModel {
     /// Updates the running composition's parameters without touching the decoder.
     private func updateLiveVideoPreview() {
         guard let player, let item = player.currentItem else { return }
-        videoState?.update(edits)
+        videoState?.update(overlayEdits)
         videoState?.showsOriginal = compareMode != .off
         if appliedVolumes != (originalVolume, musicVolume) {
             let inputs = item.audioMix?.inputParameters ?? []
@@ -828,6 +853,8 @@ final class EditorModel {
     }
 
     private func computeScopes() async -> ScopeData? {
+        // The red mask tint is a drawing aid, not the photo: keep the last real readings.
+        if showMask, selectedLocalID != nil, scopes != nil { return nil }
         if let frame {
             let original = compareMode == .original
             let image = original ? frame.original : frame.image
@@ -838,7 +865,10 @@ final class EditorModel {
                 let box = faces.reduce(CGRect.null) { $0.union($1) }
                 let rect = CGRect(x: extent.minX + box.minX * extent.width, y: extent.minY + box.minY * extent.height,
                                   width: box.width * extent.width, height: box.height * extent.height).intersection(extent)
-                let current = edits, sourceHeadroom = frame.sourceHeadroom
+                // Masks are placed relative to the whole picture, so leave them out of this crop.
+                var global = edits
+                global.locals = []
+                let current = global, sourceHeadroom = frame.sourceHeadroom
                 faceAnalysis = await Task.detached(priority: .utility) { () -> PhotoAnalysis? in
                     guard !rect.isEmpty, let graded = try? ColorPipeline.grade(frame.original.cropped(to: rect), edits: current,
                                                                               sourceHeadroom: sourceHeadroom) else { return nil }
@@ -1042,6 +1072,11 @@ extension EditorModel {
             if let musicURL { video.append(L("音乐 \(musicURL.deletingPathExtension().lastPathComponent)")) }
             if !video.isEmpty { add(L("视频"), video.joined(separator: L("，"))) }
         }
+        let layers = LocalAdjustment.Shape.allCases.compactMap { shape -> String? in
+            let count = locals.filter { $0.shape == shape && $0.hasEffect }.count
+            return count == 0 ? nil : count == 1 ? shape.title : "\(shape.title) ×\(count)"
+        }
+        if !layers.isEmpty { add(L("局部调整"), layers.joined(separator: L("、"))) }
         let off = GradeStage.allCases.filter { bypass.contains($0) }.map(\.title)
         if !off.isEmpty { add(L("已关闭"), off.joined(separator: L("、"))) }
         return rows

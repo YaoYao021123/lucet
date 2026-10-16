@@ -22,9 +22,10 @@ public struct EditRecipe: Codable, Equatable, Sendable {
     public var curves = ToneCurves()
     public var hsl = HSLAdjustments()
     public var bypass: Set<GradeStage> = []
+    public var locals: [LocalAdjustment] = []
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case version, adjustments, degrees, geometry, strength, hdrEffect, hdrPreview, lut, clip, wheels, curves, hsl, bypass
+        case version, adjustments, degrees, geometry, strength, hdrEffect, hdrPreview, lut, clip, wheels, curves, hsl, bypass, locals
     }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -41,6 +42,7 @@ public struct EditRecipe: Codable, Equatable, Sendable {
         hdrPreview = try values.decodeIfPresent(Bool.self, forKey: .hdrPreview) ?? true
         lut = try values.decodeIfPresent(LUTReference.self, forKey: .lut)
         clip = try values.decodeIfPresent(ClipSettings.self, forKey: .clip)
+        locals = try values.decodeIfPresent([LocalAdjustment].self, forKey: .locals) ?? []
     }
     public func validate() throws {
         guard (1...Self.currentVersion).contains(version), adjustments == adjustments.sanitized, wheels.isValid, degrees.isFinite, (-10...10).contains(degrees),
@@ -48,6 +50,8 @@ public struct EditRecipe: Codable, Equatable, Sendable {
         try geometry.validate()
         try curves.validate()
         try hsl.validate()
+        guard locals.count <= LocalAdjustment.maximumLayers else { throw VideoWorkError.failed(L("局部调整的参数无效。")) }
+        for layer in locals { try layer.validate() }
         if let clip { try clip.validate(duration: clip.end) }
         if let lut {
             guard lut.file.count == 69, lut.file.hasSuffix(".cube"),

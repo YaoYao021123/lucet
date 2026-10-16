@@ -129,6 +129,10 @@ struct EditorStage: View {
                                 hdr: editor.hdrPreview, influence: editor.influence)
                     if editor.cropEditing, editor.frameIsUncropped {
                         CropOverlay(editor: editor, pixelSize: frame.fullSize)
+                    } else if app.inspectorTab == .color, editor.zoomPercent == nil, editor.compareMode == .off,
+                              let layer = editor.selectedLocal, let source = editor.sourcePixelSize,
+                              let mapping = try? GeometryMapping(source: source, edits: editor.edits) {
+                        LocalMaskOverlay(editor: editor, layer: layer, mapping: mapping)
                     }
                 } else if editor.isLoading {
                     ProgressView("正在读取…").controlSize(.regular)

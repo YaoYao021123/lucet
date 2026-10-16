@@ -116,6 +116,9 @@ struct ColorPanel: View {
                     }
                 }
             }
+            if !editor.isVideo {
+                LocalAdjustmentSection(editor: editor)
+            }
             if editor.edits.usesAdvancedTools {
                 Label("这张照片还用了曲线、色轮、HSL 或 LUT 等调整，切换到「完整」可以查看。", systemImage: "info.circle")
                     .font(.caption).foregroundStyle(.secondary).padding(.vertical, 8)
@@ -158,6 +161,9 @@ struct ColorPanel: View {
                     AdjustmentRows(editor: editor, section: .detail, hints: app.learner.hoverHints)
                     AdjustmentRows(editor: editor, section: .effects, hints: app.learner.hoverHints)
                 }
+            }
+            if !editor.isVideo {
+                LocalAdjustmentSection(editor: editor, number: 7, isOn: stage(.local))
             }
             HDRSection(editor: editor)
         }
