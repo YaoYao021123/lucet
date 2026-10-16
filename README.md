@@ -1,102 +1,149 @@
 <div align="center">
 
-<img src="website/assets/app-icon.png" width="96" alt="Lucet 光集图标">
+**English** · [简体中文](README.zh-CN.md)
+
+<img src="website/assets/app-icon.png" width="96" alt="The Lucet 光集 icon">
 
 # Lucet 光集
 
-**让每一个瞬间，自有光彩。**<br>
-<sub>Let your moments shine.</sub>
+**Let your moments shine.**<br>
+<sub>让每一个瞬间，自有光彩。</sub>
 
-在 Mac 上把照片调好看，不用先学摄影；想学的时候，它用你自己的照片讲给你听。
+Make your photos look great on a Mac without learning photography first. When you do want to learn, it explains using your own photo.
 
-一键自动 · 六个滑块 · 预设一眼挑 · 调完存进「照片」<br>
-照片、视频、Live Photo 都能调。给 DJI 和 iPhone 拍摄者的 Mac 调色工具。
+One-click Auto · six plain sliders · presets you can see · save straight to Photos<br>
+Photos, videos and Live Photos. A Mac color tool for DJI and iPhone shooters, in English and Chinese.
 
 </div>
 
-<p align="center"><img src="website/assets/shot-edit.jpg" alt="光集的编辑界面" width="860"></p>
+<p align="center"><img src="website/assets/en/shot-edit.jpg" alt="Lucet's editor" width="860"></p>
 
-## 背后的故事
+### What it does to a photo
 
-### 起点：一个只有手机版的 App
+GitHub can't run a drag slider, so these sweep by themselves; on the [website](https://yaoyao021123.github.io/pic_review_edit/en/) you can drag the line yourself. All three are Lucet's real output, with no extra retouching.
 
-我用 DJI 拍素材，想调一下颜色和色调，才发现 DJI Mimo 只有手机版（iOS 和 Android）。想在大屏幕上调，只能回到手机上。
+<table>
+<tr>
+<td width="33%"><img src="website/assets/compare-auto.gif" alt="Before and after Auto"><br><b>One-click Auto</b><br><sub>Left: original. Right: Auto.</sub></td>
+<td width="33%"><img src="website/assets/compare-sky.gif" alt="Before and after a gradient darkens the sky"><br><b>Local adjustments</b><br><sub>One gradient darkens the sky; the ground is untouched.</sub></td>
+<td width="33%"><img src="website/assets/compare-match.gif" alt="Before and after matching colors"><br><b>Match colors</b><br><sub>Moved toward the colors of a sunset photo.</sub></td>
+</tr>
+</table>
 
-Lightroom、Photoshop 当然什么都能做，但打开的第一眼，就是几十个看不懂的滑块。
+## The story
 
-Lucet 光集想做中间那一块：**在 Mac 上，简单得像手机 App；想学的时候，也有人在旁边讲。** 默认只给你最常用的几样，其余的专业工具都在，只是先收起来。
+### Where it started: an app that only exists on phones
 
-### 先挑毛病，再加功能
+I shoot with DJI gear. When I wanted to adjust the color and tone, I found that DJI Mimo only exists for phones (iOS and Android). To edit on a big screen, I had to go back to my phone.
 
-最早的一版原型是 ChatGPT 写的，仓库的第一条提交就叫 “Baseline: ChatGPT prototype as received”。它能跑，但用起来又慢又乱。后来我在 Claude Code 里继续做，第一件事不是加功能，而是挑毛病，并且每个毛病都在 Mac 上实测：
+Lightroom and Photoshop can do anything, of course. But the first thing you see is dozens of sliders you don't understand.
 
-- 把一个有 2000 个文件的文件夹加入素材库：原来要 6.9 秒，界面卡住；现在不到 0.01 秒。
-- DJI Pocket 3 官方的 Spring / Winter Pro LUT：原来直接导入失败（文件标题是 GBK 编码）；现在能正常导入，解析时间从约 0.6 秒降到 0.02 秒。
-- 导出照片：原来只能存 PNG，还丢掉全部拍摄信息；现在可以选 JPEG / HEIC / PNG，并保留拍摄时间和相机信息。
+Lucet aims for the middle: **as simple as a phone app, on your Mac, with someone beside you to explain when you want to learn.** You get the handful of controls you'll use most; the full pro tools are all there, just tucked away.
 
-### 一句人话，一次修改
+### Find the problems first, then add features
 
-之后几乎每次改动，都从一句普通的话开始：「这个蓝色太亮了」「右边不够紧凑」「信息不够」「对新手不够友好」。AI 改，我看，再说，一轮一轮。官网和宣传视频也是这样做出来的：用网页技术写好，再渲染出来。
+The first prototype was written by ChatGPT; the repository's first commit is literally "Baseline: ChatGPT prototype as received". It ran, but it was slow and messy. I continued in Claude Code, and the first job wasn't new features but finding problems, each measured on a real Mac:
 
-AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片，曾被判成「整体偏亮」，建议把曝光降 1.5 档；可白桌子本来就该亮。这样的问题，都是在真正用的时候一眼看出来，再修好、加上测试的。
+- Adding a folder of 2,000 files to the library took 6.9 seconds and froze the app; now it takes under 0.01 seconds.
+- DJI Pocket 3's official Spring / Winter Pro LUTs failed to import (their titles are GBK-encoded); now they import, and parsing dropped from about 0.6 s to 0.02 s.
+- Photo export only offered PNG and dropped all capture info; now there's JPEG / HEIC / PNG, keeping the capture time and camera info.
 
-### 为什么要「边调边学」
+### One plain sentence, one change
 
-一键滤镜能让照片变好看，但下一次，你还是不知道为什么。
+After that, almost every change started with an ordinary sentence: "this blue is too bright", "the right side isn't compact enough", "not enough information", "not friendly enough for beginners". The AI changes it, I look, I say more, round after round. The website and promo video were made the same way: written with web technology, then rendered.
 
-抖音上的摄影博主张小样用动画讲直方图、曲线和光圈，比任何说明书都清楚，可是只有几条视频，覆盖不了全部基础。于是我们把这种讲法放进了 App：用你自己的照片，看像素怎样按亮度堆成直方图，拖动光圈看背景怎样变虚。所有课程的文字和动画都是我们自己写、自己画的。大纲公开在 [docs/curriculum.md](docs/curriculum.md)，还在一课一课往上加。
+AI makes mistakes too, and they can look convincing. A photo of a latte on a white table was once judged "too bright overall", with a suggestion to lower exposure by 1.5 stops, even though a white table is supposed to be bright. Problems like that showed up as soon as the app was really used, and each was fixed and covered by a test.
 
-### 名字
+### Why learn while editing
 
-**Lucet** 是拉丁语，意思是「它在发光」。**光集**，是把光收集起来。一张照片，本来就是被留住的光。
+A one-click filter can make a photo look good, but next time you still won't know why.
 
-### 我们在意的
+The Douyin photography creator Zhang Xiaoyang explains histograms, curves and aperture with animation more clearly than any manual, but there are only a few videos and they can't cover all the basics. So we built that way of teaching into the app: watch your own photo's pixels pile up into a histogram by brightness, drag the aperture and see the background blur. We write and draw every lesson ourselves. The syllabus is in [docs/curriculum.md](docs/curriculum.md) (Chinese), and new lessons keep coming.
 
-- 原片从不被修改；没有账号，不上传照片。
-- 能做什么、还做不到什么，都写清楚（见下方「现在的限制」）。
-- 欢迎一起做：想法、问题、你自己的照片故事，都可以到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们。如果你也在用 [Claude Code](https://claude.com/claude-code) 或别的 AI 工具做东西，欢迎分享你的做法。
+### The name
 
-## 它能做什么
+**Lucet** is Latin for "it shines". **光集** (Guāngjí) means "gathering light". A photo is light that was kept.
 
-**简单开始**
-- **自动（A）**：看这张照片本身的明暗和颜色，替你调好曝光、影调、白平衡和色彩。很克制：白底、雪景保持明亮，夜景保持夜景，日落保留暖色。不满意按 ⌘Z 撤销。
-- **六个滑块**：亮度、对比度、亮部、暗部、冷暖、鲜艳度，每个都有一句人话解释。
-- **预设缩略图**：每个预设直接用你这张照片预览，点一下套用。可以存自己的预设。
-- **拖动裁剪**：在「构图」里直接在照片上拖裁剪框，也有拉直、旋转、镜像，地平线歪了会提醒。
+### The web edition
 
-**调完回到 iPhone**
-- 导出默认**直接存入「照片」**，开启 iCloud 照片后同步到 iPhone。也可以存成文件，或用系统共享发给朋友。
-- 视频裁到 3 秒以内可以做成真正的 **Live Photo**；还能把多段拼成一张「拼图 Live」。
-- 格式 JPEG / HEIC / PNG，可缩小到社交平台尺寸；默认保留拍摄时间和相机信息，移除位置信息。导出在后台进行，不挡着你继续调。
+A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms for grouping similar shots, matching colors, exporting a grade as a LUT and local masks have been rebuilt on Core Image in this Mac app.
 
-**为 DJI 素材准备**
-- 能打开 DJI 无人机和相机的 MP4 / MOV（含 10 位 HEVC）。「信息」页列出编码、位深、码率、帧率、色彩空间和拍摄设备。
-- 导入 DJI 官方的 `.cube` 风格 LUT（已用 Pocket 3 的 Spring / Winter Pro 实测）。
-- 视频可以裁切、变速（0.5–4 倍）。
+### What we care about
 
-**边调边学**
-- 光集会读这张照片，指出真正的问题（哪里过曝、哪里偏色、地平线歪了多少度），并给出可以一键试用的调整。悬停在滑块名上，画面会只高亮它影响的区域。
-- **互动课**：几分钟一课，用动画和你自己的照片讲清原理，边看边动手，最后一道小题。比如看照片碎成像素、按亮度堆成直方图；拖光圈看开口变小、背景变清楚。目前 13 课，覆盖直方图、亮度分区、溢出、曝光、曲线、白平衡、HSL、光圈、快门与 ISO、焦距，以及视频的帧率与快门、Log 与 LUT，在「学习」页或菜单栏「学习」里打开。
-- **五个亮度区**：最暗部、暗部、中间调、亮部、最亮部。拖动任何一个明暗滑块，直方图上都会标出它改变的是哪一段。
-- 水平分「入门 / 进阶 / 专业」，讲解的深浅随之变化；学习记录只保存在你的 Mac 上。
-- 可选的「问问这张照片」：用自然语言提问，由 Claude 结合这张照片回答。需要你自己的 Anthropic API 密钥，**默认关闭**（见下方隐私）。
+- Originals are never changed. No account, no uploaded photos.
+- We say plainly what it can and can't do yet (see "Current limitations" below).
+- Build it with us: ideas, problems and your own photo stories are welcome in [Issues](https://github.com/YaoYao021123/pic_review_edit/issues). If you also build things with [Claude Code](https://claude.com/claude-code) or other AI tools, tell us how you work.
 
-**想深入时**
-- 点「完整」，展开示波器（直方图、波形、分量、矢量）、色轮、曲线、HSL 色彩混合、风格 LUT，按 DaVinci 式的固定顺序处理，每一步都能单独开关对比。
-- 对比原片、左右分屏、溢出显示、缩放到 100%、命名版本、拷贝粘贴和批量同步调色。
+## Features
 
-**整理素材**
-- 导入文件夹或直接拖进窗口，缩略图网格显示已调色的样子。评级 0–5、选用 / 排除、按类型 / 评级筛选、搜索。同名的 HEIC/JPG 加 MOV 自动合成 Live Photo。
-- 原片在 Finder 里被移动或重命名，光集会提示「找不到原文件」，指给它新位置即可，评级和调整都保留。
+**Start simple**
+- **Auto (A)** reads the photo's own brightness and color and sets exposure, tone, white balance and color. It holds back: white backdrops and snow stay bright, night stays night, sunsets stay warm. Not happy? ⌘Z.
+- **Six sliders**: Brightness, Contrast, Highlights, Shadows, Warmth and Vividness, each explained in one plain sentence.
+- **Preset thumbnails** preview every preset on your photo; click to apply. Save your own presets.
+- **Drag to crop** right on the photo in the Crop tab, with straighten, rotate and flip, and a warning when the horizon tilts.
 
-## 安装
+**Change just part of the picture: local adjustments**
+- A **gradient** to darken a sky, an **ellipse** to brighten a subject (or invert it to darken the surroundings), and a **brush** that adjusts wherever you paint (hold ⌥ to erase).
+- Each layer has its own exposure, contrast, highlights, shadows, whites, blacks, temperature, tint, saturation, vibrance, clarity, sharpness and noise reduction. "Show mask" marks its area in red.
+- Masks stick to the picture's content, so cropping or rotating later doesn't shift them.
 
-**系统要求**：Apple 芯片（M 系列）的 Mac，macOS 15 或更高。界面目前只有中文。
+<p align="center"><img src="website/assets/en/shot-local.jpg" alt="Dragging a gradient's two lines on the picture to darken the sky" width="860"></p>
 
-1. 到 [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest) 下载最新的 `Lucet-…-arm64.zip`，解压，把「Lucet 光集」拖进「应用程序」。
-2. 第一次打开会被系统拦下（提示无法验证开发者），因为目前的版本还没有经过 Apple 公证。放行方法：先双击打开一次，看到提示后点「完成」→ 打开「系统设置 › 隐私与安全性」→ 滚动到最下面 → 在「Lucet 光集」旁点「仍要打开」。只需要一次。
+**Like another photo's colors? Match colors and export LUTs**
+- Pick a photo whose colors you like, and this photo's overall brightness and color move toward it (Reinhard color transfer in Lab space). The result is a LUT you can dial back with Strength, or undo.
+- Export your adjustments as a `.cube` LUT for DaVinci Resolve, Final Cut Pro or Premiere. (Noise reduction, clarity, sharpness and vignette depend on neighboring pixels, so they can't be part of a LUT.)
 
-想自己构建（需要 Xcode 命令行工具，`xcode-select --install`）：
+**Cull: similar shots and bursts**
+- "Similar & Bursts" groups shots with nearly the same framing and colors, and photos one camera took less than 2 seconds apart.
+- "Compare" shows 2–8 photos side by side: P to pick, X to reject, 1–5 to rate, "Keep Only This One". "Zoom to 100%" zooms them all to the same spot and pans them together, so you can tell which is sharpest.
+
+<table>
+<tr>
+<td width="62%"><img src="website/assets/en/shot-similar.jpg" alt="The Similar & Bursts view"></td>
+<td width="38%"><img src="website/assets/en/sheet-compare.jpg" alt="Compare and cull"></td>
+</tr>
+</table>
+
+**Back to your iPhone when you're done**
+- Exports **save straight into Photos** by default; with iCloud Photos on, they sync to your iPhone. Or save files, or share with the system share sheet.
+- Trim a video to 3 seconds or less to make a real **Live Photo**, or combine several clips into a "Collage Live".
+- JPEG / HEIC / PNG, optionally resized for social media. Capture time and camera info are kept; location is removed by default. Exports run in the background.
+
+**Ready for DJI footage**
+- Opens MP4 / MOV from DJI drones and cameras (including 10-bit HEVC). The Info tab lists codec, bit depth, bitrate, frame rate, color space and recording device.
+- Imports DJI's official `.cube` creative LUTs (tested with the Pocket 3's Spring / Winter Pro).
+- Trim videos and change speed (0.5–4×).
+
+**Learn as you edit**
+- Lucet reads the photo and points out what's really going on (where it's clipped, where there's a color cast, how far the horizon tilts), with an adjustment you can try in one click. Hover over a slider's name and the picture highlights only what it affects.
+- **Interactive lessons**: a few minutes each, using animation and your own photo, with something to try and one quick question at the end. 13 lessons so far: the histogram, brightness zones, clipping, exposure, curves, white balance, HSL, aperture, shutter and ISO, focal length, video frame rate and shutter, and Log footage with LUTs. Open them from the Learn tab or the Learn menu.
+- **Five brightness zones**: darkest, shadows, midtones, highlights, brightest. Drag any light or dark slider and the histogram shows which part it changes.
+- Choose Beginner, Intermediate or Advanced and the explanations change depth. Your learning history stays on your Mac.
+- Optional **Ask About This Photo**: ask in plain language and Claude answers based on your photo. It needs your own Anthropic API key and is **off by default** (see Privacy).
+
+<table>
+<tr>
+<td width="50%"><img src="website/assets/en/panel-learn.jpg" alt="The Learn tab"></td>
+<td width="50%"><img src="website/assets/en/panel-info.jpg" alt="The Info tab for a DJI video"></td>
+</tr>
+</table>
+
+**When you want to go deeper**
+- Switch to **Full** for scopes (histogram, waveform, parade, vectorscope), color wheels, curves, the HSL color mixer and creative LUTs, processed in a fixed DaVinci-style order where every step can be switched off to compare.
+- Compare with the original, split view, clipping display, 100% zoom, named versions, copy and paste adjustments, and batch sync.
+
+**Organize**
+- Import folders or drag files into the window. Thumbnails show each photo as edited. Ratings 0–5, pick / reject, filters by type and rating, search. A HEIC or JPG with a same-name MOV becomes a Live Photo automatically.
+- If you move or rename an original in Finder, Lucet says "Original file not found"; point it to the new location and ratings and adjustments are kept.
+
+## Install
+
+**Requirements**: a Mac with Apple silicon (M-series) running macOS 15 or later. The interface is in English and Simplified Chinese and follows your Mac's language; you can also switch it under **Lucet 光集 › Language · 语言** in the menu bar.
+
+1. Download the latest `Lucet-…-arm64.zip` from [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest), unzip it and drag **Lucet 光集** into Applications.
+2. The first launch is blocked ("can't verify the developer") because this version isn't notarized by Apple yet. To allow it: double-click it once and click Done → open **System Settings › Privacy & Security** → scroll to the bottom → click **Open Anyway** next to Lucet 光集. You only need to do this once.
+
+To build it yourself (needs the Xcode Command Line Tools, `xcode-select --install`):
 
 ```sh
 git clone https://github.com/YaoYao021123/pic_review_edit.git
@@ -104,53 +151,54 @@ cd pic_review_edit
 bash scripts/run-workbench.sh
 ```
 
-## 三步上手
+## Three steps
 
-1. **导入**：把照片或视频文件夹拖进窗口。
-2. **调色**：按 `A` 自动，挑一个预设，用六个滑块微调。想看原图，按 `\`。
-3. **存起来**：⌘E 导出，选「保存到 照片」。之后随时回来，调整都还在。
+1. **Import**: drag a folder of photos or videos into the window.
+2. **Adjust**: press `A` for Auto, pick a preset, fine-tune with six sliders. Press `\` to see the original.
+3. **Save**: ⌘E to export and choose "Save to Photos". Come back any time; your adjustments are still there.
 
-## 快捷键
+## Keyboard shortcuts
 
-按 `?` 或 ⌘/ 随时查看完整列表。常用的：
+Press `?` or ⌘/ for the full list. The most common:
 
-| 按键 | 作用 | 按键 | 作用 |
+| Key | Action | Key | Action |
 |---|---|---|---|
-| `A` | 自动调整 | `\` 或 `M` | 对比原片 |
-| `G` / `E` | 浏览 / 编辑 | `Y` | 左右分屏 |
-| `0`–`5` | 评级 | `J` | 显示高光 / 暗部溢出 |
-| `P` / `X` / `U` | 选用 / 排除 / 取消 | `Z` | 适合窗口 ↔ 100% |
-| ⌘Z / ⇧⌘Z | 撤销 / 重做 | ⇧⌘C / ⇧⌘V | 拷贝 / 粘贴调色 |
-| ⌘E | 导出当前 | `Tab` | 隐藏 / 显示两侧面板 |
+| `A` | Auto | `\` or `M` | Compare with original |
+| `G` / `E` | Browse / Edit | `Y` | Side-by-side split |
+| `0`–`5` | Rate | `J` | Highlight / shadow clipping |
+| `P` / `X` / `U` | Pick / Reject / Unflag | `Z` | Fit ↔ 100% |
+| ⌘Z / ⇧⌘Z | Undo / Redo | ⇧⌘C / ⇧⌘V | Copy / paste adjustments |
+| ⌘E | Export current | `Tab` | Hide / show side panels |
+| ⌥⌘C | Compare selected side by side | | |
 
-视频：空格播放，`I` / `O` 入点出点，`C` 设为封面。单键快捷键在输入文字时不会触发。
+Video: Space plays, `I` / `O` set in and out points, `C` sets the key photo. Single-key shortcuts don't fire while you're typing.
 
-## 隐私
+## Privacy
 
-- 原片**从不被修改**。所有调整保存为一份很小的配方文件，导出时才生成新的副本。
-- 没有账号，没有统计，**不上传任何照片**。素材库、配方、学习记录都在 `~/Library/Application Support/Guangji`。
-- 唯一会联网的是可选的「问问这张照片」：默认关闭；你填入自己的密钥（保存在钥匙串）后，只有点「提问」时才发送，内容是一张最长边 1024 px、不含拍摄和位置信息的缩略图（可在设置里关掉），加上画面统计与当前参数。按你的账户计费；中国大陆网络可能无法直接访问。
+- Originals are **never changed**. Adjustments are saved as a small recipe file, and a new copy is made only when you export.
+- No account, no analytics, **no photo uploads**. The library, recipes, photo fingerprints for "Similar & Bursts" and learning history live in `~/Library/Application Support/Guangji`.
+- The only thing that goes online is the optional "Ask About This Photo". It's off by default; after you add your own key (stored in the Keychain), it sends data only when you click Ask: a thumbnail up to 1024 px on the long edge without capture or location info (can be turned off), plus image statistics and the current settings. It's billed to your account and may not be reachable from mainland China.
 
-## 现在的限制
+## Current limitations
 
-Lucet 光集还是早期版本，诚实地说：
+Lucet is an early version. Honestly:
 
-- 仅支持 Apple 芯片 Mac 与 macOS 15+，界面只有中文。
-- 还没有 Apple 公证，首次打开需要手动放行（见上方安装）。
-- 调色后的 HDR 照片会以普通亮度（SDR）导出，原片的 HDR 增益图不保留。
-- 视频的裁剪仍用滑块；不支持多轨道剪辑、转场、字幕。
-- 常见相机 RAW 文件可以导入，但只是按普通图片处理，并非 RAW 冲洗；这部分目前测试有限。
-- D-Log 等 Log 素材需要自己导入对应的转换 LUT，自动识别还在计划中。
-- 导入的文件夹不会自动监视新文件。
+- Apple silicon Macs with macOS 15+ only.
+- Not notarized by Apple yet; the first launch needs to be allowed by hand (see Install).
+- Adjusted HDR photos are exported at standard brightness (SDR); the original's HDR gain map isn't kept.
+- Video trimming still uses sliders; no multi-track editing, transitions or titles. Local adjustments are for photos only for now.
+- Common camera RAW files open, but they're treated as regular images, not developed as RAW; this is lightly tested.
+- Log footage such as D-Log needs its conversion LUT imported by hand; automatic detection is planned.
+- Imported folders aren't watched for new files.
 
-## 反馈
+## Feedback
 
-遇到问题或想要某个功能，欢迎到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们，附上一张截图会很有帮助。
+Problems or feature ideas are welcome in [Issues](https://github.com/YaoYao021123/pic_review_edit/issues); a screenshot helps a lot.
 
-## 开发
+## Development
 
-构建、测试、发布与代码结构见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+Building, testing, translations, releases and the code structure: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (Chinese).
 
 ---
 
-<sub>Lucet 光集是独立开发的软件，与 DJI、Apple、Adobe、Anthropic、OpenAI 没有关联，也未获得它们的认可。DJI、Mimo、iPhone、Live Photo、Lightroom、Photoshop、Claude、ChatGPT 等名称属于各自的所有者。</sub>
+<sub>Lucet 光集 is independent software, not affiliated with or endorsed by DJI, Apple, Adobe, Anthropic or OpenAI. DJI, Mimo, iPhone, Live Photo, Lightroom, Photoshop, Claude, ChatGPT and other names belong to their owners.</sub>

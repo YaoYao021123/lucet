@@ -3,7 +3,8 @@ name: Website
 # Publishes website/ to GitHub Pages. One-time setup: repository Settings › Pages › Source: GitHub Actions.
 on:
   push:
-    branches: [main]
+    # improve-workbench is the repository's default branch.
+    branches: [main, improve-workbench]
     paths: ['website/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 

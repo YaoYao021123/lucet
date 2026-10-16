@@ -7,7 +7,7 @@
 ```sh
 bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh             # 101 项测试
+bash scripts/test-workbench.sh             # 115 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
 bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zip（临时签名，未公证）
 ```
@@ -20,6 +20,9 @@ bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zi
 swift run media-probe details <素材>        # 打印「信息」页的全部内容
 swift run media-probe analyze <图片>        # 画面统计与教练提示
 swift run media-probe auto <图片> [对比.jpg] # 「自动」的取值，可输出前后对比图
+swift run media-probe similar <文件夹>       # 相似照片与连拍分组（含指纹用时）
+swift run media-probe render <图片> <配方.json|-> <输出.jpg> [长边]   # 套用配方（含局部调整）导出
+swift run media-probe match <图片> <参考图> <输出.jpg> [长边]          # 「匹配色调」的结果
 swift run --configuration release media-benchmark
 ```
 
@@ -42,11 +45,11 @@ swift run --configuration release media-benchmark
 
 ## 网站
 
-`website/` 是纯静态页面（无构建步骤、无外部依赖）。本地预览：`python3 -m http.server --directory website`。推送到 `main` 后由 `.github/workflows/pages.yml` 发布到 GitHub Pages（需在仓库 Settings › Pages 把来源设为 GitHub Actions）。
+`website/` 是纯静态页面（无构建步骤、无外部依赖）：中文在 `website/index.html`，英文在 `website/en/index.html`，两页内容要一起更新。浏览器语言不是中文的访客第一次会被带到英文页；导航栏的「English / 中文」会记住选择。本地预览：`python3 -m http.server --directory website`。推送到 `main` 或 `improve-workbench`（默认分支）后由 `.github/workflows/pages.yml` 发布到 GitHub Pages（需在仓库 Settings › Pages 把来源设为 GitHub Actions）。
 
 社交分享预览（`<head>` 里的 `og:` / `twitter:` 标签）使用绝对地址，默认假定站点在 `https://yaoyao021123.github.io/pic_review_edit/`；换域名时请把 `website/index.html` 中该块的所有地址一起改掉。分享图是 `website/assets/og.jpg`（1200×630）。发布后可以用 opengraph.xyz 之类的预览工具检查；各平台会缓存预览，改图后可能要等一会儿或在平台的调试工具里刷新。
 
-页面里的截图由应用自带的快照模式生成：`bash scripts/make-site-screenshots.sh <示例照片文件夹> [示例视频]`。快照无法呈现 Liquid Glass 材质，想要真实玻璃效果，可以自己截一张图替换 `website/assets/shot-edit.jpg`（文件名不变即可）。示例照片会公开展示，请只用你有权公开的照片。
+页面和 README 里的截图由应用自带的快照模式生成：`bash scripts/make-site-screenshots.sh <示例照片文件夹> <主图> [示例视频] [自动对比用的照片]`。`SHOT_LANG=en` 生成英文界面（放在 `website/assets/en/`，建议用英文文件名的示例照片）；`SKY_PHOTO`（局部调整截图和天空前后对比）、`MATCH_REFERENCE`（匹配色调的参考图）、`SIMILAR_DIR` 与 `COMPARE_FILES`（相似与连拍、并排选片）可选。前后对比图和 README 里的 GIF 不含文字，两种语言共用。快照无法呈现 Liquid Glass 材质，想要真实玻璃效果，可以自己截一张图替换 `website/assets/shot-edit.jpg`（文件名不变即可）。示例照片会公开展示，请只用你有权公开的照片。
 
 ## 宣传视频
 
@@ -58,11 +61,12 @@ swift run --configuration release media-benchmark
 
 ## 代码结构
 
-- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、`CubeLUT`、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）。
+- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、局部调整（`LocalAdjustments`：蒙版、画布坐标映射）、`CubeLUT`、导出 LUT 与匹配色调（`LookTransfer`）、相似照片与连拍（`SimilarPhotos`）、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）、界面语言（`Localization`）。
+- 移植自合作伙伴网页版 Lucet（Apache-2.0）的算法：相似照片分组（`review.py`）、色彩迁移与导出 LUT（`engine.py`）、局部蒙版（`masks.py`）。参考源码放在 `reference/`（不进 Git）；各文件开头注明了来源和改动。
 - `Sources/MediaWorkbenchApp`：界面。
   - 模型：`AppModel` 负责协调（导入、导出、同步、快捷键），`LibraryModel` 管理素材库，`EditorModel` 管理当前文档，`ExportQueue` 是导出队列，`ThumbnailStore` 生成缩略图。
-  - 视图：`WorkbenchView`、`LibraryViews`、`InspectorView`、`GradeControls`、`MediaCanvas`、`MediaTimeline`、`Sheets`。
-- 数据位置：`~/Library/Application Support/Guangji`（素材库 `library.json`、配方、快照、预设、LUT）。
+  - 视图：`WorkbenchView`、`LibraryViews`、`InspectorView`、`GradeControls`、`MediaCanvas`、`MediaTimeline`、`Sheets`、`LocalAdjustmentViews`（局部调整面板与画布控制点）、`CullingViews`（相似与连拍、并排选片）、`LanguageMenu`。
+- 数据位置：`~/Library/Application Support/Guangji`（素材库 `library.json`、配方、快照、预设、LUT、相似照片指纹 `fingerprints.json`）。
 
 ### 开发：无屏幕录制权限的界面截图
 
