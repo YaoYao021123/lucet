@@ -21,6 +21,7 @@ struct SheetContent: View {
         case .lesson(let id): if let lesson = Lesson.lesson(id) { LessonPlayer(app: app, lesson: lesson) }
         case .livePreview(let resources): LivePreviewSheet(app: app, resources: resources)
         case .matchLook: MatchLookSheet(app: app)
+        case .photosImport: PhotosImportSheet(app: app)
         case .compare(let ids): CullingSheet(app: app, ids: ids)
         }
     }
@@ -376,7 +377,7 @@ struct ShortcutsSheet: View {
     let app: AppModel
     private let groups: [(String, [(String, String)])] = [
         (L("浏览"), [("G / E", L("浏览网格 / 编辑")), ("↑ ↓ ← →", L("上一项 / 下一项")), (L("⏎ 或 空格"), L("打开所选")),
-                 ("0 – 5", L("评级")), ("P / X / U", L("选用 / 排除 / 取消标记")), (L("⌘ / ⇧ 点按"), L("多选")), ("Tab", L("隐藏 / 显示两侧面板")),
+                 ("0 – 5", L("评级")), ("P / X / U", L("选用 / 排除 / 取消标记")), (L("⌘ / ⇧ 点按"), L("多选")), ("⌘A", L("全选")), ("Tab", L("隐藏 / 显示两侧面板")),
                  ("⌥⌘C", L("并排比较所选"))]),
         (L("编辑"), [("A", L("自动调整")), (L("\\ 或 M"), L("对比原片")), ("Y", L("左右分屏对比")), ("J", L("显示高光 / 暗部溢出")), (L("Z 或 空格"), L("适合窗口 ↔ 100%")),
                  ("⌘0 / ⌘1 / ⌘+ / ⌘−", L("适合 / 实际像素 / 放大 / 缩小")), ("⌘Z / ⇧⌘Z", L("撤销 / 重做")),

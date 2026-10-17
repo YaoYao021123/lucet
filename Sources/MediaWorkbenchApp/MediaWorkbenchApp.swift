@@ -65,6 +65,7 @@ struct WorkbenchCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("添加照片或视频…") { app.importMedia() }.keyboardShortcut("o")
             Button("导入文件夹…") { app.importMedia(folders: true) }.keyboardShortcut("o", modifiers: [.command, .shift])
+            Button("从「照片」导入…") { app.sheet = .photosImport }.keyboardShortcut("i", modifiers: [.command, .shift])
             Divider()
             Button("导入 LUT…", action: app.importLUT)
         }
@@ -89,6 +90,7 @@ struct WorkbenchCommands: Commands {
             Button("同步调色到所选…") { app.sheet = .sync }.disabled(!editor.isLoaded)
             Button("存为预设…") { app.sheet = .savePreset }.disabled(!editor.isLoaded)
             Button("匹配另一张照片的色调…") { app.sheet = .matchLook }.disabled(!editor.isLoaded || editor.isVideo)
+            Button("AI 调色") { app.aiLook() }.disabled(!editor.isLoaded || editor.isVideo || AdaptiveLUT.shared == nil)
             Button("导出调色为 LUT…", action: app.exportGradeLUT).disabled(!editor.isLoaded)
             Button("撤回上次同步", action: app.undoBatch).disabled(app.lastBatch.isEmpty)
         }
@@ -116,6 +118,8 @@ struct WorkbenchCommands: Commands {
             Divider()
             Button("在 Finder 中显示", action: app.revealSelection).keyboardShortcut("r", modifiers: [.command, .shift])
             Button("从素材库移除", action: app.removeSelectionFromLibrary)
+            Button("全选", action: app.selectAll)
+            Button("清空素材库…", action: app.clearLibrary)
         }
         CommandGroup(before: .toolbar) {
             Button("浏览网格") { app.mode = .browse }.keyboardShortcut("1", modifiers: [.command, .option])

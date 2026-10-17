@@ -14,4 +14,5 @@ bin_dir="$(swift build "${flags[@]}" --show-bin-path)"
 # An unbundled executable looks up *.lproj next to itself. Run it with
 # `-AppleLanguages '(en)'` to see the English interface.
 for lproj in Localization/*.lproj; do rm -rf "$bin_dir/$(basename "$lproj")"; cp -R "$lproj" "$bin_dir/"; done
+cp assets/models/adaptive-lut.bin "$bin_dir/"
 echo "$bin_dir/media-workbench"

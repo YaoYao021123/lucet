@@ -34,10 +34,13 @@ struct LUTParsingTests {
         for b in 0..<size { for g in 0..<size { for r in 0..<size {
             text += "\(Float(r) / 63) \(Float(g) / 63) \(Float(b) / 63)\n"
         } } }
-        let start = Date()
+        // CPU time of this thread, not wall-clock time, so other work on the Mac (or other tests
+        // running in parallel) can't make it fail.
+        let start = clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID)
         let lut = try CubeLUT(text: text)
+        let seconds = Double(clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID) - start) / 1e9
         #expect(lut.rgb.count == size * size * size * 3)
-        #expect(Date().timeIntervalSince(start) < 1.0)
+        #expect(seconds < 1.0, "\(seconds) s")
     }
 
     @Test func storedLUTIsCachedAcrossLoads() throws {

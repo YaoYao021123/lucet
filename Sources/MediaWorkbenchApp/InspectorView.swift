@@ -263,6 +263,9 @@ struct PresetStrip: View {
     var editor: EditorModel { app.editor }
     @UIState private var previews: [UUID: CGImage] = [:]
     @UIState private var original: CGImage?
+    /// The AI Look made for this photo, and how it looks.
+    @UIState private var aiLook: CreativeLUT?
+    @UIState private var aiPreview: CGImage?
 
     var body: some View {
         InspectorSection(L("预设"), help: L("一键套用整套调色（不影响裁切、片段与声音）。可把当前调色存为自己的预设。")) {
@@ -271,6 +274,12 @@ struct PresetStrip: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 64, maximum: 90), spacing: 6)], spacing: 8) {
                     tile(L("原图"), image: original, selected: !editor.edits.hasGrade) {
                         editor.applyLook(EditRecipe(), lut: nil, name: L("原图"))
+                    }
+                    if !editor.isVideo, AdaptiveLUT.shared != nil {
+                        tile(L("AI 调色"), image: aiPreview, selected: editor.edits.lut?.name == L("AI 调色") && editor.edits.adjustments.isNeutral) {
+                            app.aiLook(aiLook)
+                        }
+                        .help("为这张照片生成的调色：一个小型神经网络看过整张照片后，混合三张学来的 LUT（Image-Adaptive-3DLUT，在这台 Mac 上计算）")
                     }
                     ForEach(app.presets) { preset in
                         tile(preset.name, image: previews[preset.id], selected: matches(preset)) { app.applyPreset(preset) }
@@ -344,9 +353,9 @@ struct PresetStrip: View {
 
     private func render(_ frame: GradeFrame) async {
         let source = frame.original, headroom = frame.sourceHeadroom
-        let presets = app.presets, drafts = app.drafts
+        let presets = app.presets, drafts = app.drafts, video = editor.isVideo
         let shape = MediaEdits(degrees: editor.degrees, geometry: editor.geometry)
-        let result = await Task.detached(priority: .utility) { () -> (CGImage?, [UUID: CGImage]) in
+        let result = await Task.detached(priority: .utility) { () -> (CGImage?, [UUID: CGImage], CreativeLUT?, CGImage?) in
             let scale = min(1, 160 / max(source.extent.width, source.extent.height))
             let small = source.transformed(by: .init(scaleX: scale, y: scale))
             func draw(_ edits: MediaEdits) -> CGImage? {
@@ -364,11 +373,20 @@ struct PresetStrip: View {
                                        curves: r.curves, hsl: r.hsl, bypass: r.bypass)
                 images[preset.id] = draw(edits)
             }
-            return (draw(MediaEdits()), images)
+            // The AI Look is worked out from the full preview (the network looks at 256 × 256).
+            var ai: CreativeLUT?, aiImage: CGImage?
+            if !video, !Task.isCancelled, let model = AdaptiveLUT.shared,
+               let cube = model.lut(for: source, headroom: headroom, title: "AI Look") {
+                ai = CreativeLUT(cube: cube, name: L("AI 调色"))
+                aiImage = draw(MediaEdits(lut: ai, strength: 0.75))
+            }
+            return (draw(MediaEdits()), images, ai, aiImage)
         }.value
         guard !Task.isCancelled else { return }
         original = result.0
         previews = result.1
+        aiLook = result.2
+        aiPreview = result.3
     }
 }
 
@@ -395,6 +413,7 @@ struct LUTControls: View {
                     Divider()
                     Button("导入 .cube LUT…", action: app.importLUT)
                     Button("匹配另一张照片的色调…") { app.sheet = .matchLook }.disabled(editor.isVideo)
+                    if AdaptiveLUT.shared != nil { Button("AI 调色（为这张照片生成）") { app.aiLook() }.disabled(editor.isVideo) }
                     Divider()
                     Button("把当前调色导出为 .cube…", action: app.exportGradeLUT)
                 } label: {

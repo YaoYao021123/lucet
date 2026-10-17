@@ -251,6 +251,11 @@ final class LibraryModel {
         }
     }
 
+    func selectAll() {
+        selection = Set(visible.map(\.id))
+        if anchorID == nil || selection.contains(anchorID ?? "") == false { anchorID = visible.first?.id }
+    }
+
     func select(_ id: String) {
         selection = [id]
         anchorID = id

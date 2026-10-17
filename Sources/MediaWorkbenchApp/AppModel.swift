@@ -29,6 +29,7 @@ enum ActiveSheet: Identifiable {
     case lesson(String)
     case matchLook
     case compare([String])
+    case photosImport
 
     var id: String {
         switch self {
@@ -42,6 +43,7 @@ enum ActiveSheet: Identifiable {
         case .livePreview(let resources): "live-\(resources.identifier)"
         case .lesson(let id): "lesson-\(id)"
         case .matchLook: "match-look"
+        case .photosImport: "photos-import"
         case .compare(let ids): "compare-\(ids.joined(separator: "|").hashValue)"
         }
     }
@@ -331,6 +333,31 @@ final class AppModel {
         if let current = library.currentID, ids.contains(current) { editor.close(); mode = .browse }
         library.remove(ids)
         show(L("已从素材库移除 \(ids.count) 项；原文件未改动。"))
+    }
+
+    /// ⌘A: every item currently listed (respects the search and filter).
+    func selectAll() {
+        guard !library.visible.isEmpty else { return }
+        if mode == .edit { mode = .browse }
+        library.selectAll()
+        show(L("已选中 \(library.selection.count) 项。"), seconds: 2)
+    }
+
+    /// Empties the library list only. Original files, Photos and saved edits stay where they are.
+    func clearLibrary() {
+        let ids = Set(library.entries.map(\.id))
+        guard !ids.isEmpty else { return }
+        let alert = NSAlert()
+        alert.messageText = L("清空素材库？")
+        alert.informativeText = L("将从光集移除全部 \(ids.count) 项。原文件、「照片」里的图片和已保存的编辑都不会被删除，之后可以重新添加。")
+        alert.addButton(withTitle: L("清空"))
+        alert.addButton(withTitle: L("取消"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        editor.close()
+        mode = .browse
+        library.filter = LibraryFilter()
+        library.remove(ids)
+        show(L("素材库已清空；原文件未改动。"))
     }
 
     func removeFromLibrary(_ id: String) {
@@ -1052,6 +1079,8 @@ final class AppModel {
     /// Called for key-downs in the workbench window when no text field is editing.
     func handleKey(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        // ⌘A: the monitor skips text fields, so this never steals Select All from typing.
+        if flags == .command, event.charactersIgnoringModifiers?.lowercased() == "a" { selectAll(); return true }
         if flags.contains(.command) || flags.contains(.control) || flags.contains(.option) { return false }
         let editing = mode == .edit && editor.isLoaded
         switch event.keyCode {

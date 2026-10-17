@@ -112,6 +112,10 @@ struct LibrarySidebar: View {
                 Menu {
                     Button("添加照片或视频…") { app.importMedia() }
                     Button("导入文件夹…") { app.importMedia(folders: true) }
+                    Button("从「照片」导入…") { app.sheet = .photosImport }
+                    Divider()
+                    Button("全选") { app.selectAll() }.disabled(library.visible.isEmpty)
+                    Button("清空素材库…") { app.clearLibrary() }.disabled(library.entries.isEmpty)
                 } label: { Image(systemName: "plus").foregroundStyle(.primary) }
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().tint(.primary)
                     .help("添加素材")

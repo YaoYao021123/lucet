@@ -1,17 +1,22 @@
 /* English for Lucet 光集. Keys are the Simplified Chinese source text.
    Maintained with scripts/localize.py (merge / check). */
 
+/* AdaptiveLUT.swift */
+"AI 调色模型文件已损坏。" = "The AI Look model file is damaged.";
+
 /* AppModel+Looks.swift */
 "还没有调色，没有可导出的 LUT。" = "There are no adjustments yet, so there's no LUT to export.";
 "导出调色为 LUT：可在 DaVinci Resolve、Final Cut Pro、Premiere 等软件里套用到 Rec.709 / sRGB 素材。" = "Export the adjustments as a LUT to use on Rec.709 / sRGB footage in DaVinci Resolve, Final Cut Pro, Premiere and other apps.";
-"已导出 LUT。降噪、清晰度、锐度和暗角依赖周围像素，不在 LUT 里。" = "LUT exported. Noise reduction, clarity, sharpness and vignette depend on neighboring pixels, so they aren't in the LUT.";
+"已导出 LUT。降噪、去雾、清晰度、锐度、暗角和颗粒依赖周围像素，不在 LUT 里。" = "LUT exported. Noise reduction, dehaze, clarity, sharpness, vignette and grain depend on neighboring pixels, so they aren't in the LUT.";
 "在 Finder 中显示" = "Show in Finder";
 "无法导出 LUT" = "Couldn't export the LUT";
+"无法分析画面颜色。" = "Couldn't analyze the image's colors.";
+"AI 调色" = "AI Look";
+"撤销" = "Undo";
+"无法生成 AI 调色" = "Couldn't Make an AI Look";
 "匹配：%@" = "Match: %@";
 "无法读取「%@」。" = "Couldn't read “%@”.";
-"无法分析画面颜色。" = "Couldn't analyze the image's colors.";
 "已向「%@」的色调靠拢。在「风格 LUT」里用强度调整多少。" = "Moved toward the colors of “%@”. Use Strength under “Creative LUT” to set how much.";
-"撤销" = "Undo";
 "无法匹配色调" = "Couldn't match the colors";
 
 /* AppModel.swift */
@@ -30,6 +35,12 @@
 "已取消标记" = "Flag removed";
 "已排除" = "Rejected";
 "已选用" = "Picked";
+"已选中 %lld 项。" = "%lld items selected.";
+"清空素材库？" = "Clear the library?";
+"将从光集移除全部 %lld 项。原文件、「照片」里的图片和已保存的编辑都不会被删除，之后可以重新添加。" = "All %lld items will be removed from Lucet. Original files, pictures in Photos and saved edits are not deleted, and you can add them again later.";
+"清空" = "Clear";
+"取消" = "Cancel";
+"素材库已清空；原文件未改动。" = "Library cleared; original files are untouched.";
 "找到「%@」现在的位置（它可能被移动或重命名了）" = "Find where “%@” is now (it may have been moved or renamed)";
 "选择" = "Choose";
 "已重新关联。这和之前编辑的不是同一个文件，旧的编辑没有套用。" = "Relinked. This isn't the same file you edited before, so the old edits weren't applied.";
@@ -74,7 +85,6 @@
 "现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。" = "The selected clip is %.1f seconds. Keep just the 3 seconds around the playhead, or speed the whole clip up to fit 3 seconds.";
 "选取播放头附近 3 秒" = "Keep 3 Seconds Around Playhead";
 "整段加速到 3 秒" = "Speed Up to 3 Seconds";
-"取消" = "Cancel";
 "已调整为 %@ 秒，再点一次「制作 Live」即可。" = "Set to %@ seconds. Click “Make Live” again.";
 "制作 Live · 存到「照片」" = "Make Live · Save to Photos";
 "已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone" = "Saved to Photos as a Live Photo; it will sync to your iPhone with iCloud";
@@ -446,6 +456,7 @@
 "复位%@" = "Reset %@";
 "一键套用整套调色（不影响裁切、片段与声音）。可把当前调色存为自己的预设。" = "Apply a whole look in one click (crop, clip and audio stay as they are). You can save the current look as your own preset.";
 "预设" = "Presets";
+"为这张照片生成的调色：一个小型神经网络看过整张照片后，混合三张学来的 LUT（Image-Adaptive-3DLUT，在这台 Mac 上计算）" = "A grade made for this photo: a small neural network looks at the whole picture and mixes three learned LUTs (Image-Adaptive-3DLUT, computed on this Mac)";
 "删除预设「%@」" = "Delete Preset “%@”";
 "存为预设" = "Save as Preset";
 "把当前调色存为自己的预设" = "Save the current look as your own preset";
@@ -457,6 +468,7 @@
 "已导入" = "Imported";
 "导入 .cube LUT…" = "Import .cube LUT…";
 "匹配另一张照片的色调…" = "Match Another Photo's Colors…";
+"AI 调色（为这张照片生成）" = "AI Look (Made for This Photo)";
 "把当前调色导出为 .cube…" = "Export Current Adjustments as .cube…";
 "选择或导入创意 LUT" = "Choose or import a creative LUT";
 "强度" = "Strength";
@@ -883,6 +895,9 @@
 "素材库" = "Library";
 "添加照片或视频…" = "Add Photos or Videos…";
 "导入文件夹…" = "Import Folder…";
+"从「照片」导入…" = "Import from Photos…";
+"全选" = "Select All";
+"清空素材库…" = "Clear Library…";
 "添加素材" = "Add Media";
 "搜索文件名或画面内容" = "Search names or contents";
 "按文件名，或按画面里有什么来找：天空、山、海、狗、日落……在这台 Mac 上识别，不会上传。" = "Find by file name, or by what's in the picture: sky, mountain, sea, dog, sunset… Recognized on this Mac; nothing is uploaded.";
@@ -1331,6 +1346,25 @@
 "为什么不直接降低曝光？" = "Why not just lower the exposure?";
 "怎么让云更立体？" = "How can I make the clouds look more three-dimensional?";
 
+/* PhotosImport.swift */
+"全部照片" = "All Photos";
+"最新 100 张" = "Latest 100";
+"最新 500 张" = "Latest 500";
+"最新 2000 张" = "Latest 2,000";
+"全部" = "All";
+"已从「照片」读入 %lld 项。" = "Imported %lld items from Photos.";
+"有 %lld 项没能读取（可能还在 iCloud 上，或网络中断）。" = "%lld items couldn't be read (they may still be in iCloud, or the network dropped).";
+"从「照片」导入" = "Import from Photos";
+"读取你的「照片」图库（包括 iCloud 照片），把原图复制一份到光集里编辑。「照片」里的内容不会被改动或删除。" = "Reads your Photos library (including iCloud Photos) and copies the originals into Lucet for editing. Nothing in Photos is changed or deleted.";
+"光集没有读取「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集。" = "Lucet doesn't have permission to read Photos. Allow it in System Settings › Privacy & Security › Photos.";
+"打开系统设置" = "Open System Settings";
+"相簿" = "Album";
+"数量" = "Amount";
+"iCloud 里的原图会先下载到这台 Mac，数量多时需要一些时间和空间。" = "Originals stored in iCloud are downloaded to this Mac first, which takes time and space for large amounts.";
+"导入 %lld 项" = "Import %lld items";
+"正在读取 %lld / %lld…" = "Reading %lld / %lld…";
+"停止" = "Stop";
+
 /* PhotosSaver.swift */
 "光集没有存入「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集，或改为保存到文件夹。" = "Lucet doesn't have permission to save to Photos. Allow it in System Settings › Privacy & Security › Photos, or save to a folder instead.";
 "光集-照片-%@" = "Lucet-Photo-%@";
@@ -1529,3 +1563,6 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
+
+/* Not used by the current code (kept until reviewed) */
+"已套用为这张照片生成的 AI 调色（强度 %lld%%）。在「风格 LUT」里调整强度。" = "Applied the AI Look made for this photo (strength %lld%%). Adjust the strength under Creative LUT.";

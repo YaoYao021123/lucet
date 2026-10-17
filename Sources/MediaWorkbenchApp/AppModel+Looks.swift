@@ -23,10 +23,37 @@ extension AppModel {
                         let cube = try LUTBaker.bake(edits, size: 33, title: "\(stem) · Lucet")
                         try Data(cube.textRepresentation().utf8).write(to: target, options: .atomic)
                     }.value
-                    self.show(L("已导出 LUT。降噪、清晰度、锐度和暗角依赖周围像素，不在 LUT 里。"),
+                    self.show(L("已导出 LUT。降噪、去雾、清晰度、锐度、暗角和颗粒依赖周围像素，不在 LUT 里。"),
                               actions: [.init(title: L("在 Finder 中显示")) { NSWorkspace.shared.activateFileViewerSelecting([target]) }])
                 } catch { self.fail(L("无法导出 LUT"), error) }
             }
+        }
+    }
+
+    /// AI Look: a grade made for this photo by the bundled Image-Adaptive-3DLUT model, applied like
+    /// a preset (from the original, at 75 %, one undo step). `ready` is the tile's LUT when it has
+    /// one already.
+    func aiLook(_ ready: CreativeLUT? = nil) {
+        guard editor.isLoaded, !editor.isVideo, let frame = editor.frame, let model = AdaptiveLUT.shared else { return }
+        let source = frame.original, headroom = frame.sourceHeadroom, drafts = self.drafts
+        Task {
+            do {
+                let (lut, reference) = try await Task.detached(priority: .userInitiated) { () throws -> (CreativeLUT, LUTReference) in
+                    let lut = try ready ?? {
+                        guard let cube = model.lut(for: source, headroom: headroom, title: "AI Look") else {
+                            throw VideoWorkError.failed(L("无法分析画面颜色。"))
+                        }
+                        return CreativeLUT(cube: cube, name: L("AI 调色"))
+                    }()
+                    return (lut, try drafts.storeLUT(lut))
+                }.value
+                var recipe = EditRecipe()
+                recipe.lut = reference
+                recipe.strength = 0.75
+                editor.applyLook(recipe, lut: lut, name: L("AI 调色"))
+                let editor = self.editor
+                show(L("已套用为这张照片生成的 AI 调色（强度 \(Int((recipe.strength * 100).rounded()))%）。在「风格 LUT」里调整强度。"), actions: [.init(title: L("撤销")) { editor.undo() }])
+            } catch { fail(L("无法生成 AI 调色"), error) }
         }
     }
 
