@@ -19,8 +19,9 @@ extension EditorModel {
         locals.append(layer)
         selectedLocalID = layer.id
         // A fresh brush layer has no strokes yet; the red tint shows where you paint.
-        showMask = shape == .brush
-        status = shape == .brush ? L("在画面上涂抹要调整的地方；按住 ⌥ 擦除。")
+        showMask = shape.isPainted
+        status = shape == .remove ? L("在要去掉的东西上涂抹，松开后用周围的画面填补；按住 ⌥ 擦除。")
+            : shape == .brush ? L("在画面上涂抹要调整的地方；按住 ⌥ 擦除。")
             : L("已添加\(shape.title)。拖动画面上的控制点调整范围。")
     }
 
@@ -65,11 +66,14 @@ struct LocalAdjustmentSection: View {
                          help: L("只调整画面的一部分：渐变适合压暗天空，椭圆适合提亮主体，画笔可以涂出任何地方。"),
                          onReset: editor.locals.isEmpty ? nil : { editor.resetStage(.local) }) {
             VStack(alignment: .leading, spacing: 8) {
-                // Icons and words when they fit (Chinese); words alone when they don't (English).
+                // One row of icons and words when it fits, else words alone, else two rows.
                 ViewThatFits(in: .horizontal) {
-                    shapeButtons(.titleAndIcon)
-                    shapeButtons(.titleOnly)
-                    shapeButtons(.iconOnly)
+                    shapeButtons(shapes, .titleAndIcon)
+                    shapeButtons(shapes, .titleOnly)
+                    VStack(spacing: 6) {
+                        shapeButtons(Array(shapes.prefix(3)), .titleAndIcon)
+                        shapeButtons(Array(shapes.dropFirst(3)), .titleAndIcon)
+                    }
                 }
                 if editor.locals.isEmpty {
                     Text("只调整画面的一部分：比如用渐变压暗天空、用椭圆提亮人物，或者用画笔涂出要改的地方。")
@@ -88,9 +92,14 @@ struct LocalAdjustmentSection: View {
         }
     }
 
-    private func shapeButtons<S: LabelStyle>(_ style: S) -> some View {
+    /// Subject and Remove work on photos only.
+    private var shapes: [LocalAdjustment.Shape] {
+        LocalAdjustment.Shape.allCases.filter { !editor.isVideo || ($0 != .subject && $0 != .remove) }
+    }
+
+    private func shapeButtons<S: LabelStyle>(_ shapes: [LocalAdjustment.Shape], _ style: S) -> some View {
         HStack(spacing: 6) {
-            ForEach(LocalAdjustment.Shape.allCases.filter { $0 != .subject || !editor.isVideo }, id: \.self) { shape in
+            ForEach(shapes, id: \.self) { shape in
                 Button { editor.addLocal(shape) } label: {
                     Label(shape.title, systemImage: shape.symbol).labelStyle(style).lineLimit(1).fixedSize().frame(maxWidth: .infinity)
                 }
@@ -106,6 +115,7 @@ struct LocalAdjustmentSection: View {
         case .radial: L("椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。")
         case .brush: L("画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。")
         case .subject: L("主体：自动找出人物、动物或前景物体，只调整它们；反转后调整背景。")
+        case .remove: L("去除：涂抹电线、路人、垃圾或灰尘，用周围的画面自动填补。")
         }
     }
 
@@ -126,12 +136,14 @@ struct LocalAdjustmentSection: View {
                 .buttonStyle(.borderless).foregroundStyle(editor.showMask ? .primary : .secondary)
                 .help(editor.showMask ? L("隐藏蒙版") : L("把这一层作用的范围标成红色"))
                 .accessibilityLabel(L("显示蒙版"))
-                Button { editor.updateLocal(layer.id) { $0.invert.toggle() } } label: {
-                    Image(systemName: "arrow.left.arrow.right.circle" + (layer.invert ? ".fill" : ""))
+                if layer.shape != .remove {
+                    Button { editor.updateLocal(layer.id) { $0.invert.toggle() } } label: {
+                        Image(systemName: "arrow.left.arrow.right.circle" + (layer.invert ? ".fill" : ""))
+                    }
+                    .buttonStyle(.borderless).foregroundStyle(layer.invert ? .primary : .secondary)
+                    .help(layer.invert ? L("已反转：调整范围之外的部分") : L("改为调整范围之外的部分"))
+                    .accessibilityLabel(L("反转"))
                 }
-                .buttonStyle(.borderless).foregroundStyle(layer.invert ? .primary : .secondary)
-                .help(layer.invert ? L("已反转：调整范围之外的部分") : L("改为调整范围之外的部分"))
-                .accessibilityLabel(L("反转"))
             }
             Button { editor.updateLocal(layer.id) { $0.enabled.toggle() } } label: {
                 Image(systemName: layer.enabled ? "eye" : "eye.slash")
@@ -152,7 +164,8 @@ struct LocalAdjustmentSection: View {
         let changed = LocalAdjustment.parameters.filter { layer.adjustments[$0] != 0 }.prefix(2).map { p in
             p == .exposure ? String(format: "%@ %+.2f", p.title, layer.adjustments[p]) : String(format: "%@ %+.0f", p.title, layer.adjustments[p])
         }
-        if layer.shape == .brush, layer.strokes.isEmpty { return L("还没有涂抹") }
+        if layer.shape.isPainted, layer.strokes.isEmpty { return L("还没有涂抹") }
+        if layer.shape == .remove { return L("用周围的画面填补") }
         return changed.isEmpty ? L("未调整") : changed.joined(separator: " · ")
     }
 }
@@ -192,7 +205,7 @@ private struct LocalLayerControls: View {
             Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 .help(detailedHint)
                 .padding(.top, 2)
-            if layer.shape == .brush {
+            if layer.shape.isPainted {
                 HStack(spacing: 8) {
                     Picker("", selection: Binding(get: { editor.brushErase }, set: { editor.brushErase = $0 })) {
                         Text("涂抹").tag(false)
@@ -207,11 +220,11 @@ private struct LocalLayerControls: View {
                 ParameterRow(title: L("画笔大小"), value: (editor.brushRadius * 200).rounded(), range: 1...50, neutral: 8,
                              onChange: { editor.brushRadius = $0 / 200 })
             }
-            if layer.shape != .linear {
+            if layer.shape != .linear, layer.shape != .remove {
                 ParameterRow(title: L("羽化"), value: (layer.feather * 100).rounded(), range: 0...100, suffix: "%", neutral: 35,
                              onChange: { value in editor.updateLocal(layer.id) { $0.feather = value / 100 } }, onEditing: editor.beginEditing)
             }
-            ForEach(Group.allCases, id: \.self) { group in
+            ForEach(layer.shape == .remove ? [] : Group.allCases, id: \.self) { group in
                 groupHeader(group)
                 if open.contains(group) {
                     VStack(spacing: 1) {
@@ -263,6 +276,7 @@ private struct LocalLayerControls: View {
         case .radial: L("拖动中心和边上的点，放好椭圆。")
         case .brush: L("在画面上涂抹；按住 ⌥ 擦除。")
         case .subject: L(layer.invert ? "正在调整背景（主体以外）。" : "已自动选中主体；反转可改为背景。")
+        case .remove: L("涂抹要去掉的东西，松开后自动填补；按住 ⌥ 擦除。")
         }
     }
 
@@ -272,6 +286,7 @@ private struct LocalLayerControls: View {
         case .radial: L("拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。")
         case .brush: L("在画面上涂抹；按住 ⌥ 临时擦除。")
         case .subject: L("用 macOS 的主体识别（和「照片」里抠出主体相同）找出前景里的人物、动物和物体。羽化让边缘更柔和；反转按钮改为调整背景，比如压暗背景、突出人物。")
+        case .remove: L("把要去掉的东西完整涂满，边缘多涂一点。光集会在周围找相似的纹理来填补（PatchMatch，在这台 Mac 上计算）。适合电线、路人、垃圾、灰尘这类较小的东西；涂得太大时效果会变差，可以分几次去除。")
         }
     }
 }
@@ -298,7 +313,7 @@ struct LocalMaskOverlay: View {
                 switch layer.shape {
                 case .linear: linear(shown, size: proxy.size)
                 case .radial: radial(shown)
-                case .brush: brush(shown)
+                case .brush, .remove: brush(shown)
                 case .subject: EmptyView()
                 }
             }

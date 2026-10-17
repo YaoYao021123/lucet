@@ -81,7 +81,8 @@ public enum ImageExporter {
         if options.keepHDR, options.format != .png, headroom > 1.05 {
             // Unedited: the photo's own HDR. Edited: the grade works on the tone-mapped picture,
             // so the original's highlight lift (HDR ÷ tone-mapped) is put back on top of it.
-            var hdr = edits.hasGrade ? resized(try ColorPipeline.geometry(HDRGain.restore(graded, original: input, headroom: headroom), edits: edits), options: options) : shaped
+            let original = Retouch.apply(input, edits: edits)
+            var hdr = edits.hasGrade ? resized(try ColorPipeline.geometry(HDRGain.restore(graded, original: original, headroom: headroom), edits: edits), options: options) : shaped
             if let watermark = options.watermark { hdr = watermark.drawn(over: hdr) }
             try Task.checkCancellation()
             hdrData = HDRGain.encode(base: CIImage(cgImage: bitmap), hdr: hdr, format: options.format, quality: options.quality)

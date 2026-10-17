@@ -127,7 +127,7 @@ public enum ColorPipeline {
         guard edits.hasGrade else { return image }
         let a = edits.adjustments.sanitized
         let reference = image.extent
-        var result = toneMap(image, sourceHeadroom: sourceHeadroom)
+        var result = toneMap(Retouch.apply(image, edits: edits), sourceHeadroom: sourceHeadroom)
         if edits.isActive(.detail) {
             result = BasicColorPipeline.denoise(result, a)
             result = BasicColorPipeline.dehaze(result, a, reference: reference)

@@ -933,6 +933,7 @@
 
 /* LocalAdjustmentViews.swift */
 "最多 %lld 个局部调整。" = "Up to %lld local adjustments.";
+"在要去掉的东西上涂抹，松开后用周围的画面填补；按住 ⌥ 擦除。" = "Paint over what you want gone; when you let go it's filled in from its surroundings. Hold ⌥ to erase.";
 "在画面上涂抹要调整的地方；按住 ⌥ 擦除。" = "Paint over the areas to adjust; hold ⌥ to erase.";
 "已添加%@。拖动画面上的控制点调整范围。" = "Added a %@. Drag the handles on the picture to set where it applies.";
 "正在识别主体…" = "Finding the subject…";
@@ -944,6 +945,7 @@
 "椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。" = "Ellipse: adjusts inside (or outside) an ellipse, often used to brighten a subject or darken the surroundings.";
 "画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。" = "Brush: adjusts wherever you paint; hold ⌥ to erase.";
 "主体：自动找出人物、动物或前景物体，只调整它们；反转后调整背景。" = "Subject: finds people, animals or objects in front automatically and adjusts only them; invert to adjust the background.";
+"去除：涂抹电线、路人、垃圾或灰尘，用周围的画面自动填补。" = "Remove: paint over a wire, a passer-by, litter or dust, and it's filled in from its surroundings.";
 "把这一层作用的范围标成红色" = "Show where this layer applies in red";
 "隐藏蒙版" = "Hide mask";
 "显示蒙版" = "Show mask";
@@ -954,6 +956,7 @@
 "隐藏此局部调整以比较" = "Hide this local adjustment to compare";
 "删除" = "Delete";
 "还没有涂抹" = "Nothing painted yet";
+"用周围的画面填补" = "Filled from surroundings";
 "未调整" = "Not adjusted";
 "光线" = "Light";
 "涂抹" = "Paint";
@@ -966,10 +969,12 @@
 "在画面上涂抹；按住 ⌥ 擦除。" = "Paint on the photo; hold ⌥ to erase.";
 "已自动选中主体；反转可改为背景。" = "Subject selected automatically; invert for the background.";
 "正在调整背景（主体以外）。" = "Adjusting the background (everything but the subject).";
+"涂抹要去掉的东西，松开后自动填补；按住 ⌥ 擦除。" = "Paint over what to remove; it fills in when you let go. Hold ⌥ to erase.";
 "在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。" = "Drag the two dots on the picture: the solid-line side gets the full effect and the dashed-line side none. Drag the middle dot to move both.";
 "拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。" = "Drag the center to move the ellipse and the edge dots to resize it; Feather softens the edge.";
 "在画面上涂抹；按住 ⌥ 临时擦除。" = "Paint on the picture; hold ⌥ to erase for a moment.";
 "用 macOS 的主体识别（和「照片」里抠出主体相同）找出前景里的人物、动物和物体。羽化让边缘更柔和；反转按钮改为调整背景，比如压暗背景、突出人物。" = "Uses macOS subject detection (the same as lifting a subject in Photos) to find people, animals and objects in front. Feather softens the edge; the invert button switches to the background, for example to darken it so a person stands out.";
+"把要去掉的东西完整涂满，边缘多涂一点。光集会在周围找相似的纹理来填补（PatchMatch，在这台 Mac 上计算）。适合电线、路人、垃圾、灰尘这类较小的东西；涂得太大时效果会变差，可以分几次去除。" = "Cover the whole thing, a little past its edge. Lucet finds similar texture nearby to fill it in (PatchMatch, computed on this Mac). Works best on smaller things such as wires, passers-by, litter and dust; very large areas come out worse, so remove them in a few goes.";
 "完全生效的一侧" = "Full-effect side";
 "过渡结束的一侧" = "End of the fade";
 "整体移动" = "Move both";
@@ -979,6 +984,7 @@
 
 /* LocalAdjustments.swift */
 "主体" = "Subject";
+"去除" = "Remove";
 "椭圆" = "Ellipse";
 "渐变" = "Gradient";
 "画笔" = "Brush";

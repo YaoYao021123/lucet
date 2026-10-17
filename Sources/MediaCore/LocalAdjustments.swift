@@ -23,14 +23,16 @@ public struct BrushStroke: Codable, Equatable, Sendable {
 
 public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
     public enum Shape: String, Codable, Sendable, CaseIterable {
-        case linear, radial, brush, subject
+        case linear, radial, brush, subject, remove
         public var title: String {
-            switch self { case .linear: L("渐变"); case .radial: L("椭圆"); case .brush: L("画笔"); case .subject: L("主体") }
+            switch self { case .linear: L("渐变"); case .radial: L("椭圆"); case .brush: L("画笔"); case .subject: L("主体"); case .remove: L("去除") }
         }
+        /// Painted with the brush (strokes, size, erase).
+        public var isPainted: Bool { self == .brush || self == .remove }
         public var symbol: String {
             switch self {
             case .linear: "rectangle.tophalf.filled"; case .radial: "circle.dashed"; case .brush: "paintbrush.pointed"
-            case .subject: "person.and.background.dotted"
+            case .subject: "person.and.background.dotted"; case .remove: "eraser"
             }
         }
     }
@@ -64,6 +66,7 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
         case .radial: adjustments.exposure = 0.4
         case .brush: adjustments.exposure = 0.3
         case .subject: adjustments.exposure = 0.25; feather = 0.25
+        case .remove: break
         }
     }
 
@@ -89,7 +92,9 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
 
     public var title: String { shape.title }
     public var hasEffect: Bool {
-        enabled && !adjustments.sanitized.isNeutral && (shape != .brush || !strokes.isEmpty || invert)
+        // Remove fills what is painted; it has no sliders.
+        if shape == .remove { return enabled && strokes.contains { !$0.erase } }
+        return enabled && !adjustments.sanitized.isNeutral && (shape != .brush || !strokes.isEmpty || invert)
     }
 
     public func validate() throws {
@@ -133,7 +138,7 @@ public enum LocalMask {
             let center = point(layer.center)
             mask = smoothstep(circle.transformed(by: CGAffineTransform(translationX: center.x, y: center.y)
                 .scaledBy(x: layer.radii.width * w / unit, y: layer.radii.height * h / unit)))
-        case .brush:
+        case .brush, .remove:
             mask = brush(layer, size: extent.size).transformed(by: CGAffineTransform(translationX: extent.minX, y: extent.minY))
         case .subject:
             mask = SubjectMask.image(for: source, extent: extent, feather: layer.feather)
@@ -226,7 +231,8 @@ extension ColorPipeline {
     static func applyLocals(_ image: CIImage, edits: MediaEdits, reference: CGRect) throws -> CIImage {
         var result = image
         if edits.isActive(.local) {
-            for layer in edits.locals where layer.hasEffect {
+            // Remove layers ran before grading (Retouch).
+            for layer in edits.locals where layer.hasEffect && layer.shape != .remove {
                 let a = layer.adjustments.sanitized
                 var adjusted = result
                 if a.noiseReduction > 0 { adjusted = BasicColorPipeline.denoise(adjusted, a) }
