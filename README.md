@@ -20,13 +20,16 @@ Photos, videos and Live Photos. A Mac color tool for DJI and iPhone shooters, in
 
 ### What it does to a photo
 
-GitHub can't run a drag slider, so these sweep by themselves; on the [website](https://yaoyao021123.github.io/pic_review_edit/en/) you can drag the line yourself. All three are Lucet's real output, with no extra retouching.
+GitHub can't run a drag slider, so these sweep by themselves; on the [website](https://yaoyao021123.github.io/pic_review_edit/en/) you can drag the line yourself. All four are Lucet's real output, with no extra retouching.
 
 <table>
 <tr>
-<td width="33%"><img src="website/assets/compare-auto.gif" alt="Before and after Auto"><br><b>One-click Auto</b><br><sub>Left: original. Right: Auto.</sub></td>
-<td width="33%"><img src="website/assets/compare-sky.gif" alt="Before and after a gradient darkens the sky"><br><b>Local adjustments</b><br><sub>One gradient darkens the sky; the ground is untouched.</sub></td>
-<td width="33%"><img src="website/assets/compare-match.gif" alt="Before and after matching colors"><br><b>Match colors</b><br><sub>Moved toward the colors of a sunset photo.</sub></td>
+<td width="50%"><img src="website/assets/compare-auto.gif" alt="Before and after Auto"><br><b>One-click Auto</b><br><sub>Left: original. Right: Auto.</sub></td>
+<td width="50%"><img src="website/assets/compare-sky.gif" alt="Before and after a gradient darkens the sky"><br><b>Local adjustments</b><br><sub>One gradient darkens the sky; the ground is untouched.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="website/assets/compare-match.gif" alt="Before and after matching colors"><br><b>Match colors</b><br><sub>Moved toward the colors of a sunset photo.</sub></td>
+<td width="50%"><img src="website/assets/compare-remove.gif" alt="Before and after removing a sign"><br><b>Remove</b><br><sub>Three brush strokes; the sign is filled in from its surroundings.</sub></td>
 </tr>
 </table>
 

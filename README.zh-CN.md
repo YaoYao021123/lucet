@@ -20,13 +20,16 @@
 
 ### 调完是什么样
 
-GitHub 上没法拖动，下面三张会自己来回扫；[官网](https://yaoyao021123.github.io/pic_review_edit/)上可以亲手拖中间那条线对比。都是光集的真实输出，没有额外修图。
+GitHub 上没法拖动，下面四张会自己来回扫；[官网](https://yaoyao021123.github.io/pic_review_edit/)上可以亲手拖中间那条线对比。都是光集的真实输出，没有额外修图。
 
 <table>
 <tr>
-<td width="33%"><img src="website/assets/compare-auto.gif" alt="自动调整前后对比"><br><b>一键自动</b><br><sub>左原图，右「自动」</sub></td>
-<td width="33%"><img src="website/assets/compare-sky.gif" alt="用渐变压暗天空前后对比"><br><b>局部调整</b><br><sub>一个渐变压暗天空，地面不变</sub></td>
-<td width="33%"><img src="website/assets/compare-match.gif" alt="匹配色调前后对比"><br><b>匹配色调</b><br><sub>向一张日落照片的颜色靠拢</sub></td>
+<td width="50%"><img src="website/assets/compare-auto.gif" alt="自动调整前后对比"><br><b>一键自动</b><br><sub>左原图，右「自动」</sub></td>
+<td width="50%"><img src="website/assets/compare-sky.gif" alt="用渐变压暗天空前后对比"><br><b>局部调整</b><br><sub>一个渐变压暗天空，地面不变</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="website/assets/compare-match.gif" alt="匹配色调前后对比"><br><b>匹配色调</b><br><sub>向一张日落照片的颜色靠拢</sub></td>
+<td width="50%"><img src="website/assets/compare-remove.gif" alt="去除指示牌前后对比"><br><b>去除</b><br><sub>涂了三笔，指示牌被周围的画面补上</sub></td>
 </tr>
 </table>
 

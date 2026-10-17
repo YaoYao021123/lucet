@@ -10,6 +10,8 @@
 #   MATCH_REFERENCE=<photo>  the reference for the "match colors" pair (default: SKY_PHOTO); the hero is matched to it
 #   SIMILAR_DIR=<folder> near-duplicate shots, for the "Similar & Bursts" view
 #   COMPARE_FILES=a.jpg,b.jpg,c.jpg  photos for the side-by-side compare sheet
+#   REMOVE_RECIPE=<recipe.json>  a Remove layer for SKY_PHOTO, for the "Remove" before / after pair
+#                        (scripts/site-remove.json paints out the sign in the published sunset photo)
 # The before / after pairs and the README GIFs (no text in them) are shared by both languages.
 #
 # The demo photos are shown publicly, so use pictures you have the right to publish (landscapes,
@@ -127,20 +129,22 @@ if [ -n "${SKY_PHOTO:-}" ]; then
   swift run --quiet media-probe render "$hero" - "$pairs/match-before.jpg" 1280 >/dev/null
   swift run --quiet media-probe match "$hero" "${MATCH_REFERENCE:-$SKY_PHOTO}" "$pairs/match-after.jpg" 1280 >/dev/null
   sips -Z 640 "${MATCH_REFERENCE:-$SKY_PHOTO}" --out "$pairs/match-reference.jpg" >/dev/null
+  [ -n "${REMOVE_RECIPE:-}" ] && swift run --quiet media-probe render "$SKY_PHOTO" "$REMOVE_RECIPE" "$pairs/remove-after.jpg" 1280 >/dev/null
 fi
 # README GIFs: GitHub can't run the website's drag slider, so the divider sweeps by itself.
 sweep() { # <before> <after> <out.gif>
   # Ordered (Bayer) dithering keeps each GIF around 0.5 MB instead of 3–4 MB.
+  # The white divider is drawn by the same expression (drawbox's "t" is its border thickness, not time).
   ffmpeg -loglevel error -y -loop 1 -t 6 -framerate 12 -i "$1" -loop 1 -t 6 -framerate 12 -i "$2" -filter_complex \
     "[0]scale=640:-2,format=gbrp[a];[1]scale=640:-2,format=gbrp[b];\
-     [a][b]blend=all_expr='if(lt(X,W*(0.5-0.4*cos(2*PI*T/6))),A,B)'[m];\
-     [m]drawbox=x='iw*(0.5-0.4*cos(2*PI*t/6))-1':y=0:w=3:h=ih:color=white@0.95:t=fill,\
+     [a][b]blend=all_expr='if(lt(abs(X-W*(0.5-0.4*cos(2*PI*T/6))),1.5),245,if(lt(X,W*(0.5-0.4*cos(2*PI*T/6))),A,B))',\
      split[s0][s1];[s0]palettegen=max_colors=128:stats_mode=full[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3" "$3"
 }
 cp "$out/before.jpg" "$out/after.jpg" "$pairs/" 2>/dev/null || true
 [ -s "$pairs/before.jpg" ] && sweep "$pairs/before.jpg" "$pairs/after.jpg" "$pairs/compare-auto.gif"
 [ -s "$pairs/sky-after.jpg" ] && sweep "$pairs/sky-before.jpg" "$pairs/sky-after.jpg" "$pairs/compare-sky.gif"
 [ -s "$pairs/match-after.jpg" ] && sweep "$pairs/match-before.jpg" "$pairs/match-after.jpg" "$pairs/compare-match.gif"
+[ -s "$pairs/remove-after.jpg" ] && sweep "$pairs/sky-before.jpg" "$pairs/remove-after.jpg" "$pairs/compare-remove.gif"
 
 # Only now replace the website's images, and only if every one was produced.
 for f in shot-edit shot-crop shot-browse; do [ -s "$out/$f.jpg" ] || { echo "没有生成 $f.jpg，网站图片保持不变" >&2; exit 1; }; done
