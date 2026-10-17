@@ -68,9 +68,11 @@ struct Scene3D {
 
     let camera: OrbitCamera
     private var under: [Mark] = []
-    private var marks: [(depth: Double, mark: Mark)] = []
+    private var marks: [(depth: Double, order: Int, mark: Mark)] = []
     private var labels: [(Text, CGPoint)] = []
     private var drawingUnder = false
+    /// While set, everything added sorts as if it sat at this depth (see `layer`).
+    private var layerDepth: Double?
     /// The light is fixed in the world, so faces change shade as the view turns.
     private static let light: V3 = { let v = V3(-0.35, 0.85, -0.4); return v / dot3(v, v).squareRoot() }()
 
@@ -81,11 +83,19 @@ struct Scene3D {
         1 - 0.5 * min(1, max(0, (depth - camera.distance + camera.fit) / (2 * camera.fit)))
     }
     private mutating func add(_ depth: Double, _ mark: Mark) {
-        if drawingUnder { under.append(mark) } else { marks.append((depth, mark)) }
+        if drawingUnder { under.append(mark); return }
+        // Marks forced on top (negative depth) stay on top; the order breaks ties, so layers keep their sequence.
+        marks.append((depth >= 0 ? layerDepth ?? depth : depth, marks.count, mark))
     }
 
     /// Everything added inside is drawn first, in order (floors, grids), behind the sorted marks.
     mutating func underlay(_ body: (inout Scene3D) -> Void) { drawingUnder = true; body(&self); drawingUnder = false }
+
+    /// Everything added inside is ordered as one piece, at the depth of `p`, in the order it was added:
+    /// a picture and what is drawn on it stay together however the view turns.
+    mutating func layer(at p: V3, _ body: (inout Scene3D) -> Void) {
+        layerDepth = camera.project(p).depth; body(&self); layerDepth = nil
+    }
 
     // MARK: Lines and dots
 
@@ -189,11 +199,11 @@ struct Scene3D {
     }
 
     /// A shaded ball, drawn as a disc with a highlight.
-    mutating func ball(_ c: V3, _ radius: Double, _ rgb: Rgb) {
+    mutating func ball(_ c: V3, _ radius: Double, _ rgb: Rgb, opacity: Double = 1) {
         let q = camera.project(c)
         let r = radius * camera.pixels(at: q.depth)
-        add(q.depth, .dot(q.point, r, rgb.color(0.85)))
-        add(q.depth, .dot(CGPoint(x: q.point.x - r * 0.28, y: q.point.y - r * 0.3), r * 0.5, rgb.color(1.15, opacity: 0.8)))
+        add(q.depth, .dot(q.point, r, rgb.color(0.85, opacity: opacity)))
+        add(q.depth, .dot(CGPoint(x: q.point.x - r * 0.28, y: q.point.y - r * 0.3), r * 0.5, rgb.color(1.15, opacity: 0.8 * opacity)))
     }
 
     // MARK: Text and pictures
@@ -239,7 +249,7 @@ struct Scene3D {
 
     mutating func render(into context: inout GraphicsContext) {
         for mark in under { draw(mark, &context) }
-        marks.sort { $0.depth > $1.depth }
+        marks.sort { $0.depth != $1.depth ? $0.depth > $1.depth : $0.order < $1.order }
         for entry in marks { draw(entry.mark, &context) }
         for (text, point) in labels { context.draw(text, at: point) }
     }

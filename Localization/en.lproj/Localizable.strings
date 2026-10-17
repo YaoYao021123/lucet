@@ -347,6 +347,12 @@
 /* ExportQueue.swift */
 "已取消，原片保留" = "Canceled; original kept";
 
+/* ExposureTriangle.swift */
+"均衡" = "Balanced";
+"背景虚化" = "Background blur";
+"冻结动作" = "Freeze action";
+"风景" = "Landscape";
+
 /* GradeControls.swift */
 "分量" = "Parade";
 "波形" = "Waveform";
@@ -640,42 +646,8 @@
 "分别拖动两个滑块，比较右边线的形状。" = "Drag each slider in turn and compare the shape of the line on the right.";
 "彩色 = 「%@」会改变的地方" = "In color = where “%@” makes changes";
 "显示作用范围" = "Show where it acts";
-"原样" = "Unchanged";
-"变亮" = "Brighter";
-"变暗" = "Darker";
-"S 形：对比更强" = "S curve: more contrast";
-"反 S：更柔和" = "Reverse S: softer";
-"原来 %lld → 现在 %lld：比它暗的和比它亮的，都跟着平滑变化。" = "Was %lld → now %lld: everything darker and brighter than it follows smoothly.";
-"原来 → 暗 … 亮" = "Before → dark … bright";
-"现在" = "After";
 "%.0f 秒" = "%.0f s";
 "1/%lld 秒" = "1/%lld s";
-"快门" = "Shutter";
-"中间档：亮度合适，运动略有拖影。" = "In between: good brightness, slight motion blur.";
-"快门很快：运动被冻结，但画面变暗了。" = "Very fast shutter: motion is frozen, but the image got darker.";
-"快门慢：画面变亮，但运动的东西拖出了影子。" = "Slow shutter: the image is brighter, but moving things leave trails.";
-"你这张照片用了 %@；按等效焦距 %lld mm，手持时最好快于 1/%lld 秒。" = "Your photo used %@. At an equivalent focal length of %lld mm, handheld shots should be faster than 1/%lld s.";
-"同样的弱光，只改变 ISO" = "Same dim light, only ISO changes";
-"ISO 低：干净，但光不够时太暗。" = "Low ISO: clean, but too dark when light is short.";
-"ISO 高：亮了，但颗粒（噪点）也明显了。" = "High ISO: brighter, but the grain (noise) shows too.";
-"中间档：亮度和噪点的折中。" = "In between: a trade-off between brightness and noise.";
-"你这张照片用的是 ISO %lld。" = "Your photo was taken at ISO %lld.";
-"前后都清楚" = "Sharp front to back";
-"略虚" = "Slightly soft";
-"背景虚" = "Blurry background";
-"背景虚化" = "Background blur";
-"一般" = "Moderate";
-"冻结运动" = "Frozen motion";
-"容易糊" = "Blurs easily";
-"拖影风险" = "Blur risk";
-"噪点" = "Noise";
-"干净" = "Clean";
-"明显" = "Visible";
-"轻微" = "Slight";
-"光圈" = "Aperture";
-"亮了 %.0f 档" = "Brighter by %.0f EV";
-"亮度正好" = "Just right";
-"暗了 %.0f 档" = "Darker by %.0f EV";
 
 /* LessonScenes3D.swift */
 "越亮的格子越高；越暗的越矮。" = "The brighter a square, the taller it is; the darker, the shorter.";
@@ -691,6 +663,7 @@
 "开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm" = "Opening diameter = %.0f mm ÷ %.1f ≈ %.1f mm";
 "最大的开口，进光最多。" = "The widest opening lets in the most light.";
 "进来的光只有 ƒ/1.4 的 1/%.0f。" = "Only 1/%.0f of the light at ƒ/1.4 gets in.";
+"光圈" = "Aperture";
 "。" = ".";
 "你这张照片用的是 %@" = "Your photo was taken at %@";
 "，焦距 %.1f mm，开口约 %.1f mm。" = ", focal length %.1f mm, opening about %.1f mm.";
@@ -712,6 +685,60 @@
 "画面宽 %.0f 米" = "Frame %.0f m wide";
 "人" = "Person";
 "山" = "Mountain";
+
+/* LessonScenesCurves3D.swift */
+"原样" = "Unchanged";
+"变亮" = "Brighter";
+"变暗" = "Darker";
+"S 形：对比更强" = "S curve: more contrast";
+"反 S：更柔和" = "Reverse S: softer";
+"原来 %lld → 现在 %lld：比它暗的和比它亮的，都跟着平滑变化。" = "Was %lld → now %lld: everything darker and brighter than it follows smoothly.";
+"拖动圆点。立体图里发暖色的格子，是原来的亮度和这个点最接近的地方，它们升高或降低得最多。" = "Drag the dot. The warm-colored cells in the 3D view are where the original brightness is closest to this point; they rise or fall the most.";
+"柱子的高度 = 这一格现在的亮度" = "Column height = this cell's brightness now";
+
+/* LessonScenesExposure3D.swift */
+"快门" = "Shutter";
+"中间档：亮度合适，运动略有拖影。" = "In between: good brightness, slight motion blur.";
+"快门很快：运动被冻结，但画面变暗了。" = "Very fast shutter: motion is frozen, but the image got darker.";
+"快门慢：画面变亮，但运动的东西拖出了影子。" = "Slow shutter: the image is brighter, but moving things leave trails.";
+"球横穿画面只要 0.25 秒。快门开着的这段时间里，它走过了画面宽度的 %@。" = "The ball takes only 0.25 s to cross the frame. While the shutter is open it covers %@ of the frame's width.";
+"你这张照片用了 %@；按等效焦距 %lld mm，手持时最好快于 1/%lld 秒。" = "Your photo used %@. At an equivalent focal length of %lld mm, handheld shots should be faster than 1/%lld s.";
+"更早" = "Earlier";
+"更晚" = "Later";
+"快门开着 %@" = "Shutter open %@";
+"拍到的照片" = "The photo it takes";
+"同样的弱光，只改变 ISO" = "Same dim light, only ISO changes";
+"ISO 低：干净，但光不够时太暗。" = "Low ISO: clean, but too dark when light is short.";
+"ISO 高：亮了，但颗粒（噪点）也明显了。" = "High ISO: brighter, but the grain (noise) shows too.";
+"中间档：亮度和噪点的折中。" = "In between: a trade-off between brightness and noise.";
+"每一格收到的光没有变，ISO 只是把数字统统放大。光子是随机落下来的，相邻的格子数目不同，放大以后就是噪点。" = "The light each cell catches hasn't changed; ISO just multiplies the numbers. Photons arrive at random, so neighboring cells catch different counts, and after multiplying, that shows up as noise.";
+"你这张照片用的是 ISO %lld。" = "Your photo was taken at ISO %lld.";
+"纯白的上限" = "Pure-white limit";
+"传感器上的一格" = "One cell on the sensor";
+"光子一颗颗落进每一格" = "Photons land in every cell, one by one";
+"放大 ×%.0f" = "Gain ×%.0f";
+"前后都清楚" = "Sharp front to back";
+"略虚" = "Slightly soft";
+"背景虚" = "Blurry background";
+"一般" = "Moderate";
+"冻结运动" = "Frozen motion";
+"容易糊" = "Blurs easily";
+"拖影风险" = "Blur risk";
+"噪点" = "Noise";
+"干净" = "Clean";
+"明显" = "Visible";
+"轻微" = "Slight";
+"同样的亮度，换一种拍法：" = "Same brightness, a different approach:";
+"ISO 升高" = "Higher ISO";
+"光圈开大" = "Wider aperture";
+"噪点更多" = "More noise";
+"快门变慢" = "Slower shutter";
+"拖影更重" = "More motion blur";
+"背景更虚" = "Blurrier background";
+"亮度正好的设置" = "Correct exposure";
+"亮了 %.0f 档" = "Brighter by %.0f EV";
+"亮度正好" = "Just right";
+"暗了 %.0f 档" = "Darker by %.0f EV";
 
 /* LessonScenesMore.swift */
 "日出日落" = "Sunrise / sunset";
@@ -826,9 +853,9 @@
 "曲线：把旧亮度换成新亮度" = "Curves: Old Brightness In, New Brightness Out";
 "曲线看起来很专业，其实只回答一个问题。" = "Curves look technical, but they answer just one question.";
 "横轴是原来，竖轴是现在" = "Across is before, up is after";
-"斜线上的每一点都在说：原来这么亮，现在还是这么亮。拖动中间的点，看哪段亮度变了。" = "Every point on the diagonal says: this bright before, just as bright now. Drag the middle point and see which brightness range changes.";
+"曲线竖在左边：横着是原来的亮度，竖着是现在的亮度，斜线上的每一点都在说「原来多亮，现在还是多亮」。右边是你照片的亮度地形，柱子的高度就是现在的亮度。拖动中间的点，看哪一段的柱子变了。" = "The curve stands on the left: across is the old brightness, up is the new brightness, and every point on the diagonal says “as bright as before, still as bright”. On the right is your photo's brightness terrain, where each column's height is its brightness now. Drag the middle point and see which columns change.";
 "三种常见形状" = "Three common shapes";
-"整体往上 = 变亮；往下 = 变暗；S 形 = 暗的更暗、亮的更亮，对比更强。点按钮切换，看照片和直方图。" = "Moved up = brighter; down = darker; S-shaped = darker darks and brighter brights, for more contrast. Click the buttons to switch and watch the photo and histogram.";
+"整体往上 = 变亮，柱子整体升高；往下 = 变暗。S 形 = 暗的更暗、亮的更亮：矮的柱子更矮，高的更高，地形更陡，对比更强。点按钮切换，看地形、照片和直方图。" = "Moved up = brighter, so the columns all rise; down = darker. S-shaped = darker darks and brighter brights: short columns get shorter, tall ones get taller, the terrain gets steeper and contrast goes up. Click the buttons and watch the terrain, the photo and the histogram.";
 "照片发灰、没有层次，最常用哪种曲线？" = "The photo looks gray and flat. Which curve is most commonly used?";
 "S 形" = "S-shaped";
 "整体往上" = "Moved up";
@@ -866,11 +893,11 @@
 "快门、ISO 和曝光三角" = "Shutter, ISO and the Exposure Triangle";
 "同样亮的照片，为什么有的糊、有的满是噪点？" = "Two photos are equally bright. Why is one blurry and the other full of noise?";
 "快门：开多久" = "Shutter: how long it's open";
-"快门开得越久，进来的光越多，但移动的东西会拖出影子。手持拍摄，快门最好快于 1/焦距 秒。" = "The longer the shutter stays open, the more light gets in, but moving things leave trails. Handheld, keep the shutter faster than 1/focal length seconds.";
+"把时间想成纵深：越远越晚。一个球横穿画面，它的路线是一条斜线。快门开着的那段时间是一块玻璃板：板越厚，进来的光越多，球在板里走过的路也越长，落到照片上就是拖影。拖动快门，再转一转看看。手持拍摄，快门最好快于 1/焦距 秒。" = "Think of time as depth: the farther away, the later. A ball crosses the frame, and its path through space and time is a slanted line. The time the shutter stays open is a pane of glass: the thicker the pane, the more light gets in and the farther the ball travels inside it, which lands on the photo as a trail. Drag the shutter, then turn the view. Handheld, keep the shutter faster than 1/focal length seconds.";
 "ISO：把信号放大" = "ISO: amplifying the signal";
-"光不够时，ISO 把传感器的信号放大，照片变亮，但噪点也一起被放大。" = "When there isn't enough light, ISO amplifies the sensor's signal. The photo gets brighter, but the noise is amplified too.";
+"传感器是一格一格的小格子，光一颗一颗落进去，每一格数一数收到多少。光不够时，ISO 把每一格的数字统统放大，照片就变亮。可光子是随机落下来的，相邻的格子数目总有差别，放大以后，这些差别就成了噪点。拖动 ISO，看柱子怎么变。" = "The sensor is a grid of tiny cells. Light lands in them one photon at a time, and each cell counts what it caught. When there isn't enough light, ISO multiplies every cell's count and the photo gets brighter. But photons land at random, so neighboring cells never catch quite the same number, and multiplying turns those differences into noise. Drag ISO and watch the columns.";
 "三个旋钮，同一个亮度" = "Three dials, one brightness";
-"光圈、快门、ISO 都能改变亮度，但各有代价：景深、拖影、噪点。调到指针居中，再看看画面的变化。" = "Aperture, shutter and ISO all change brightness, but each has a cost: depth of field, motion blur, noise. Center the needle, then see what changes in the image.";
+"光圈、快门、ISO 是空间里的三条轴，每条轴都指向「更多光」，也各有代价：景深、拖影、噪点。那块斜板上的每个点，亮度都正好；点离开板，就是亮了或暗了几档。下面几种拍法都在板上，只是落在不同的位置。" = "Aperture, shutter and ISO are three axes in space. Each points toward “more light” and each has a cost: depth of field, motion blur, noise. Every point on the tilted slab has just the right brightness; a point off the slab is some stops too bright or too dark. The recipes below all lie on the slab, just in different places.";
 "夜里拍街景，照片太暗又不想糊，先试哪个？" = "Shooting a street at night, the photo is too dark and you don't want blur. What do you try first?";
 "开大光圈，再适当提高 ISO" = "Open the aperture, then raise ISO a little";
 "把 ISO 调到最低" = "Set ISO as low as it goes";
