@@ -43,7 +43,8 @@ struct SidebarProjects: View {
                         }
                     }
                 }
-                .frame(maxHeight: 168)
+                // Only as tall as the projects need, up to about five rows.
+                .frame(height: min(168, CGFloat(app.projects.count) * 30))
             }
         }
         .padding(.horizontal, 8)

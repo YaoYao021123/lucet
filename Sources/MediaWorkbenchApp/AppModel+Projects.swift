@@ -20,7 +20,8 @@ extension AppModel {
         projectPhotoOnly = false
         guard let id = library.currentID else { return }
         if project?.contains(id) ?? true {
-            if editor.url != nil { open(id) }
+            // The open photo switches to its version here, without leaving Browse.
+            if editor.url != nil, let entry = library.entry(id) { editor.open(entry.url, project: editContext(for: id)) }
         } else {
             editor.close()
             library.currentID = nil

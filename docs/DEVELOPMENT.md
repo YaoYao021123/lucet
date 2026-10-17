@@ -7,7 +7,7 @@
 ```sh
 bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh             # 150 项测试
+bash scripts/test-workbench.sh             # 155 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
 bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zip（临时签名，未公证）
 ```
@@ -63,7 +63,7 @@ swift run --configuration release media-benchmark
 
 ## 代码结构
 
-- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、局部调整（`LocalAdjustments`：蒙版、画布坐标映射；`SubjectMask`：Vision 主体蒙版）、去除（`Inpainting`：多尺度 PatchMatch 补全；`Retouch`：接入管线与缓存）、胶片效果（`FilmEffects`：暗通道去雾、褪色、颗粒、黑白）、`CubeLUT`、导出 LUT 与匹配色调（`LookTransfer`）、相似照片与连拍（`SimilarPhotos`）、完全相同的文件（`ExactDuplicates`）、按内容搜索（`ContentLabels`）、`Scopes`、`ImageExport`（含 HDR 增益图导出 `HDRGain`）、导出预设外的命名与水印（`ExportExtras`）、历史记录（`HistoryLog`）、AI 调色（`AdaptiveLUT`：Image-Adaptive-3DLUT 的网络，用 Accelerate 计算；权重 `assets/models/adaptive-lut.bin` 由 `scripts/convert-adaptive-lut.py` 从原始 .pth 转换，来源与许可见 `assets/models/NOTICE.md`）、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）、界面语言（`Localization`）。
+- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、局部调整（`LocalAdjustments`：蒙版、画布坐标映射；`SubjectMask`：Vision 主体蒙版）、去除（`Inpainting`：多尺度 PatchMatch 补全；`Retouch`：接入管线与缓存）、胶片效果（`FilmEffects`：暗通道去雾、褪色、颗粒、黑白）、`CubeLUT`、导出 LUT 与匹配色调（`LookTransfer`）、相似照片与连拍（`SimilarPhotos`）、完全相同的文件（`ExactDuplicates`）、按内容搜索（`ContentLabels`）、`Scopes`、`ImageExport`（含 HDR 增益图导出 `HDRGain`）、导出预设外的命名与水印（`ExportExtras`）、历史记录（`HistoryLog`）、项目（`Projects`：共用的调色 + 每张照片的偏移、裁剪与蒙版，统一明暗与色温 `ProjectEvenOut`；界面在 `AppModel+Projects`、`ProjectViews`）、AI 调色（`AdaptiveLUT`：Image-Adaptive-3DLUT 的网络，用 Accelerate 计算；权重 `assets/models/adaptive-lut.bin` 由 `scripts/convert-adaptive-lut.py` 从原始 .pth 转换，来源与许可见 `assets/models/NOTICE.md`）、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）、界面语言（`Localization`）。
 - 移植自合作伙伴网页版 Lucet（Apache-2.0）的算法：相似照片分组（`review.py`）、色彩迁移与导出 LUT（`engine.py`）、局部蒙版（`masks.py`）。参考源码放在 `reference/`（不进 Git）；各文件开头注明了来源和改动。
 - `Sources/MediaWorkbenchApp`：界面。
   - 模型：`AppModel` 负责协调（导入、导出、同步、快捷键），`LibraryModel` 管理素材库，`EditorModel` 管理当前文档，`ExportQueue` 是导出队列，`ThumbnailStore` 生成缩略图。

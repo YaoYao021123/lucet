@@ -86,6 +86,13 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 - **AI Look** makes a grade for this particular photo: a small neural network (Image-Adaptive-3DLUT) looks at the whole picture and mixes three learned LUTs. It runs on your Mac and starts at 75% strength.
 - **Drag to crop** right on the photo in the Crop tab, with straighten, rotate and flip, and a warning when the horizon tilts.
 
+**One job, one look: projects**
+- Put the photos for one trip, post or client shoot in a **project**. They share one set of colors: change the warmth, curves or LUT on any of them and every photo in the project follows. Each photo keeps its own exposure, crop and local adjustments, and a "This photo" switch handles the exceptions.
+- **Even Out** moves every photo's brightness and white balance toward the group's middle, so the set looks like it was shot together. **Export Project** saves the picked photos (or all of them) into a folder named after the project.
+- A photo can be in several projects, each with its own version; its own edits in the library stay as they are.
+
+<p align="center"><img src="website/assets/en/shot-project.jpg" alt="A project in the sidebar and its photos sharing one look" width="860"></p>
+
 **Change just part of the picture: local adjustments**
 - A **gradient** to darken a sky, an **ellipse** to brighten a subject (or invert it to darken the surroundings), and a **brush** that adjusts wherever you paint (hold ⌥ to erase).
 - **Subject** finds the people, animals and objects in front automatically (the same on-device detection as lifting a subject in Photos); invert it to work on the background instead.

@@ -64,6 +64,10 @@ run "open:$hero;wait:3;sheet:export;wait:2;shot:export;quit"
 sky_layer="start=0.5,0|end=0.5,0.52|exposure=-0.7|highlights=-45|saturation=18|contrast=12"
 [ -n "${SKY_PHOTO:-}" ] && run "size:1470x836;open:$SKY_PHOTO;tab:color;colormode:simple;collapse:$t_presets;collapse:$t_adjust;wait:4;\
 local:linear;localset:$sky_layer;wait:5;shot:local;panel:local-panel@1100;quit" "$work/data-local"
+# A project: every demo photo in one project sharing one look, evened out.
+if [ "$lang" = en ]; then project_name="Grassland trip"; else project_name="草原之行"; fi
+run "size:1470x836;import:$demo;wait:8;open:$hero;wait:3;adjust:vibrance=18;adjust:contrast=8;wait:2;mode:browse;selectall;\
+newproject:$project_name;wait:4;evenout;wait:15;select:$hero;wait:2;shot:project;quit" "$work/data-project"
 # Similar shots and bursts, and the side-by-side compare sheet.
 [ -n "${SIMILAR_DIR:-}" ] && run "size:1470x836;import:$SIMILAR_DIR;wait:8;groups:on;wait:10;shot:similar;\
 ${COMPARE_FILES:+compare:$COMPARE_FILES;wait:6;shot:compare;}quit" "$work/data-similar"
@@ -112,6 +116,8 @@ jpg "$shots/export.png" "$out/sheet-export.jpg"
 if [ -n "${SKY_PHOTO:-}" ]; then
   with_panel "$shots/local.png" "$shots/local-panel.png" 525 "$crops/local.png"; jpg "$crops/local.png" "$out/shot-local.jpg"
 fi
+# The project view keeps the sidebar, where the projects are listed.
+[ -f "$shots/project.png" ] && { sips -c 1100 2938 --cropOffset 104 1 "$shots/project.png" --out "$crops/project.png" >/dev/null; jpg "$crops/project.png" "$out/shot-project.jpg"; }
 [ -f "$shots/similar.png" ] && { sips -c 960 2415 --cropOffset 104 525 "$shots/similar.png" --out "$crops/similar.png" >/dev/null; jpg "$crops/similar.png" "$out/shot-similar.jpg"; }
 [ -f "$shots/compare.png" ] && jpg "$shots/compare.png" "$out/sheet-compare.jpg"
 
