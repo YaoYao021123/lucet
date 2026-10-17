@@ -11,9 +11,8 @@ struct GlassSegmentedControl<Option: Hashable>: View {
     let title: (Option) -> String
     var size = Size.regular
     var accessibilityTitle = ""
-    /// Without the track only the glass thumb shows: one shape instead of a box in a box
-    /// (for places that already sit on glass, like the toolbar).
-    var showsTrack = true
+    /// Off by default: only the glass thumb shows, one shape instead of a box in a box.
+    var showsTrack = false
 
     @GestureState private var dragX: CGFloat?
     @UIState private var hovered: Option?

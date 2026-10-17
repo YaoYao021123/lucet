@@ -295,7 +295,7 @@ struct WorkbenchToolbar: ToolbarContent {
                               selection: Binding(get: { app.mode }, set: { mode in
                                   if mode == .edit, !editor.isLoaded { app.openSelection() } else { app.mode = mode }
                               }),
-                              title: { $0 == .browse ? L("浏览") : L("编辑") }, accessibilityTitle: L("视图"), showsTrack: false)
+                              title: { $0 == .browse ? L("浏览") : L("编辑") }, accessibilityTitle: L("视图"))
             .frame(width: 140)
             .help("浏览（G） / 编辑（E）")
     }
