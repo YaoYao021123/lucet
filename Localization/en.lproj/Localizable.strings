@@ -210,11 +210,17 @@
 "选用（P）" = "Pick (P)";
 "排除（X）" = "Reject (X)";
 "正在比对照片 %lld / %lld…" = "Comparing photos %lld of %lld…";
-"没有找到相似的照片或连拍" = "No similar shots or bursts found";
-"相似：同一场景、构图和颜色几乎一样的几张。连拍：同一台相机 2 秒内连续拍下的照片。视频不参与比对。" = "Similar: shots of the same scene with nearly the same framing and colors. Bursts: photos taken by the same camera less than 2 seconds apart. Videos aren't compared.";
+"正在查找完全相同的文件…" = "Looking for identical files…";
+"没有找到重复、相似的照片或连拍" = "No duplicates, similar photos or bursts found";
+"重复：内容完全相同的文件，比如同一张照片导入了两次。相似：同一场景、构图和颜色几乎一样的几张。连拍：同一台相机 2 秒内连续拍下的照片。视频只查找完全相同的文件。" = "Duplicates: files with identical contents, such as one photo imported twice. Similar: shots of one scene with nearly the same framing and colors. Bursts: photos from one camera taken within 2 seconds of each other. Videos are only checked for exact duplicates.";
+"排除副本" = "Reject Copies";
+"保留一份（已评分、已编辑或最早导入的那份），其余标为排除" = "Keeps one copy (the picked, rated or edited one, else the first imported) and marks the rest rejected";
+"从素材库移除副本" = "Remove Copies from Library";
+"保留一份，其余从素材库移除；硬盘上的文件不会被删除或改动" = "Keeps one copy and removes the rest from the library; files on disk are never deleted or changed";
+"并排比较" = "Compare";
+"完全相同" = "Exact Duplicates";
 "相似" = "Similar";
 "连拍" = "Burst";
-"并排比较" = "Compare";
 
 /* EditRecipe.swift */
 "配方参数无效或版本不支持。" = "The recipe has invalid settings or an unsupported version.";
@@ -850,8 +856,8 @@
 "清除筛选" = "Clear Filters";
 "筛选：类型、评级、选用 / 排除" = "Filter by type, rating, pick / reject";
 "筛选结果 %lld 项" = "%lld matching";
-"相似与连拍" = "Similar & Bursts";
-"把同一场景的几张相似照片和连拍归成一组，并排比较后只留最好的" = "Group similar shots of one scene and bursts, compare them side by side and keep the best";
+"重复与相似" = "Duplicates & Similar";
+"找出完全相同的文件，并把同一场景的相似照片和连拍归成一组，并排比较后只留最好的" = "Finds identical files and groups similar shots and bursts of one scene, so you can compare them side by side and keep the best";
 "并排比较所选照片（最多 8 张）" = "Compare the selected photos side by side (up to 8)";
 "缩略图大小" = "Thumbnail size";
 "让每一个瞬间，自有光彩。" = "Let your moments shine.";
@@ -1055,7 +1061,7 @@
 "下一项" = "Next";
 "向左旋转" = "Rotate Left";
 "向右旋转" = "Rotate Right";
-"显示相似与连拍" = "Show Similar & Bursts";
+"显示重复与相似" = "Show Duplicates & Similar";
 "复位全部编辑" = "Reset All Edits";
 "浏览网格" = "Browse Grid";
 "编辑" = "Edit";

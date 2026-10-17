@@ -329,10 +329,10 @@ struct BrowseGrid: View {
             }
             Spacer()
             Toggle(isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0 })) {
-                Label("相似与连拍", systemImage: "square.on.square")
+                Label("重复与相似", systemImage: "square.on.square")
             }
             .toggleStyle(.button).controlSize(.small)
-            .help("把同一场景的几张相似照片和连拍归成一组，并排比较后只留最好的")
+            .help("找出完全相同的文件，并把同一场景的相似照片和连拍归成一组，并排比较后只留最好的")
             if library.selection.count > 1 {
                 Button("并排比较") { app.sheet = .compare(app.compareSelection) }.controlSize(.small).help("并排比较所选照片（最多 8 张）")
             }

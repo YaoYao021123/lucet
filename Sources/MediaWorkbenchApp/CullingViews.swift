@@ -231,11 +231,37 @@ private struct CullingCell: View {
     }
 }
 
-/// Browse view grouped into similar shots and bursts.
+/// Browse view grouped into exact duplicates, similar shots and bursts.
 struct GroupedBrowse: View {
     let app: AppModel
     let cellWidth: Double
     var library: LibraryModel { app.library }
+
+    /// The copy worth keeping: picked, then rated, then edited, then the first imported.
+    private func keeper(_ ids: [String]) -> String? {
+        let entries = ids.compactMap(library.entry)
+        let edited = app.thumbnails.edited
+        return entries.max { a, b in
+            let ka = (a.flag == .pick ? 1 : 0, a.rating, edited.contains(a.id) ? 1 : 0, -a.added.timeIntervalSinceReferenceDate)
+            let kb = (b.flag == .pick ? 1 : 0, b.rating, edited.contains(b.id) ? 1 : 0, -b.added.timeIntervalSinceReferenceDate)
+            return ka < kb
+        }?.id
+    }
+
+    private func rejectCopies(_ ids: [String]) {
+        guard let keep = keeper(ids) else { return }
+        library.setFlag(.reject, for: ids.filter { $0 != keep })
+        app.show(L("已排除 \(ids.count - 1) 个副本，保留 \(library.entry(keep)?.name ?? "")。"))
+    }
+
+    private func removeCopies(_ ids: [String]) {
+        guard let keep = keeper(ids) else { return }
+        let copies = Set(ids.filter { $0 != keep })
+        if let current = library.currentID, copies.contains(current) { app.editor.close(); app.mode = .browse }
+        library.remove(copies)
+        app.show(L("已从素材库移除 \(copies.count) 个副本；硬盘上的文件未改动。"))
+        app.similar.refresh(library.entries, missing: library.missing)
+    }
 
     var body: some View {
         let visible = Set(library.visible.map(\.id))
@@ -250,10 +276,15 @@ struct GroupedBrowse: View {
                         ProgressView(value: Double(progress.done), total: Double(max(1, progress.total))).frame(width: 160)
                         Text(L("正在比对照片 \(progress.done) / \(progress.total)…")).font(.callout).foregroundStyle(.secondary)
                     }
+                } else if app.similar.checkingDuplicates {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("正在查找完全相同的文件…").font(.callout).foregroundStyle(.secondary)
+                    }
                 } else if groups.isEmpty, app.similar.hasScanned {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("没有找到相似的照片或连拍").font(.title3)
-                        Text("相似：同一场景、构图和颜色几乎一样的几张。连拍：同一台相机 2 秒内连续拍下的照片。视频不参与比对。")
+                        Text("没有找到重复、相似的照片或连拍").font(.title3)
+                        Text("重复：内容完全相同的文件，比如同一张照片导入了两次。相似：同一场景、构图和颜色几乎一样的几张。连拍：同一台相机 2 秒内连续拍下的照片。视频只查找完全相同的文件。")
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     .padding(.top, 40)
@@ -261,12 +292,24 @@ struct GroupedBrowse: View {
                 ForEach(groups) { group in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 10) {
-                            Label(group.kind == .burst ? L("连拍") : L("相似"),
-                                  systemImage: group.kind == .burst ? "square.stack.3d.down.right" : "square.on.square")
+                            Label(group.kind.title, systemImage: group.kind.symbol)
                                 .font(.callout.weight(.semibold))
-                            Text(L("\(group.ids.count) 张")).font(.callout).foregroundStyle(.secondary)
+                            Text(group.kind == .duplicate ? L("\(group.ids.count) 个文件") : L("\(group.ids.count) 张"))
+                                .font(.callout).foregroundStyle(.secondary)
                             Spacer()
-                            Button("并排比较") { app.sheet = .compare(group.ids) }.glassButton().controlSize(.small)
+                            if group.kind == .duplicate {
+                                Button("排除副本") { rejectCopies(group.ids) }.glassButton().controlSize(.small)
+                                    .help("保留一份（已评分、已编辑或最早导入的那份），其余标为排除")
+                                Button("从素材库移除副本") { removeCopies(group.ids) }.glassButton().controlSize(.small)
+                                    .help("保留一份，其余从素材库移除；硬盘上的文件不会被删除或改动")
+                            } else {
+                                Button("并排比较") { app.sheet = .compare(group.ids) }.glassButton().controlSize(.small)
+                            }
+                        }
+                        if group.kind == .duplicate {
+                            Text(group.ids.compactMap { library.entry($0)?.url.deletingLastPathComponent().path }
+                                .map { ($0 as NSString).abbreviatingWithTildeInPath }.joined(separator: "\n"))
+                                .font(.caption).foregroundStyle(.secondary).lineLimit(4).truncationMode(.middle).textSelection(.enabled)
                         }
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: cellWidth, maximum: cellWidth * 1.4), spacing: 10)], alignment: .leading, spacing: 10) {
                             ForEach(group.ids, id: \.self) { id in
@@ -275,7 +318,7 @@ struct GroupedBrowse: View {
                                              current: id == library.currentID, missing: library.missing.contains(id))
                                         .onTapGesture {
                                             endTextEditing()
-                                            if (NSApp.currentEvent?.clickCount ?? 1) >= 2 { app.sheet = .compare(group.ids); return }
+                                            if (NSApp.currentEvent?.clickCount ?? 1) >= 2, group.kind != .duplicate { app.sheet = .compare(group.ids); return }
                                             let flags = NSEvent.modifierFlags
                                             library.click(id, command: flags.contains(.command), shift: flags.contains(.shift))
                                         }
@@ -289,5 +332,14 @@ struct GroupedBrowse: View {
             }
             .padding(14)
         }
+    }
+}
+
+extension PhotoGroup.Kind {
+    var title: String {
+        switch self { case .duplicate: L("完全相同"); case .similar: L("相似"); case .burst: L("连拍") }
+    }
+    var symbol: String {
+        switch self { case .duplicate: "doc.on.doc"; case .similar: "square.on.square"; case .burst: "square.stack.3d.down.right" }
     }
 }

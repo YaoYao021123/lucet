@@ -111,7 +111,7 @@ struct WorkbenchCommands: Commands {
             Divider()
             Button("并排比较所选") { app.sheet = .compare(app.compareSelection) }
                 .keyboardShortcut("c", modifiers: [.command, .option]).disabled(app.compareSelection.count < 2)
-            Toggle("显示相似与连拍", isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0; if $0 { app.mode = .browse } }))
+            Toggle("显示重复与相似", isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0; if $0 { app.mode = .browse } }))
             Button("复位全部编辑", action: editor.resetAll).disabled(!editor.isLoaded)
             Divider()
             Button("在 Finder 中显示", action: app.revealSelection).keyboardShortcut("r", modifiers: [.command, .shift])

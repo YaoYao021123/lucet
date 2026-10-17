@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld file</string>
+			<key>other</key>
+			<string>%lld files</string>
+		</dict>
+	</dict>
 	<key>%lld 张</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -162,6 +178,22 @@
 			<string>%lld items</string>
 		</dict>
 	</dict>
+	<key>已从素材库移除 %lld 个副本；硬盘上的文件未改动。</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Removed %#@n@ from the library; the files on disk are untouched.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld copy</string>
+			<key>other</key>
+			<string>%lld copies</string>
+		</dict>
+	</dict>
 	<key>已从素材库移除 %lld 项；原文件未改动。</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -176,6 +208,22 @@
 			<string>%lld item</string>
 			<key>other</key>
 			<string>%lld items</string>
+		</dict>
+	</dict>
+	<key>已排除 %lld 个副本，保留 %@。</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>Rejected %1$#@n@ and kept %2$@.</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld copy</string>
+			<key>other</key>
+			<string>%lld copies</string>
 		</dict>
 	</dict>
 	<key>已撤回 %lld 项；之后又单独修改过的素材保持不变。</key>

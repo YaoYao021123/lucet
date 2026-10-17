@@ -108,7 +108,7 @@ public struct PhotoFingerprint: Codable, Sendable, Equatable {
 
 /// A set of photos to compare and cull together.
 public struct PhotoGroup: Sendable, Equatable, Identifiable {
-    public enum Kind: String, Sendable { case similar, burst }
+    public enum Kind: String, Sendable { case duplicate, similar, burst }
     public var kind: Kind
     public var ids: [String]
     public var id: String { ids.first ?? "" }
@@ -185,9 +185,13 @@ public enum SimilarPhotos {
         return result
     }
 
-    /// Similar and burst groups merged where they share photos, largest first.
-    /// A merged group is "similar" if any of its parts was visually similar.
-    public static func groups(_ items: [Item]) -> [PhotoGroup] {
+    /// Exact duplicates first, then similar and burst groups merged where they share photos,
+    /// largest first. A merged group is "similar" if any of its parts was visually similar.
+    /// Only the first copy of each duplicate takes part in the similar and burst groups, so
+    /// identical files don't show up twice.
+    public static func groups(_ items: [Item], duplicates: [[String]] = []) -> [PhotoGroup] {
+        let copies = Set(duplicates.flatMap { $0.dropFirst() })
+        let items = items.filter { !copies.contains($0.id) }
         let order = Dictionary(uniqueKeysWithValues: items.enumerated().map { ($1.id, $0) })
         var parent: [String: String] = [:]
         func root(_ id: String) -> String {
@@ -204,7 +208,7 @@ public enum SimilarPhotos {
         }
         var merged: [String: [String]] = [:]
         for id in parent.keys { merged[root(id), default: []].append(id) }
-        return merged.values
+        return duplicates.filter { $0.count > 1 }.map { PhotoGroup(kind: .duplicate, ids: $0) } + merged.values
             .map { ids in
                 let sorted = ids.sorted { (order[$0] ?? 0) < (order[$1] ?? 0) }
                 return PhotoGroup(kind: sorted.contains(where: similar.contains) ? .similar : .burst, ids: sorted)

@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld 个文件</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@n@ 个文件</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
 	<key>%lld 张</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -142,10 +156,38 @@
 			<string>%lld</string>
 		</dict>
 	</dict>
+	<key>已从素材库移除 %lld 个副本；硬盘上的文件未改动。</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>已从素材库移除 %#@n@ 个副本；硬盘上的文件未改动。</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
 	<key>已从素材库移除 %lld 项；原文件未改动。</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
 		<string>已从素材库移除 %#@n@ 项；原文件未改动。</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
+	<key>已排除 %lld 个副本，保留 %@。</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>已排除 %1$#@n@ 个副本，保留 %2$@。</string>
 		<key>n</key>
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
