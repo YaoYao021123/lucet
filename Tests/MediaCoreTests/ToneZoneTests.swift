@@ -64,6 +64,15 @@ struct LessonCatalogTests {
         #expect(used == Set(LessonScene.allCases))
     }
 
+    @Test func everyLessonEndsWithACheckQuestion() {
+        for lesson in Lesson.catalog { #expect(lesson.steps.last?.question != nil, "\(lesson.id)") }
+    }
+
+    @Test func histogramLessonGoesFromPixelsToReliefToPile() throws {
+        let scenes = try #require(Lesson.lesson("pixels-histogram")).steps.map(\.scene)
+        #expect(scenes == [.pixelGrid, .brightnessOnly, .brightnessRelief, .histogramBuild, .histogramRead])
+    }
+
     @Test func zoneQuestionAnswersFromThePhoto() throws {
         let question = try #require(Lesson.lesson("pixels-histogram")?.steps.last?.question)
         #expect(question.correctIndex(zoneShares: [.midtones: 0.6, .shadows: 0.3]) == 2)

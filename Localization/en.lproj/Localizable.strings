@@ -608,6 +608,10 @@
 "已完成 %lld / %lld 课" = "%lld of %lld lessons done";
 "%lld 分钟" = "%lld min";
 
+/* Lesson3D.swift */
+"拖动旋转" = "Drag to rotate";
+"三维演示，拖动可以旋转" = "3D demo. Drag to rotate.";
+
 /* LessonPlayer.swift */
 "关闭" = "Close";
 "第 %lld 步，共 %lld 步" = "Step %lld of %lld";
@@ -646,19 +650,6 @@
 "现在" = "After";
 "%.0f 秒" = "%.0f s";
 "1/%lld 秒" = "1/%lld s";
-"正面看：开口" = "Front view: the opening";
-"侧面看：进来的光" = "Side view: the light coming in";
-"开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm" = "Opening diameter = %.0f mm ÷ %.1f ≈ %.1f mm";
-"最大的开口，进光最多。" = "The widest opening lets in the most light.";
-"进来的光只有 ƒ/1.4 的 1/%.0f。" = "Only 1/%.0f of the light at ƒ/1.4 gets in.";
-"光圈" = "Aperture";
-"。" = ".";
-"你这张照片用的是 %@" = "Your photo was taken at %@";
-"，焦距 %.1f mm，开口约 %.1f mm。" = ", focal length %.1f mm, opening about %.1f mm.";
-"清楚的范围" = "Sharp zone";
-"中间档：主体清楚，背景略有虚化。" = "In between: the subject is sharp and the background slightly soft.";
-"开口大：只有人是清楚的，背景的灯变成柔和的光斑。" = "Wide opening: only the person is sharp, and the lights behind become soft blobs.";
-"开口小：从近处的花到远处的树都清楚，适合风景。" = "Small opening: everything from the near flowers to the far trees is sharp, good for landscapes.";
 "快门" = "Shutter";
 "中间档：亮度合适，运动略有拖影。" = "In between: good brightness, slight motion blur.";
 "快门很快：运动被冻结，但画面变暗了。" = "Very fast shutter: motion is frozen, but the image got darker.";
@@ -681,9 +672,46 @@
 "干净" = "Clean";
 "明显" = "Visible";
 "轻微" = "Slight";
+"光圈" = "Aperture";
 "亮了 %.0f 档" = "Brighter by %.0f EV";
 "亮度正好" = "Just right";
 "暗了 %.0f 档" = "Darker by %.0f EV";
+
+/* LessonScenes3D.swift */
+"越亮的格子越高；越暗的越矮。" = "The brighter a square, the taller it is; the darker, the shorter.";
+"越暗的格子先落下，落在越靠左的柱子里。" = "The darkest squares fall first, into the columns farthest left.";
+"白" = "White";
+"黑" = "Black";
+"你点的颜色" = "The color you clicked";
+
+/* LessonScenesCamera3D.swift */
+"侧面看" = "Side view";
+"斜着看" = "Angled view";
+"正面看" = "Front view";
+"开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm" = "Opening diameter = %.0f mm ÷ %.1f ≈ %.1f mm";
+"最大的开口，进光最多。" = "The widest opening lets in the most light.";
+"进来的光只有 ƒ/1.4 的 1/%.0f。" = "Only 1/%.0f of the light at ƒ/1.4 gets in.";
+"。" = ".";
+"你这张照片用的是 %@" = "Your photo was taken at %@";
+"，焦距 %.1f mm，开口约 %.1f mm。" = ", focal length %.1f mm, opening about %.1f mm.";
+"来自远处的光" = "Light from far away";
+"光圈（可变的开口）" = "Aperture (the adjustable opening)";
+"传感器" = "Sensor";
+"开口小：从近处的花到远处的树都清楚，适合风景。" = "Small opening: everything from the near flowers to the far trees is sharp, good for landscapes.";
+"中间档：主体清楚，背景略有虚化。" = "In between: the subject is sharp and the background slightly soft.";
+"开口大：只有人是清楚的，背景的灯变成柔和的光斑。" = "Wide opening: only the person is sharp, and the lights behind become soft blobs.";
+"清楚的范围" = "Sharp zone";
+"等效 %.0f mm · 水平视角约 %.0f°" = "%.0f mm equivalent · about %.0f° horizontal view";
+"焦距" = "Focal length";
+"广角：装得多，适合风景、室内、合影。" = "Wide-angle: fits a lot in, good for landscapes, interiors and group shots.";
+"标准：接近人眼看到的感觉。" = "Standard: close to how the eye sees.";
+"长焦：像望远镜，把远处拉近，背景更简洁。" = "Telephoto: like a telescope, it brings distant things closer and simplifies the background.";
+"你这张照片是等效 %.0f mm 拍的；更长的焦距在这里用裁切模拟。" = "Your photo was taken at %.0f mm equivalent; longer focal lengths are simulated here by cropping.";
+"相机" = "Camera";
+"人离相机约 %.0f 米；背景的山看起来有原来的 %.1f 倍大。" = "The person is about %.0f m from the camera; the mountains behind look %.1f× their original size.";
+"画面宽 %.0f 米" = "Frame %.0f m wide";
+"人" = "Person";
+"山" = "Mountain";
 
 /* LessonScenesMore.swift */
 "日出日落" = "Sunrise / sunset";
@@ -693,10 +721,13 @@
 "烛光" = "Candle";
 "阴天" = "Overcast";
 "在 %.0f K 的光下，相机按日光拍摄时的样子" = "How it looks under %.0f K light with the camera set for daylight";
+"每个点是照片里的一个像素。白圆点是整体的平均颜色，离灰色竖线越远，偏色越重。" = "Each dot is one pixel of the photo. The white dot is the overall average color; the farther it is from the gray line, the stronger the color cast.";
 "光偏冷：白墙看起来发蓝。" = "Cool light: white walls look blue.";
 "光偏暖：白墙看起来发黄发橙。" = "Warm light: white walls look yellow-orange.";
 "接近日光：白色基本是白的。" = "Close to daylight: white looks white.";
-"你点的颜色" = "The color you clicked";
+"每个点是照片里的一个像素。点一下左边的照片，看它落在立方体的哪里。" = "Each dot is one pixel of the photo. Click the photo on the left to see where that color sits in the cube.";
+"校正后：你点的颜色回到了灰色竖线上，整团颜色一起跟着挪过来了。" = "After: the color you picked is back on the gray line, and the whole cloud has moved with it.";
+"校正前：你点的颜色偏离了灰色竖线，整团颜色都偏向同一边。" = "Before: the color you picked sits off the gray line, and the whole cloud leans the same way.";
 "校正成中性灰" = "Corrected to neutral gray";
 "显示校正后" = "Show corrected";
 "点照片里本来应该是白色或灰色的地方：墙、云、路面、白衣服。" = "Click something in the photo that should be white or gray: a wall, a cloud, pavement, white clothes.";
@@ -707,20 +738,15 @@
 "这里偏暖。在光集里相当于：" = "This spot is warm. In Lucet, that's about: ";
 "这里偏洋红。在光集里相当于：" = "This spot is magenta. In Lucet, that's about: ";
 "这里偏绿。在光集里相当于：" = "This spot is green. In Lucet, that's about: ";
-"哪一种颜色（转一圈）" = "Which color (around the wheel)";
-"有多鲜艳（离中心多远）" = "How vivid (distance from the center)";
-"有多亮" = "How bright";
+"色轮：从上往下看这根圆柱" = "Color wheel: this cylinder seen from above";
+"圆柱：拖动旋转，小点是你照片里的颜色" = "Cylinder: drag to rotate. The dots are the colors in your photo.";
+"绕圈：哪一种颜色" = "Around: which color";
+"向外：有多鲜艳" = "Outward: how vivid";
+"向上：有多亮" = "Up: how bright";
 "彩色的部分属于「%@」色系" = "The parts in color belong to the %@ range";
+"圆柱里的每个点是一个像素。被选中色系的点会跟着滑块移动。" = "Each dot in the cylinder is one pixel. The dots of the chosen color range move with the sliders.";
 "只显示这种颜色" = "Show only this color";
 "%@ 色相" = "%@ hue";
-"等效 %.0f mm · 水平视角约 %.0f°" = "%.0f mm equivalent · about %.0f° horizontal view";
-"从上往下看" = "Seen from above";
-"焦距" = "Focal length";
-"广角：装得多，适合风景、室内、合影。" = "Wide-angle: fits a lot in, good for landscapes, interiors and group shots.";
-"标准：接近人眼看到的感觉。" = "Standard: close to how the eye sees.";
-"长焦：像望远镜，把远处拉近，背景更简洁。" = "Telephoto: like a telescope, it brings distant things closer and simplifies the background.";
-"你这张照片是等效 %.0f mm 拍的；更长的焦距在这里用裁切模拟。" = "Your photo was taken at %.0f mm equivalent; longer focal lengths are simulated here by cropping.";
-"人离相机约 %.0f 米；背景的山看起来有原来的 %.1f 倍大。" = "The person is about %.0f m from the camera; the mountains behind look %.1f× their original size.";
 "每秒 12 帧：明显一顿一顿" = "12 fps: visibly stuttering";
 "每秒 24 帧：电影的标准" = "24 fps: the movie standard";
 "每秒 60 帧：非常顺滑" = "60 fps: very smooth";
@@ -740,6 +766,7 @@
 "普通模式已经是纯白（顶到头了），Log 还在往上走，细节还在。" = "Normal mode is already pure white (it's hit the top) while Log keeps climbing, so the detail is still there.";
 "套用转换 LUT 之后" = "After the conversion LUT";
 "模拟的 Log 画面：灰、淡，但什么都在" = "Simulated Log image: gray and faded, but everything is there";
+"每个交叉点是一种颜色。LUT 把整张网拉开，照片里的颜色（小点）跟着铺开。" = "Each crossing is one color. The LUT stretches the whole grid, and the photo's colors (the small dots) spread out with it.";
 "LUT 强度" = "LUT strength";
 "Log 的直方图挤在中间；转换 LUT 把它重新铺开，对比和颜色就回来了。" = "Log's histogram is bunched in the middle; the conversion LUT spreads it out again, and contrast and color come back.";
 
@@ -755,6 +782,8 @@
 "放大到足够大，任何照片都是一格一格的像素。每一格只有一种颜色。" = "Zoom in far enough and every photo is a grid of pixels. Each square has just one color.";
 "先只看明暗" = "Look only at brightness";
 "把颜色去掉，每一格只剩下一个亮度：0 是纯黑，100 是纯白。" = "Take the color away and each square is left with a single brightness: 0 is pure black, 100 is pure white.";
+"亮度变成高度" = "Brightness becomes height";
+"把每一格的亮度当成高度：越亮的格子越高，越暗的越矮。照片就变成一片立体的柱子。拖动画面转一转，从侧面看看。" = "Use each square's brightness as its height: the brighter the square, the taller it is; the darker, the shorter. The photo becomes a field of 3D columns. Drag the view to turn it and look from the side.";
 "按亮度排队" = "Line them up by brightness";
 "把所有格子按亮度从左到右排好，一样亮的叠在同一列。叠出来的形状，就是直方图。" = "Line up all the squares from dark on the left to bright on the right, stacking equally bright ones in the same column. The shape of the stacks is the histogram.";
 "读一读你的照片" = "Read your own photo";
@@ -808,9 +837,9 @@
 "白平衡与色温" = "White Balance and Color Temperature";
 "为什么在室内拍的照片总是发黄？" = "Why do photos taken indoors always look yellow?";
 "光本身有颜色" = "Light has a color";
-"烛光和灯泡偏橙，正午阳光接近白，阴天和树荫偏蓝。用开尔文（K）表示：数字越小越暖，越大越冷。选一种光，看同一张照片被染成什么样。" = "Candles and light bulbs are orange, midday sun is close to white, and overcast skies and shade are blue. It's measured in kelvin (K): lower is warmer, higher is cooler. Pick a light and see how it tints the same photo.";
+"烛光和灯泡偏橙，正午阳光接近白，阴天和树荫偏蓝。用开尔文（K）表示：数字越小越暖，越大越冷。选一种光，看同一张照片被染成什么样；右边的立方体里，整团颜色会偏离中间的灰色竖线。" = "Candles and light bulbs are orange, midday sun is close to white, and overcast skies and shade are blue. It's measured in kelvin (K): lower is warmer, higher is cooler. Pick a light and see how it tints the same photo; in the cube on the right, the whole cloud of colors moves away from the gray line in the middle.";
 "找一个本该是白或灰的地方" = "Find something that should be white or gray";
-"白纸、白墙、灰色路面在真实世界里没有颜色。点照片里这样的地方，光集会把它校正成中性灰，整张照片的偏色就跟着消失。" = "White paper, white walls and gray pavement have no color in real life. Click a spot like that in the photo and Lucet makes it neutral gray, and the cast disappears from the whole photo.";
+"白纸、白墙、灰色路面在真实世界里没有颜色。点照片里这样的地方，光集会把它校正成中性灰：你点的颜色回到灰色竖线上，整张照片的偏色就跟着消失。" = "White paper, white walls and gray pavement have no color in real life. Click a spot like that in the photo and Lucet makes it neutral gray: the color you picked returns to the gray line, and the cast disappears from the whole photo.";
 "暖黄灯光下拍的照片发黄，色温滑块该往哪边？" = "A photo shot under warm yellow light looks yellow. Which way should the Temperature slider go?";
 "往冷（左）" = "Cooler (left)";
 "往暖（右）" = "Warmer (right)";
@@ -818,9 +847,9 @@
 "HSL：只改一种颜色" = "HSL: Change Just One Color";
 "怎样只让天空更蓝，而草地不变？" = "How do you make only the sky bluer and leave the grass alone?";
 "一个颜色，三个数" = "One color, three numbers";
-"色相是哪种颜色（转一圈：红→黄→绿→青→蓝→紫）；饱和度是多鲜艳（越靠外越浓）；明亮度是多亮。拖动色轮上的点和下面的滑块。" = "Hue is which color it is (all the way around: red → yellow → green → aqua → blue → purple); saturation is how vivid (stronger toward the outside); luminance is how bright. Drag the dot on the wheel and the slider below.";
+"任何颜色都能用三个数找到：绕圈是色相（哪种颜色，红→黄→绿→青→蓝→紫），向外是饱和度（多鲜艳），向上是明亮度（多亮）。色轮就是这根圆柱的俯视图。拖动色轮上的点和下面的滑块。" = "Any color can be found with three numbers: going around is hue (which color: red → yellow → green → aqua → blue → purple), going outward is saturation (how vivid), going up is luminance (how bright). The color wheel is this cylinder seen from above. Drag the dot on the wheel and the slider below.";
 "只挑出一种颜色" = "Pick out one color";
-"选一个色系，照片上只有这种颜色保持彩色。再拖它的色相、饱和度、明亮度，其他颜色不会动。" = "Choose a color range and only that color stays in color in the photo. Drag its hue, saturation and luminance; the other colors won't move.";
+"选一个色系，照片上只有这种颜色保持彩色。再拖它的色相、饱和度、明亮度：圆柱里这个色系的点会跟着移动，其他颜色不会动。" = "Choose a color range and only that color stays in color in the photo. Drag its hue, saturation and luminance: the dots of that range move in the cylinder, and the other colors stay put.";
 "想让天空更深一点、草地不受影响，应该调什么？" = "You want the sky a little deeper without affecting the grass. What should you adjust?";
 "整体饱和度" = "Overall saturation";
 "曝光往下" = "Lower the exposure";
@@ -829,9 +858,9 @@
 "光圈：数字越大，开口越小" = "Aperture: Bigger Number, Smaller Opening";
 "为什么 ƒ/4 比 ƒ/2.8 的光圈小？" = "Why is ƒ/4 a smaller aperture than ƒ/2.8?";
 "ƒ 后面是一个除数" = "The number after ƒ divides";
-"光圈开口的直径 = 焦距 ÷ ƒ 值。所以 ƒ 值越大，开口越小，进来的光越少。ƒ 值每乘以 1.4，进光量减半。" = "The opening's diameter = focal length ÷ the ƒ-number. So the bigger the ƒ-number, the smaller the opening and the less light gets in. Each time the ƒ-number is multiplied by 1.4, the light is halved.";
+"光圈开口的直径 = 焦距 ÷ ƒ 值。所以 ƒ 值越大，开口越小，进来的光越少。ƒ 值每乘以 1.4，进光量减半。拖动滑块，再转着看：光圈挡住外圈的光，只有开口里的光能到达传感器。" = "The opening's diameter = focal length ÷ the ƒ-number. So the bigger the ƒ-number, the smaller the opening and the less light gets in. Each time the ƒ-number is multiplied by 1.4, the light is halved. Drag the slider, then turn the view: the aperture blocks the outer light and only the light through the opening reaches the sensor.";
 "开口还决定背景有多虚" = "The opening also decides how blurry the background is";
-"开口大（ƒ 值小），只有很薄的一层是清楚的，背景就虚；开口小，前后都清楚。拖动看看。" = "With a wide opening (small ƒ-number) only a thin slice is sharp and the background blurs; with a small opening, front and back are both sharp. Drag to see.";
+"开口大（ƒ 值小），空间里只有很薄的一层（半透明的板）是清楚的，前后的东西就虚；开口小，这一层变厚，前后都清楚。拖动看看，旁边是拍出来的样子。" = "With a wide opening (small ƒ-number) only a thin layer of space (the translucent slab) is sharp, and whatever is in front of or behind it blurs; with a small opening the layer gets thicker and front and back are both sharp. Drag to see; the photo it makes is next to it.";
 "想拍背景虚化的人像，应该怎么选？" = "For a portrait with a blurry background, what do you choose?";
 "ƒ 值小 = 开口大 = 清楚的范围薄，背景更虚。" = "Small ƒ-number = wide opening = a thin sharp zone and a blurrier background.";
 "快门、ISO 和曝光三角" = "Shutter, ISO and the Exposure Triangle";
@@ -850,9 +879,9 @@
 "焦距：广角和长焦" = "Focal Length: Wide and Telephoto";
 "同一个位置，为什么手机「2 倍」「5 倍」拍出的画面差这么多？" = "From the same spot, why do a phone's “2×” and “5×” give such different pictures?";
 "焦距决定看多宽" = "Focal length decides how wide you see";
-"焦距越短，看到的范围越宽（广角）；越长，越像望远镜（长焦）。拖动焦距，看你的照片能装下多少。手机上的「2 倍」「5 倍」，就是在换焦距。" = "The shorter the focal length, the wider the view (wide-angle); the longer, the more like a telescope (telephoto). Drag the focal length and see how much of your photo fits. A phone's “2×” and “5×” are changing focal length.";
+"焦距越短，看到的范围越宽（广角）；越长，越像望远镜（长焦）。拖动焦距：立体图里相机看到的是一个楔形，焦距越长楔形越窄，照片只装得下中间那一小块。手机上的「2 倍」「5 倍」，就是在换焦距。" = "The shorter the focal length, the wider the view (wide-angle); the longer, the more like a telescope (telephoto). Drag the focal length: in the 3D view the camera sees a wedge, and the longer the lens, the narrower the wedge, so the photo only holds a small piece from the middle. A phone's “2×” and “5×” are changing focal length.";
 "长焦会把背景「拉近」" = "Telephoto “pulls” the background closer";
-"让人在画面里一样大，长焦需要人站得更远，背景就显得又大又近；广角则背景很远、很小。这叫透视压缩。" = "To keep a person the same size in the frame, a telephoto lens needs them farther away, so the background looks big and close; with wide-angle, the background looks far away and small. This is called perspective compression.";
+"让人在画面里一样大，长焦需要站得更远（上面的图是从上往下看）。楔形变窄，同一座山占的画面比例就变大，背景显得又大又近；广角则背景很远、很小。这叫透视压缩。" = "To keep a person the same size in the frame, a telephoto lens needs you to stand farther away (the picture above is seen from above). The wedge gets narrower, so the same mountain takes up a larger share of the frame and the background looks big and close; with wide-angle, the background looks far away and small. This is called perspective compression.";
 "在小房间里拍一大群人的合影，选哪种焦距？" = "For a big group photo in a small room, which focal length do you pick?";
 "广角（短焦距）" = "Wide-angle (short focal length)";
 "长焦（长焦距）" = "Telephoto (long focal length)";
@@ -873,7 +902,7 @@
 "Log 把更多亮度装进同一个文件" = "Log fits more brightness into the same file";
 "普通模式（Rec.709）亮到一定程度就变成纯白。Log 用一条平缓的曲线，把很暗到很亮都记下来，代价是画面看起来又灰又淡。拖动「场景亮度」比较两条线。" = "In normal mode (Rec.709), anything past a certain brightness turns pure white. Log uses a gentle curve to record everything from very dark to very bright, at the cost of a gray, washed-out look. Drag “Scene brightness” to compare the two lines.";
 "LUT 把它还原成正常画面" = "A LUT turns it back into a normal picture";
-"转换 LUT 是一张对照表，把 Log 的灰色画面换回正常的对比和颜色。拖动强度，看直方图从挤在中间变成铺开。注意：这里用你的照片模拟 Log 的样子。" = "A conversion LUT is a lookup table that turns Log's gray image back into normal contrast and color. Drag the strength and watch the histogram spread out from the middle. Note: this simulates the Log look using your photo.";
+"转换 LUT 是一张对照表：在颜色空间里放一张网，把网上每个点搬到新的位置。拖动强度，看这张网被拉开，照片的颜色和直方图一起铺开。注意：这里用你的照片模拟 Log 的样子。" = "A conversion LUT is a lookup table: it puts a grid into color space and moves every point on the grid to a new position. Drag the strength and watch the grid stretch open, with the photo's colors and histogram spreading out together. Note: this simulates the Log look using your photo.";
 "拿到 D-Log 素材，第一步做什么？" = "You've got D-Log footage. What's the first step?";
 "先套用这台相机对应的转换 LUT" = "Apply this camera's conversion LUT first";
 "直接拉高饱和度和对比度" = "Just raise saturation and contrast";

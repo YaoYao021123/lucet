@@ -51,6 +51,31 @@ extension LessonPhoto {
         return Self.cgImage(out, width, height) ?? thumbnail
     }
 
+    /// The colour family a pixel belongs to (nil for greys), by the same rule as `bandMask`.
+    static func band(_ r: Double, _ g: Double, _ b: Double) -> HueBand? {
+        let high = max(r, g, b), low = min(r, g, b)
+        guard high > 0.05, (high - low) / high > 0.12 else { return nil }
+        let hue = hue(r, g, b, high, low)
+        let d = HueBand.allCases.map { abs(((hue - $0.degrees + 540).truncatingRemainder(dividingBy: 360)) - 180) }
+        return d.enumerated().min(by: { $0.element < $1.element }).flatMap { HueBand(rawValue: $0.offset) }
+    }
+
+    /// The photo's cloud of pixels in the colour cylinder. `edited` gives the positions (the
+    /// rendered, adjusted bytes) while the family each dot belongs to stays that of the original
+    /// pixel, so the same dots can be followed as sliders move them. Others turn grey when a
+    /// family is highlighted.
+    func cylinderDots(edited: [UInt8]? = nil, highlight: HueBand? = nil, count: Int = 1800) -> [CloudDot] {
+        let source = edited?.count == pixels.count ? edited! : pixels
+        return cloud(count).map { i in
+            let now = Self.rgb(source, i)
+            let p = hsvOf(now.r, now.g, now.b)
+            let original = Self.rgb(pixels, i)
+            guard let highlight else { return CloudDot(position: cylinderPosition(p.h, p.s, p.v), color: Color(red: now.r, green: now.g, blue: now.b)) }
+            let member = Self.band(original.r, original.g, original.b) == highlight
+            return CloudDot(position: cylinderPosition(p.h, p.s, p.v), color: member ? Color(red: now.r, green: now.g, blue: now.b) : Color(white: 0.45, opacity: 0.5))
+        }
+    }
+
     static func hue(_ r: Double, _ g: Double, _ b: Double, _ high: Double, _ low: Double) -> Double {
         let c = high - low
         guard c > 0 else { return 0 }
@@ -70,6 +95,12 @@ private func lightColor(_ kelvin: Double) -> (Double, Double, Double) {
 
 private func linear(_ v: Double) -> Double { pow(max(0, v), 2.2) }
 
+/// A colour with each channel multiplied in linear light, like `LessonPhoto.gains` does to the picture.
+private func scaled(_ c: (r: Double, g: Double, b: Double), _ gain: (Double, Double, Double)) -> (r: Double, g: Double, b: Double) {
+    func channel(_ v: Double, _ k: Double) -> Double { min(1, pow(linear(v) * k, 1 / 2.2)) }
+    return (channel(c.r, gain.0), channel(c.g, gain.1), channel(c.b, gain.2))
+}
+
 // MARK: - White balance
 
 struct ColorTemperatureScene: View {
@@ -81,10 +112,20 @@ struct ColorTemperatureScene: View {
         let light = lightColor(kelvin), day = lightColor(5500)
         let gains = (linear(light.0) / linear(day.0), linear(light.1) / linear(day.1), linear(light.2) / linear(day.2))
         let norm = 0.2126 * gains.0 + 0.7152 * gains.1 + 0.0722 * gains.2
+        let g = (gains.0 / norm, gains.1 / norm, gains.2 / norm)
+        let cloud = photo.cubeDots(photo.pixels) { scaled($0, g) }
         return VStack(spacing: 14) {
-            LessonImage(image: photo.gains(gains.0 / norm, gains.1 / norm, gains.2 / norm),
-                        caption: String(format: L("在 %.0f K 的光下，相机按日光拍摄时的样子"), kelvin))
-                .frame(maxHeight: 300)
+            HStack(spacing: 14) {
+                LessonImage(image: photo.gains(g.0, g.1, g.2), caption: String(format: L("在 %.0f K 的光下，相机按日光拍摄时的样子"), kelvin))
+                    .frame(maxWidth: .infinity)
+                VStack(spacing: 4) {
+                    ColorCubeView(dots: cloud.dots, average: cloud.average)
+                    Text("每个点是照片里的一个像素。白圆点是整体的平均颜色，离灰色竖线越远，偏色越重。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(width: 290)
+            }
+            .frame(height: 320)
             HStack(spacing: 6) {
                 ForEach(Self.lights, id: \.1) { name, k in
                     let c = lightColor(k)
@@ -119,7 +160,16 @@ struct WhitePickerScene: View {
             let mean = (r + g + b) / 3
             return photo.gains(mean / max(0.001, r), mean / max(0.001, g), mean / max(0.001, b))
         }
+        // The cloud in the RGB cube: the fix moves everything the same way, so the picked colour lands on the grey axis.
+        let gain: (Double, Double, Double)? = sample.map { s in
+            let (r, g, b) = (linear(s.0), linear(s.1), linear(s.2)), mean = (r + g + b) / 3
+            return (mean / max(0.001, r), mean / max(0.001, g), mean / max(0.001, b))
+        }
+        let applied = showFixed ? gain : nil
+        let cloud = photo.cubeDots(photo.pixels) { c in applied.map { scaled(c, $0) } ?? c }
+        let marker = sample.map { s in applied.map { scaled((s.0, s.1, s.2), $0) } ?? (r: s.0, g: s.1, b: s.2) }
         return VStack(spacing: 12) {
+            HStack(spacing: 14) {
             GeometryReader { proxy in
                 let fit = fitRect(proxy.size)
                 ZStack(alignment: .topLeading) {
@@ -139,7 +189,16 @@ struct WhitePickerScene: View {
                     picked = point; sample = photo.color(at: point); showFixed = true
                 }
             }
-            .frame(maxHeight: 320)
+            VStack(spacing: 4) {
+                ColorCubeView(dots: cloud.dots, average: cloud.average, picked: marker)
+                Text(sample == nil ? L("每个点是照片里的一个像素。点一下左边的照片，看它落在立方体的哪里。")
+                     : showFixed ? L("校正后：你点的颜色回到了灰色竖线上，整团颜色一起跟着挪过来了。")
+                     : L("校正前：你点的颜色偏离了灰色竖线，整团颜色都偏向同一边。"))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: 290)
+            }
+            .frame(height: 320)
             if let s = sample {
                 HStack(spacing: 14) {
                     swatch(L("你点的颜色"), Color(red: s.0, green: s.1, blue: s.2))
@@ -187,43 +246,58 @@ struct WhitePickerScene: View {
 // MARK: - HSL
 
 struct ColorThreeNumbersScene: View {
+    let photo: LessonPhoto
     @UIState private var hue = 0.58
     @UIState private var saturation = 0.7
     @UIState private var lightness = 0.85
     var body: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 30) {
-                GeometryReader { proxy in
-                    let size = min(proxy.size.width, proxy.size.height)
-                    let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                    ZStack {
-                        Circle().fill(AngularGradient(gradient: Gradient(colors: stride(from: 0.0, through: 1.0, by: 1.0 / 12).map { Color(hue: $0, saturation: 1, brightness: lightness) }),
-                                                      center: .center, angle: .degrees(0)))
-                        Circle().fill(RadialGradient(colors: [Color(white: lightness), Color(white: lightness).opacity(0)], center: .center, startRadius: 0, endRadius: size / 2))
-                        Circle()
-                            .strokeBorder(Color.white, lineWidth: 2).frame(width: 18, height: 18)
-                            .position(x: center.x + cos(hue * 2 * .pi) * saturation * size / 2, y: center.y + sin(hue * 2 * .pi) * saturation * size / 2)
-                    }
-                    .frame(width: size, height: size).position(center)
-                    .contentShape(Circle())
-                    .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                        let dx = value.location.x - center.x, dy = value.location.y - center.y
-                        hue = (atan2(dy, dx) / (2 * .pi) + 1).truncatingRemainder(dividingBy: 1)
-                        saturation = min(1, (dx * dx + dy * dy).squareRoot() / (size / 2))
-                    })
+        VStack(spacing: 14) {
+            HStack(spacing: 20) {
+                VStack(spacing: 6) {
+                    wheel.frame(width: 230, height: 230)
+                    Text("色轮：从上往下看这根圆柱").font(.caption).foregroundStyle(.secondary)
                 }
-                .frame(width: 260, height: 260)
-                VStack(alignment: .leading, spacing: 12) {
-                    RoundedRectangle(cornerRadius: 10).fill(Color(hue: hue, saturation: saturation, brightness: lightness))
-                        .frame(width: 150, height: 100)
-                    row(L("色相"), "\(Int(hue * 360))°", L("哪一种颜色（转一圈）"))
-                    row(L("饱和度"), "\(Int(saturation * 100))", L("有多鲜艳（离中心多远）"))
-                    row(L("明亮度"), "\(Int(lightness * 100))", L("有多亮"))
+                VStack(spacing: 6) {
+                    ColorCylinderView(dots: photo.cylinderDots(), marker: (hue, saturation, lightness)).frame(height: 230)
+                    Text("圆柱：拖动旋转，小点是你照片里的颜色").font(.caption).foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity)
+            }
+            HStack(alignment: .center, spacing: 18) {
+                RoundedRectangle(cornerRadius: 8).fill(Color(hue: hue, saturation: saturation, brightness: lightness)).frame(width: 64, height: 64)
+                VStack(alignment: .leading, spacing: 8) {
+                    row(L("色相"), "\(Int(hue * 360))°", L("绕圈：哪一种颜色"))
+                    row(L("饱和度"), "\(Int(saturation * 100))", L("向外：有多鲜艳"))
+                    row(L("明亮度"), "\(Int(lightness * 100))", L("向上：有多亮"))
+                }
+                Spacer()
             }
             LessonSlider(title: L("明亮度"), value: $lightness, range: 0.1...1, format: { "\(Int($0 * 100))" })
         }
     }
+
+    private var wheel: some View {
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, proxy.size.height)
+            let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            ZStack {
+                Circle().fill(AngularGradient(gradient: Gradient(colors: stride(from: 0.0, through: 1.0, by: 1.0 / 12).map { Color(hue: $0, saturation: 1, brightness: lightness) }),
+                                              center: .center, angle: .degrees(0)))
+                Circle().fill(RadialGradient(colors: [Color(white: lightness), Color(white: lightness).opacity(0)], center: .center, startRadius: 0, endRadius: size / 2))
+                Circle()
+                    .strokeBorder(Color.white, lineWidth: 2).frame(width: 18, height: 18)
+                    .position(x: center.x + cos(hue * 2 * .pi) * saturation * size / 2, y: center.y + sin(hue * 2 * .pi) * saturation * size / 2)
+            }
+            .frame(width: size, height: size).position(center)
+            .contentShape(Circle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                let dx = value.location.x - center.x, dy = value.location.y - center.y
+                hue = (atan2(dy, dx) / (2 * .pi) + 1).truncatingRemainder(dividingBy: 1)
+                saturation = min(1, (dx * dx + dy * dy).squareRoot() / (size / 2))
+            })
+        }
+    }
+
     private func row(_ title: String, _ value: String, _ hint: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(title).font(.callout.weight(.medium)).frame(width: .label(48), alignment: .leading)
@@ -244,9 +318,18 @@ struct HSLBandScene: View {
         let r = photo.render(MediaEdits(hsl: hsl))
         let v = values[band] ?? (0, 0, 0)
         return VStack(spacing: 12) {
-            LessonImage(image: isolate ? photo.bandMask(band, on: r.pixels) : r.image,
-                        caption: isolate ? L("彩色的部分属于「\(band.title)」色系") : nil)
-                .frame(maxHeight: 280)
+            HStack(spacing: 14) {
+                LessonImage(image: isolate ? photo.bandMask(band, on: r.pixels) : r.image,
+                            caption: isolate ? L("彩色的部分属于「\(band.title)」色系") : nil)
+                    .frame(maxWidth: .infinity)
+                VStack(spacing: 4) {
+                    ColorCylinderView(dots: photo.cylinderDots(edited: r.pixels, highlight: isolate ? band : nil))
+                    Text("圆柱里的每个点是一个像素。被选中色系的点会跟着滑块移动。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(width: 270)
+            }
+            .frame(height: 290)
             HStack(spacing: 6) {
                 ForEach(HueBand.allCases, id: \.self) { item in
                     Button { band = item } label: {
@@ -269,76 +352,6 @@ struct HSLBandScene: View {
                 set: { new in var v = values[band] ?? (0, 0, 0)
                     if index == 0 { v.0 = new } else if index == 1 { v.1 = new } else { v.2 = new }
                     values[band] = v })
-    }
-}
-
-// MARK: - Focal length
-
-struct FieldOfViewScene: View {
-    let photo: LessonPhoto
-    @UIState private var zoom = 1.0
-    var body: some View {
-        // The photo is the widest view we have; longer lenses are centre crops of it.
-        let base = photo.capture?.focalLength35mm ?? 24
-        let focal = base * zoom
-        let crop = photo.thumbnail.cropping(to: CGRect(x: Double(photo.width) * (1 - 1 / zoom) / 2, y: Double(photo.height) * (1 - 1 / zoom) / 2,
-                                                       width: Double(photo.width) / zoom, height: Double(photo.height) / zoom).integral) ?? photo.thumbnail
-        let angle = 2 * atan(36 / (2 * focal)) * 180 / .pi
-        return VStack(spacing: 14) {
-            HStack(spacing: 18) {
-                LessonImage(image: crop, caption: String(format: L("等效 %.0f mm · 水平视角约 %.0f°"), focal, angle)).frame(maxWidth: .infinity)
-                Canvas { context, size in
-                    // Top view: the camera and the slice of the world it sees.
-                    let eye = CGPoint(x: size.width / 2, y: size.height - 16)
-                    let half = angle / 2 * .pi / 180, reach = size.height - 30
-                    var cone = Path(); cone.move(to: eye)
-                    cone.addLine(to: CGPoint(x: eye.x - tan(half) * reach, y: eye.y - reach))
-                    cone.addLine(to: CGPoint(x: eye.x + tan(half) * reach, y: eye.y - reach)); cone.closeSubpath()
-                    context.fill(cone, with: .color(.white.opacity(0.14)))
-                    context.stroke(cone, with: .color(.white.opacity(0.6)), lineWidth: 1)
-                    context.fill(Path(roundedRect: CGRect(x: eye.x - 12, y: eye.y - 6, width: 24, height: 14), cornerRadius: 3), with: .color(.white))
-                    context.draw(Text("从上往下看").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: size.width / 2, y: 8))
-                }
-                .frame(width: 200)
-            }
-            .frame(maxHeight: 300)
-            LessonSlider(title: L("焦距"), value: $zoom, range: 1...8, format: { String(format: "%.0f mm", base * $0) })
-            Text(focal < 35 ? L("广角：装得多，适合风景、室内、合影。") : focal < 70 ? L("标准：接近人眼看到的感觉。") : L("长焦：像望远镜，把远处拉近，背景更简洁。"))
-                .font(.callout).foregroundStyle(.secondary)
-            if photo.capture?.focalLength35mm != nil {
-                Text(String(format: L("你这张照片是等效 %.0f mm 拍的；更长的焦距在这里用裁切模拟。"), base)).font(.caption).foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-struct PerspectiveScene: View {
-    @UIState private var focal = 35.0
-    var body: some View {
-        // The person stays the same size in the frame, so the camera backs away as focal grows.
-        let distance = focal / 35 * 3   // metres to the person
-        let background = 40.0            // metres from the person to the mountain
-        let mountainScale = (distance) / (distance + background) / (3.0 / 43.0)
-        return VStack(spacing: 14) {
-            Canvas { context, size in
-                context.fill(Path(CGRect(origin: .zero, size: size)), with: .linearGradient(Gradient(colors: [Color(red: 0.55, green: 0.7, blue: 0.9), Color(red: 0.85, green: 0.9, blue: 0.95)]), startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height * 0.7)))
-                let ground = size.height * 0.72
-                let h = size.height * 0.28 * min(3.2, mountainScale)
-                var mountain = Path()
-                mountain.move(to: CGPoint(x: size.width * 0.5 - h * 1.6, y: ground)); mountain.addLine(to: CGPoint(x: size.width * 0.5, y: ground - h))
-                mountain.addLine(to: CGPoint(x: size.width * 0.5 + h * 1.6, y: ground)); mountain.closeSubpath()
-                context.fill(mountain, with: .color(Color(red: 0.35, green: 0.42, blue: 0.5)))
-                context.fill(Path(CGRect(x: 0, y: ground, width: size.width, height: size.height - ground)), with: .color(Color(red: 0.3, green: 0.45, blue: 0.28)))
-                let cx = size.width * 0.5, top = size.height * 0.36
-                context.fill(Path(ellipseIn: CGRect(x: cx - 22, y: top, width: 44, height: 48)), with: .color(Color(red: 0.86, green: 0.72, blue: 0.62)))
-                context.fill(Path(roundedRect: CGRect(x: cx - 50, y: top + 52, width: 100, height: size.height - top - 52), cornerRadius: 20), with: .color(Color(red: 0.75, green: 0.3, blue: 0.25)))
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .frame(maxHeight: 300)
-            LessonSlider(title: L("焦距"), value: $focal, range: 16...200, format: { String(format: "%.0f mm", $0) })
-            Text(String(format: L("人离相机约 %.0f 米；背景的山看起来有原来的 %.1f 倍大。"), distance, max(0.5, mountainScale)))
-                .font(.callout).foregroundStyle(.secondary)
-        }
     }
 }
 
@@ -449,13 +462,50 @@ struct LogConversionScene: View {
         curves.master = [CurvePoint(x: 0, y: 0.16 * flat), CurvePoint(x: 0.5, y: 0.5), CurvePoint(x: 1, y: 1 - 0.2 * flat)]
         var a = BasicAdjustments(); a.saturation = -60 * flat
         let r = photo.render(MediaEdits(adjustments: a, curves: curves))
+        let table = lattice(flat: flat, curve: ToneCurves.sample(curves.master, count: 256))
+        let cloud = photo.cubeDots(r.pixels, count: 1400).dots.map { CloudDot(position: $0.position, color: $0.color.opacity(0.55), radius: 1.1) }
         return VStack(spacing: 12) {
-            LessonImage(image: r.image, caption: strength < 0.05 ? L("模拟的 Log 画面：灰、淡，但什么都在") : strength > 0.95 ? L("套用转换 LUT 之后") : nil)
-                .frame(maxHeight: 300)
-            ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), height: 64, showsCaption: false)
+            HStack(spacing: 14) {
+                LessonImage(image: r.image, caption: strength < 0.05 ? L("模拟的 Log 画面：灰、淡，但什么都在") : strength > 0.95 ? L("套用转换 LUT 之后") : nil)
+                    .frame(maxWidth: .infinity)
+                VStack(spacing: 4) {
+                    ColorCubeView(dots: table.nodes + cloud, edges: table.edges)
+                    Text("每个交叉点是一种颜色。LUT 把整张网拉开，照片里的颜色（小点）跟着铺开。")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(width: 290)
+            }
+            .frame(height: 300)
+            ZoneHistogram(histogram: LessonPhoto.histogram(of: r.pixels), height: 56, showsCaption: false)
             LessonSlider(title: L("LUT 强度"), value: $strength, range: 0...1, format: { "\(Int($0 * 100))%" })
             Text("Log 的直方图挤在中间；转换 LUT 把它重新铺开，对比和颜色就回来了。")
                 .font(.callout).foregroundStyle(.secondary)
         }
+    }
+
+    /// A grid of colours (0, 0.2 … 1 per channel) after the same look as the photo: where a LUT's table
+    /// would send each of them. Joined, the grid is the cube bent into shape.
+    private func lattice(flat: Double, curve: [Double]) -> (nodes: [CloudDot], edges: [(V3, V3)]) {
+        let n = 6
+        func look(_ c: (r: Double, g: Double, b: Double)) -> (r: Double, g: Double, b: Double) {
+            func lift(_ v: Double) -> Double { curve[min(255, max(0, Int((v * 255).rounded())))] }
+            let (r, g, b) = (lift(c.r), lift(c.g), lift(c.b))
+            let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b, k = 1 - 0.6 * flat
+            return (luma + (r - luma) * k, luma + (g - luma) * k, luma + (b - luma) * k)
+        }
+        var nodes: [CloudDot] = [], edges: [(V3, V3)] = [], place: [Int: V3] = [:]
+        for i in 0..<n { for j in 0..<n { for k in 0..<n {
+            let c = look((Double(i) / Double(n - 1), Double(j) / Double(n - 1), Double(k) / Double(n - 1)))
+            let p = cubePosition(c.r, c.g, c.b)
+            place[(i * n + j) * n + k] = p
+            nodes.append(CloudDot(position: p, color: Color(red: c.r, green: c.g, blue: c.b), radius: 2.6))
+        } } }
+        for i in 0..<n { for j in 0..<n { for k in 0..<n {
+            let here = place[(i * n + j) * n + k]!
+            if i + 1 < n { edges.append((here, place[((i + 1) * n + j) * n + k]!)) }
+            if j + 1 < n { edges.append((here, place[(i * n + j + 1) * n + k]!)) }
+            if k + 1 < n { edges.append((here, place[(i * n + j) * n + k + 1]!)) }
+        } } }
+        return (nodes, edges)
     }
 }

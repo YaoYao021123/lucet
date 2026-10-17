@@ -10,6 +10,8 @@ final class LessonPhoto: @unchecked Sendable {
     let image: CIImage
     let thumbnail: CGImage
     let width: Int, height: Int
+    /// The rendered RGBA bytes, kept for the 3D scenes.
+    let pixels: [UInt8]
     let luma: [Double]
     let blocks: [Block]
     let gridWidth: Int, gridHeight: Int
@@ -18,6 +20,11 @@ final class LessonPhoto: @unchecked Sendable {
     /// True when the user's photo was used (not the built-in sample).
     let isUsersPhoto: Bool
     private var zoneCache: [ToneZone: CGImage] = [:]
+    private var reliefCache: [Int: Relief] = [:]
+    private var cloudCache: [Int: [Int]] = [:]
+
+    /// The photo averaged into a coarse grid, for the 3D relief.
+    struct Relief { let columns: Int, rows: Int, luma: [Double] }
 
     init?(source: CIImage, headroom: Float, capture: CaptureInfo?, isUsersPhoto: Bool) {
         let extent = source.extent
@@ -31,6 +38,7 @@ final class LessonPhoto: @unchecked Sendable {
         image = CIImage(cgImage: cg)
         thumbnail = cg; width = w; height = h
         self.capture = capture; self.isUsersPhoto = isUsersPhoto
+        pixels = rendered
         luma = Self.luma(rendered)
         histogram = Self.histogram(luma)
         // About 30 blocks across: enough to read as a picture, few enough to animate.
@@ -82,6 +90,49 @@ final class LessonPhoto: @unchecked Sendable {
             "inputPoint1": CIVector(x: 0, y: 0), "inputColor1": CIColor(red: 0.42, green: 0.36, blue: 0.3)])!.outputImage!
             .cropped(to: CGRect(x: 250, y: 0, width: 110, height: 120))
         return path.composited(over: hills).composited(over: sun.composited(over: sky)).cropped(to: size)
+    }
+
+    // MARK: 3D scenes
+
+    /// Mean brightness per cell of a grid `columns` wide (rows follow the photo's shape).
+    func relief(columns: Int) -> Relief {
+        if let cached = reliefCache[columns] { return cached }
+        let rows = max(4, Int((Double(columns) * Double(height) / Double(width)).rounded()))
+        var cells = [Double](repeating: 0, count: columns * rows)
+        for row in 0..<rows {
+            for column in 0..<columns {
+                let x0 = column * width / columns, x1 = max(x0 + 1, (column + 1) * width / columns)
+                let y0 = row * height / rows, y1 = max(y0 + 1, (row + 1) * height / rows)
+                var sum = 0.0
+                for y in y0..<y1 { for x in x0..<x1 { sum += luma[y * width + x] } }
+                cells[row * columns + column] = sum / Double((x1 - x0) * (y1 - y0))
+            }
+        }
+        let result = Relief(columns: columns, rows: rows, luma: cells)
+        reliefCache[columns] = result
+        return result
+    }
+
+    /// Pixel numbers spread evenly over the photo (a fixed pick, so the same dots move when the
+    /// photo is edited), for point clouds of colour.
+    func cloud(_ count: Int) -> [Int] {
+        if let cached = cloudCache[count] { return cached }
+        let total = width * height
+        guard total > count else { return Array(0..<total) }
+        var seed: UInt64 = 0x2545F4914F6CDD1D
+        let picked = (0..<count).map { i -> Int in
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            // One random pixel inside each of `count` equal slices of the photo.
+            let slice = total / count
+            return i * slice + Int((seed >> 33) % UInt64(slice))
+        }
+        cloudCache[count] = picked
+        return picked
+    }
+
+    /// Display-encoded colour (0…1) of a pixel in a byte array like `pixels`.
+    static func rgb(_ pixels: [UInt8], _ index: Int) -> (r: Double, g: Double, b: Double) {
+        (Double(pixels[index * 4]) / 255, Double(pixels[index * 4 + 1]) / 255, Double(pixels[index * 4 + 2]) / 255)
     }
 
     // MARK: Rendering

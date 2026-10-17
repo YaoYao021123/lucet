@@ -131,7 +131,9 @@ struct LessonSceneView: View {
 
     var body: some View {
         switch scene {
-        case .pixelGrid, .brightnessOnly, .histogramBuild: PixelScene(scene: scene, photo: photo, started: started)
+        case .pixelGrid, .brightnessOnly: PixelScene(scene: scene, photo: photo, started: started)
+        case .brightnessRelief: BrightnessReliefScene(photo: photo, started: started)
+        case .histogramBuild: HistogramPileScene(photo: photo, started: started)
         case .histogramRead: HistogramReadScene(photo: photo)
         case .zoneExplorer: ZoneExplorerScene(photo: photo)
         case .keyStyles: KeyStylesScene(photo: photo)
@@ -146,7 +148,7 @@ struct LessonSceneView: View {
         case .exposureTriangle: ExposureTriangleScene(photo: photo)
         case .colorTemperature: ColorTemperatureScene(photo: photo)
         case .whitePicker: WhitePickerScene(photo: photo)
-        case .colorThreeNumbers: ColorThreeNumbersScene()
+        case .colorThreeNumbers: ColorThreeNumbersScene(photo: photo)
         case .hslBand: HSLBandScene(photo: photo)
         case .fieldOfView: FieldOfViewScene(photo: photo)
         case .perspective: PerspectiveScene()

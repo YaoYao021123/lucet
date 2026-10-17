@@ -4,8 +4,8 @@ import SwiftUI
 
 // MARK: - Pixels → brightness → histogram
 
-/// One animation in three acts: the photo breaks into blocks, the blocks lose their colour,
-/// then fly into columns by brightness and pile up into a histogram.
+/// The first two acts of the histogram story: the photo breaks into blocks, then the blocks lose
+/// their colour. (The blocks then rise and fall into columns in the 3D scenes.)
 struct PixelScene: View {
     let scene: LessonScene
     let photo: LessonPhoto
@@ -21,8 +21,7 @@ struct PixelScene: View {
     private func ease(_ t: Double) -> Double { let x = min(1, max(0, t)); return x * x * (3 - 2 * x) }
 
     private func draw(_ context: inout GraphicsContext, _ size: CGSize, _ t: Double) {
-        let histogramArea = scene == .histogramBuild
-        let photoBox = CGRect(x: 0, y: 0, width: size.width, height: histogramArea ? size.height * 0.5 : size.height - 40)
+        let photoBox = CGRect(x: 0, y: 0, width: size.width, height: size.height - 40)
         let aspect = Double(photo.width) / Double(photo.height)
         let fit = min(photoBox.width / aspect, photoBox.height)
         let rect = CGRect(x: photoBox.midX - fit * aspect / 2, y: photoBox.minY + (photoBox.height - fit) / 2, width: fit * aspect, height: fit)
@@ -56,37 +55,7 @@ struct PixelScene: View {
                 startPoint: CGPoint(x: bar.minX, y: 0), endPoint: CGPoint(x: bar.maxX, y: 0)))
             context.draw(Text("0 纯黑").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: bar.minX + 18, y: bar.maxY + 10))
             context.draw(Text("100 纯白").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: bar.maxX - 22, y: bar.maxY + 10))
-        default: // histogramBuild
-            let bins = 30
-            var counts = [Int](repeating: 0, count: bins)
-            var slot = [Int](repeating: 0, count: photo.blocks.count)
-            for (i, block) in photo.blocks.enumerated() {
-                let bin = min(bins - 1, Int(block.luma * Double(bins)))
-                slot[i] = counts[bin]; counts[bin] += 1
-            }
-            let tallest = Double(max(1, counts.max() ?? 1))
-            let base = size.height - 34
-            let area = CGRect(x: 0, y: size.height * 0.55, width: size.width, height: base - size.height * 0.55)
-            let colW = area.width / Double(bins), blockH = min(colW, area.height / tallest)
-            for (i, block) in photo.blocks.enumerated() {
-                let bin = min(bins - 1, Int(block.luma * Double(bins)))
-                let start = CGRect(x: rect.minX + Double(block.x) * cellW, y: rect.minY + Double(block.y) * cellH, width: cellW, height: cellH)
-                let end = CGRect(x: area.minX + Double(bin) * colW + colW * 0.06, y: base - Double(slot[i] + 1) * blockH,
-                                 width: colW * 0.88, height: blockH * 0.9)
-                // Darker blocks leave first, so the pile grows from left to right.
-                let p = ease((t - 0.3 - block.luma * 1.1) / 0.9)
-                let frame = CGRect(x: start.minX + (end.minX - start.minX) * p, y: start.minY + (end.minY - start.minY) * p,
-                                   width: start.width + (end.width - start.width) * p, height: start.height + (end.height - start.height) * p)
-                context.fill(Path(frame), with: .color(Color(white: block.luma)))
-            }
-            // Brightness axis and zones, once the pile has formed.
-            let axis = ease((t - 2.4) / 0.6)
-            let bar = CGRect(x: area.minX, y: base + 2, width: area.width, height: 4)
-            context.fill(Path(bar), with: .linearGradient(Gradient(colors: [.black, .white]), startPoint: CGPoint(x: bar.minX, y: 0), endPoint: CGPoint(x: bar.maxX, y: 0)))
-            for zone in ToneZone.allCases {
-                let mid = (zone.range.lowerBound + zone.range.upperBound) / 2
-                context.draw(Text(zone.title).font(.caption2).foregroundStyle(Color.secondary.opacity(axis)), at: CGPoint(x: area.minX + area.width * mid, y: base + 18))
-            }
+        default: break
         }
     }
 
@@ -352,120 +321,11 @@ struct CurveScene: View {
 
 // MARK: - Camera: aperture, depth of field, shutter, ISO
 
-private let fStops: [Double] = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16]
+let fStops: [Double] = [1.4, 2, 2.8, 4, 5.6, 8, 11, 16]
 private let shutterStops: [Double] = [1.0 / 1000, 1.0 / 500, 1.0 / 250, 1.0 / 125, 1.0 / 60, 1.0 / 30, 1.0 / 15, 1.0 / 8, 1.0 / 4]
 private let isoStops: [Int] = [100, 200, 400, 800, 1600, 3200, 6400, 12800]
 private func shutterLabel(_ t: Double) -> String { t >= 1 ? String(format: L("%.0f 秒"), t) : L("1/\(Int((1 / t).rounded())) 秒") }
-private func stopLabel(_ f: Double) -> String { f < 10 ? String(format: "ƒ/%.1f", f).replacingOccurrences(of: ".0", with: "") : String(format: "ƒ/%.0f", f) }
-
-struct ApertureScene: View {
-    let photo: LessonPhoto
-    @UIState private var stop = 2.0
-    var body: some View {
-        let f = fStops[Int(stop.rounded())]
-        let focal = photo.capture?.focalLengthMM ?? 50
-        let diameter = focal / f
-        let lessLight = pow(2, log2(f / 1.4) * 2)
-        return VStack(spacing: 14) {
-            Canvas { context, size in
-                // Front view: the opening.
-                let front = CGPoint(x: size.width * 0.25, y: size.height / 2)
-                let barrel = min(size.height * 0.42, size.width * 0.2)
-                let ring = Path(ellipseIn: CGRect(x: front.x - barrel, y: front.y - barrel, width: barrel * 2, height: barrel * 2))
-                context.fill(ring, with: .color(Color(white: 0.2)))
-                context.stroke(ring, with: .color(.white.opacity(0.45)), lineWidth: 1.5)
-                let opening = barrel * 0.92 * 1.4 / f
-                var blades = Path()
-                for i in 0...9 {
-                    let angle = Double(i) / 9 * 2 * .pi
-                    let p = CGPoint(x: front.x + cos(angle) * opening, y: front.y + sin(angle) * opening)
-                    if i == 0 { blades.move(to: p) } else { blades.addLine(to: p) }
-                }
-                context.fill(blades, with: .color(Color(white: 0.85)))
-                context.draw(Text("正面看：开口").font(.caption).foregroundStyle(.secondary), at: CGPoint(x: front.x, y: front.y + barrel + 14))
-                // Side view: a cone of light through the opening onto the sensor.
-                let lensX = size.width * 0.62, sensorX = size.width * 0.9, mid = size.height / 2
-                let source = CGPoint(x: size.width * 0.45, y: mid)
-                var cone = Path()
-                cone.move(to: source); cone.addLine(to: CGPoint(x: lensX, y: mid - opening)); cone.addLine(to: CGPoint(x: sensorX, y: mid))
-                cone.addLine(to: CGPoint(x: lensX, y: mid + opening)); cone.closeSubpath()
-                context.fill(cone, with: .color(Color(red: 1, green: 0.9, blue: 0.6).opacity(0.18 + 0.5 * 1.4 / f)))
-                var lens = Path(); lens.move(to: CGPoint(x: lensX, y: mid - barrel)); lens.addLine(to: CGPoint(x: lensX, y: mid - opening))
-                lens.move(to: CGPoint(x: lensX, y: mid + opening)); lens.addLine(to: CGPoint(x: lensX, y: mid + barrel))
-                context.stroke(lens, with: .color(.white), lineWidth: 3)
-                context.fill(Path(CGRect(x: sensorX, y: mid - barrel * 0.5, width: 4, height: barrel)), with: .color(.white.opacity(0.7)))
-                context.draw(Text("侧面看：进来的光").font(.caption).foregroundStyle(.secondary), at: CGPoint(x: (lensX + sensorX) / 2, y: mid + barrel + 14))
-            }
-            .frame(maxHeight: 300)
-            Text(String(format: L("开口直径 = %.0f mm ÷ %.1f ≈ %.1f mm"), focal, f, diameter)).font(.title3.monospacedDigit())
-            Text(f == 1.4 ? L("最大的开口，进光最多。") : String(format: L("进来的光只有 ƒ/1.4 的 1/%.0f。"), lessLight))
-                .font(.callout).foregroundStyle(.secondary)
-            LessonSlider(title: L("光圈"), value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
-            if let capture = photo.capture, let fn = capture.fNumber {
-                Text(L("你这张照片用的是 \(stopLabel(fn))") + (capture.focalLengthMM.map { String(format: L("，焦距 %.1f mm，开口约 %.1f mm。"), $0, $0 / fn) } ?? L("。")))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-struct DepthOfFieldScene: View {
-    @UIState private var stop = 1.0
-    var body: some View {
-        let f = fStops[Int(stop.rounded())]
-        // Relative sharp range: grows with the f-number (simplified, same distance and lens).
-        let depth = 0.06 + 0.5 * (f - 1.4) / (16 - 1.4)
-        let blur = max(0, 14 * (1.4 / f) - 0.8)
-        return VStack(spacing: 14) {
-            HStack(spacing: 16) {
-                Canvas { context, size in
-                    // The scene from the side: camera, sharp band, three objects.
-                    let ground = size.height * 0.75
-                    let camera = CGPoint(x: 24, y: ground - 16)
-                    context.fill(Path(roundedRect: CGRect(x: camera.x - 14, y: camera.y - 10, width: 28, height: 20), cornerRadius: 4), with: .color(.white.opacity(0.8)))
-                    let subjectX = size.width * 0.5
-                    let band = CGRect(x: subjectX - size.width * depth / 2, y: 12, width: size.width * depth, height: ground - 12)
-                    context.fill(Path(band), with: .color(.white.opacity(0.12)))
-                    context.draw(Text("清楚的范围").font(.caption2).foregroundStyle(.secondary), at: CGPoint(x: subjectX, y: 8))
-                    let objects: [(Double, String)] = [(0.28, "🌼"), (0.5, "🧍"), (0.82, "🌲")]
-                    for (x, emoji) in objects {
-                        let inside = band.minX...band.maxX ~= size.width * x
-                        var layer = context
-                        if !inside { layer.addFilter(.blur(radius: min(6, blur * 0.4))) }
-                        layer.draw(Text(emoji).font(.system(size: 30)), at: CGPoint(x: size.width * x, y: ground - 20))
-                    }
-                    var line = Path(); line.move(to: CGPoint(x: 0, y: ground)); line.addLine(to: CGPoint(x: size.width, y: ground))
-                    context.stroke(line, with: .color(.white.opacity(0.3)), lineWidth: 1)
-                }
-                .frame(maxWidth: .infinity)
-                Canvas { context, size in
-                    // What the photo looks like: background lights soften as the opening grows.
-                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .linearGradient(Gradient(colors: [Color(red: 0.1, green: 0.13, blue: 0.2), Color(red: 0.05, green: 0.06, blue: 0.08)]), startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
-                    context.drawLayer { layer in
-                        layer.addFilter(.blur(radius: blur))
-                        for i in 0..<14 {
-                            let x = size.width * Double((i * 37) % 100) / 100, y = size.height * (0.15 + Double((i * 53) % 40) / 100)
-                            let r = 5.0 + Double(i % 3) * 3
-                            layer.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)),
-                                       with: .color([Color.orange, .yellow, .white, .pink][i % 4].opacity(0.85)))
-                        }
-                        layer.fill(Path(CGRect(x: 0, y: size.height * 0.62, width: size.width, height: size.height * 0.38)), with: .color(Color(red: 0.1, green: 0.16, blue: 0.1)))
-                    }
-                    // The subject stays sharp.
-                    let cx = size.width * 0.5, top = size.height * 0.32
-                    context.fill(Path(ellipseIn: CGRect(x: cx - 18, y: top, width: 36, height: 40)), with: .color(Color(red: 0.86, green: 0.72, blue: 0.62)))
-                    context.fill(Path(roundedRect: CGRect(x: cx - 40, y: top + 44, width: 80, height: size.height - top - 44), cornerRadius: 18), with: .color(Color(red: 0.2, green: 0.3, blue: 0.5)))
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .frame(maxWidth: .infinity)
-            }
-            .frame(maxHeight: 320)
-            LessonSlider(title: L("光圈"), value: $stop, range: 0...Double(fStops.count - 1), format: { stopLabel(fStops[Int($0.rounded())]) })
-            Text(f <= 2.8 ? L("开口大：只有人是清楚的，背景的灯变成柔和的光斑。") : f >= 8 ? L("开口小：从近处的花到远处的树都清楚，适合风景。") : L("中间档：主体清楚，背景略有虚化。"))
-                .font(.callout).foregroundStyle(.secondary)
-        }
-    }
-}
+func stopLabel(_ f: Double) -> String { f < 10 ? String(format: "ƒ/%.1f", f).replacingOccurrences(of: ".0", with: "") : String(format: "ƒ/%.0f", f) }
 
 struct ShutterScene: View {
     let photo: LessonPhoto

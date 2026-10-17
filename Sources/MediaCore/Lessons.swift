@@ -42,7 +42,7 @@ public struct LessonStep: Sendable {
 /// Each scene is an interactive animation the app implements.
 public enum LessonScene: String, Sendable, CaseIterable {
     // Reading a photo
-    case pixelGrid, brightnessOnly, histogramBuild, histogramRead
+    case pixelGrid, brightnessOnly, brightnessRelief, histogramBuild, histogramRead
     case zoneExplorer, keyStyles
     case clippingDemo
     // Tone
@@ -85,6 +85,8 @@ extension Lesson {
                        L("放大到足够大，任何照片都是一格一格的像素。每一格只有一种颜色。")),
             LessonStep(.brightnessOnly, L("先只看明暗"),
                        L("把颜色去掉，每一格只剩下一个亮度：0 是纯黑，100 是纯白。")),
+            LessonStep(.brightnessRelief, L("亮度变成高度"),
+                       L("把每一格的亮度当成高度：越亮的格子越高，越暗的越矮。照片就变成一片立体的柱子。拖动画面转一转，从侧面看看。")),
             LessonStep(.histogramBuild, L("按亮度排队"),
                        L("把所有格子按亮度从左到右排好，一样亮的叠在同一列。叠出来的形状，就是直方图。")),
             LessonStep(.histogramRead, L("读一读你的照片"),
@@ -142,9 +144,9 @@ extension Lesson {
         Lesson(id: "white-balance", unit: .color, title: L("白平衡与色温"),
                hook: L("为什么在室内拍的照片总是发黄？"), concept: .whiteBalance, steps: [
             LessonStep(.colorTemperature, L("光本身有颜色"),
-                       L("烛光和灯泡偏橙，正午阳光接近白，阴天和树荫偏蓝。用开尔文（K）表示：数字越小越暖，越大越冷。选一种光，看同一张照片被染成什么样。")),
+                       L("烛光和灯泡偏橙，正午阳光接近白，阴天和树荫偏蓝。用开尔文（K）表示：数字越小越暖，越大越冷。选一种光，看同一张照片被染成什么样；右边的立方体里，整团颜色会偏离中间的灰色竖线。")),
             LessonStep(.whitePicker, L("找一个本该是白或灰的地方"),
-                       L("白纸、白墙、灰色路面在真实世界里没有颜色。点照片里这样的地方，光集会把它校正成中性灰，整张照片的偏色就跟着消失。"),
+                       L("白纸、白墙、灰色路面在真实世界里没有颜色。点照片里这样的地方，光集会把它校正成中性灰：你点的颜色回到灰色竖线上，整张照片的偏色就跟着消失。"),
                        question: LessonQuestion(prompt: L("暖黄灯光下拍的照片发黄，色温滑块该往哪边？"),
                                                 options: [L("往暖（右）"), L("往冷（左）")], answer: .option(1),
                                                 explanation: L("照片偏暖，就往冷的方向补回来。日落等想保留的暖色，可以只补一部分。"))),
@@ -152,9 +154,9 @@ extension Lesson {
         Lesson(id: "hsl", unit: .color, title: L("HSL：只改一种颜色"),
                hook: L("怎样只让天空更蓝，而草地不变？"), concept: .hsl, steps: [
             LessonStep(.colorThreeNumbers, L("一个颜色，三个数"),
-                       L("色相是哪种颜色（转一圈：红→黄→绿→青→蓝→紫）；饱和度是多鲜艳（越靠外越浓）；明亮度是多亮。拖动色轮上的点和下面的滑块。")),
+                       L("任何颜色都能用三个数找到：绕圈是色相（哪种颜色，红→黄→绿→青→蓝→紫），向外是饱和度（多鲜艳），向上是明亮度（多亮）。色轮就是这根圆柱的俯视图。拖动色轮上的点和下面的滑块。")),
             LessonStep(.hslBand, L("只挑出一种颜色"),
-                       L("选一个色系，照片上只有这种颜色保持彩色。再拖它的色相、饱和度、明亮度，其他颜色不会动。"),
+                       L("选一个色系，照片上只有这种颜色保持彩色。再拖它的色相、饱和度、明亮度：圆柱里这个色系的点会跟着移动，其他颜色不会动。"),
                        question: LessonQuestion(prompt: L("想让天空更深一点、草地不受影响，应该调什么？"),
                                                 options: [L("整体饱和度"), L("蓝色的明亮度往下"), L("曝光往下")], answer: .option(1),
                                                 explanation: L("HSL 只作用在选中的颜色上：压暗蓝色，天空变深，绿色的草地不变。"))),
@@ -162,9 +164,9 @@ extension Lesson {
         Lesson(id: "aperture", unit: .camera, title: L("光圈：数字越大，开口越小"),
                hook: L("为什么 ƒ/4 比 ƒ/2.8 的光圈小？"), concept: nil, steps: [
             LessonStep(.apertureOpening, L("ƒ 后面是一个除数"),
-                       L("光圈开口的直径 = 焦距 ÷ ƒ 值。所以 ƒ 值越大，开口越小，进来的光越少。ƒ 值每乘以 1.4，进光量减半。")),
+                       L("光圈开口的直径 = 焦距 ÷ ƒ 值。所以 ƒ 值越大，开口越小，进来的光越少。ƒ 值每乘以 1.4，进光量减半。拖动滑块，再转着看：光圈挡住外圈的光，只有开口里的光能到达传感器。")),
             LessonStep(.depthOfField, L("开口还决定背景有多虚"),
-                       L("开口大（ƒ 值小），只有很薄的一层是清楚的，背景就虚；开口小，前后都清楚。拖动看看。"),
+                       L("开口大（ƒ 值小），空间里只有很薄的一层（半透明的板）是清楚的，前后的东西就虚；开口小，这一层变厚，前后都清楚。拖动看看，旁边是拍出来的样子。"),
                        question: LessonQuestion(prompt: L("想拍背景虚化的人像，应该怎么选？"),
                                                 options: ["ƒ/1.8", "ƒ/11"], answer: .option(0),
                                                 explanation: L("ƒ 值小 = 开口大 = 清楚的范围薄，背景更虚。"))),
@@ -185,9 +187,9 @@ extension Lesson {
         Lesson(id: "focal-length", unit: .camera, title: L("焦距：广角和长焦"),
                hook: L("同一个位置，为什么手机「2 倍」「5 倍」拍出的画面差这么多？"), concept: nil, steps: [
             LessonStep(.fieldOfView, L("焦距决定看多宽"),
-                       L("焦距越短，看到的范围越宽（广角）；越长，越像望远镜（长焦）。拖动焦距，看你的照片能装下多少。手机上的「2 倍」「5 倍」，就是在换焦距。")),
+                       L("焦距越短，看到的范围越宽（广角）；越长，越像望远镜（长焦）。拖动焦距：立体图里相机看到的是一个楔形，焦距越长楔形越窄，照片只装得下中间那一小块。手机上的「2 倍」「5 倍」，就是在换焦距。")),
             LessonStep(.perspective, L("长焦会把背景「拉近」"),
-                       L("让人在画面里一样大，长焦需要人站得更远，背景就显得又大又近；广角则背景很远、很小。这叫透视压缩。"),
+                       L("让人在画面里一样大，长焦需要站得更远（上面的图是从上往下看）。楔形变窄，同一座山占的画面比例就变大，背景显得又大又近；广角则背景很远、很小。这叫透视压缩。"),
                        question: LessonQuestion(prompt: L("在小房间里拍一大群人的合影，选哪种焦距？"),
                                                 options: [L("广角（短焦距）"), L("长焦（长焦距）")], answer: .option(0),
                                                 explanation: L("广角能在近距离装下更宽的画面；长焦要退得很远，小房间里做不到。"))),
@@ -207,7 +209,7 @@ extension Lesson {
             LessonStep(.logCurve, L("Log 把更多亮度装进同一个文件"),
                        L("普通模式（Rec.709）亮到一定程度就变成纯白。Log 用一条平缓的曲线，把很暗到很亮都记下来，代价是画面看起来又灰又淡。拖动「场景亮度」比较两条线。")),
             LessonStep(.logConversion, L("LUT 把它还原成正常画面"),
-                       L("转换 LUT 是一张对照表，把 Log 的灰色画面换回正常的对比和颜色。拖动强度，看直方图从挤在中间变成铺开。注意：这里用你的照片模拟 Log 的样子。"),
+                       L("转换 LUT 是一张对照表：在颜色空间里放一张网，把网上每个点搬到新的位置。拖动强度，看这张网被拉开，照片的颜色和直方图一起铺开。注意：这里用你的照片模拟 Log 的样子。"),
                        question: LessonQuestion(prompt: L("拿到 D-Log 素材，第一步做什么？"),
                                                 options: [L("直接拉高饱和度和对比度"), L("先套用这台相机对应的转换 LUT"), L("降低曝光")],
                                                 answer: .option(1),
