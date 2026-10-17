@@ -13,7 +13,8 @@ private func ease(_ t: Double) -> Double { let x = min(1, max(0, t)); return x *
 struct ShutterScene: View {
     let photo: LessonPhoto
     let started: Date
-    @UIState private var stop = 5.0   // 1/30 s
+    // 1/60 s: a visible trail, but only one stop brighter than the correct 1/125.
+    @UIState private var stop = 4.0
 
     /// Seconds the ball takes to cross the frame.
     private static let crossing = 0.25
