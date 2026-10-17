@@ -14,6 +14,7 @@ extension EditorModel {
         guard locals.count < LocalAdjustment.maximumLayers else {
             status = L("最多 \(LocalAdjustment.maximumLayers) 个局部调整。"); return
         }
+        if shape == .subject { addSubject(); return }
         let layer = LocalAdjustment(shape: shape)
         locals.append(layer)
         selectedLocalID = layer.id
@@ -21,6 +22,23 @@ extension EditorModel {
         showMask = shape == .brush
         status = shape == .brush ? L("在画面上涂抹要调整的地方；按住 ⌥ 擦除。")
             : L("已添加\(shape.title)。拖动画面上的控制点调整范围。")
+    }
+
+    /// Finds the subject first (a moment the first time), then adds the layer with its mask shown.
+    private func addSubject() {
+        guard let source = mediaURL, !isVideo else { return }
+        let document = documentID
+        status = L("正在识别主体…")
+        Task {
+            let found = await Task.detached(priority: .userInitiated) { SubjectMask.mask(for: source) != nil }.value
+            guard document == documentID, mediaURL == source else { return }
+            guard found else { status = L("没有找到明显的主体（人物、动物或前景物体）。可以改用画笔或椭圆。"); return }
+            let layer = LocalAdjustment(shape: .subject)
+            locals.append(layer)
+            selectedLocalID = layer.id
+            showMask = true
+            status = L("已选中主体，红色是调整的范围。用反转按钮改为调整背景。")
+        }
     }
 
     func updateLocal(_ id: UUID, _ change: (inout LocalAdjustment) -> Void) {
@@ -47,14 +65,11 @@ struct LocalAdjustmentSection: View {
                          help: L("只调整画面的一部分：渐变适合压暗天空，椭圆适合提亮主体，画笔可以涂出任何地方。"),
                          onReset: editor.locals.isEmpty ? nil : { editor.resetStage(.local) }) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    ForEach(LocalAdjustment.Shape.allCases, id: \.self) { shape in
-                        Button { editor.addLocal(shape) } label: {
-                            Label(shape.title, systemImage: shape.symbol).frame(maxWidth: .infinity)
-                        }
-                        .glassButton().controlSize(.small)
-                        .help(Self.hint(shape))
-                    }
+                // Icons and words when they fit (Chinese); words alone when they don't (English).
+                ViewThatFits(in: .horizontal) {
+                    shapeButtons(.titleAndIcon)
+                    shapeButtons(.titleOnly)
+                    shapeButtons(.iconOnly)
                 }
                 if editor.locals.isEmpty {
                     Text("只调整画面的一部分：比如用渐变压暗天空、用椭圆提亮人物，或者用画笔涂出要改的地方。")
@@ -73,11 +88,24 @@ struct LocalAdjustmentSection: View {
         }
     }
 
+    private func shapeButtons<S: LabelStyle>(_ style: S) -> some View {
+        HStack(spacing: 6) {
+            ForEach(LocalAdjustment.Shape.allCases.filter { $0 != .subject || !editor.isVideo }, id: \.self) { shape in
+                Button { editor.addLocal(shape) } label: {
+                    Label(shape.title, systemImage: shape.symbol).labelStyle(style).lineLimit(1).fixedSize().frame(maxWidth: .infinity)
+                }
+                .glassButton().controlSize(.small)
+                .help(Self.hint(shape))
+            }
+        }
+    }
+
     static func hint(_ shape: LocalAdjustment.Shape) -> String {
         switch shape {
         case .linear: L("渐变：从一条线开始逐渐过渡到另一条线，常用来压暗天空。")
         case .radial: L("椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。")
         case .brush: L("画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。")
+        case .subject: L("主体：自动找出人物、动物或前景物体，只调整它们；反转后调整背景。")
         }
     }
 
@@ -234,6 +262,7 @@ private struct LocalLayerControls: View {
         case .linear: L("拖动画面上的圆点，放好渐变。")
         case .radial: L("拖动中心和边上的点，放好椭圆。")
         case .brush: L("在画面上涂抹；按住 ⌥ 擦除。")
+        case .subject: L(layer.invert ? "正在调整背景（主体以外）。" : "已自动选中主体；反转可改为背景。")
         }
     }
 
@@ -242,6 +271,7 @@ private struct LocalLayerControls: View {
         case .linear: L("在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。")
         case .radial: L("拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。")
         case .brush: L("在画面上涂抹；按住 ⌥ 临时擦除。")
+        case .subject: L("用 macOS 的主体识别（和「照片」里抠出主体相同）找出前景里的人物、动物和物体。羽化让边缘更柔和；反转按钮改为调整背景，比如压暗背景、突出人物。")
         }
     }
 }
@@ -269,6 +299,7 @@ struct LocalMaskOverlay: View {
                 case .linear: linear(shown, size: proxy.size)
                 case .radial: radial(shown)
                 case .brush: brush(shown)
+                case .subject: EmptyView()
                 }
             }
         }

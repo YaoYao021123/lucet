@@ -72,7 +72,8 @@ final class ThumbnailStore {
             guard let base else { return (nil, duration, false) }
             guard let recipe = try? drafts.load(url) else { return (base, duration, false) }
             let lut = recipe.lut.flatMap { try? drafts.loadLUT($0) }
-            let edits = MediaEdits(recipe: recipe, lut: lut)
+            var edits = MediaEdits(recipe: recipe, lut: lut)
+            if !isVideo { edits.source = url }
             guard edits.hasGrade || edits.hasGeometry else { return (base, duration, false) }
             let graded = (try? ColorPipeline.grade(CIImage(cgImage: base), edits: edits))
                 .flatMap { try? ColorPipeline.geometry($0, edits: edits) }

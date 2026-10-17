@@ -23,12 +23,15 @@ public struct BrushStroke: Codable, Equatable, Sendable {
 
 public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
     public enum Shape: String, Codable, Sendable, CaseIterable {
-        case linear, radial, brush
+        case linear, radial, brush, subject
         public var title: String {
-            switch self { case .linear: L("渐变"); case .radial: L("椭圆"); case .brush: L("画笔") }
+            switch self { case .linear: L("渐变"); case .radial: L("椭圆"); case .brush: L("画笔"); case .subject: L("主体") }
         }
         public var symbol: String {
-            switch self { case .linear: "rectangle.tophalf.filled"; case .radial: "circle.dashed"; case .brush: "paintbrush.pointed" }
+            switch self {
+            case .linear: "rectangle.tophalf.filled"; case .radial: "circle.dashed"; case .brush: "paintbrush.pointed"
+            case .subject: "person.and.background.dotted"
+            }
         }
     }
 
@@ -60,6 +63,7 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
         case .linear: adjustments.exposure = -0.5
         case .radial: adjustments.exposure = 0.4
         case .brush: adjustments.exposure = 0.3
+        case .subject: adjustments.exposure = 0.25; feather = 0.25
         }
     }
 
@@ -102,8 +106,9 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
 // MARK: - Masks
 
 public enum LocalMask {
-    /// Coverage 0...1 as a gray image over `extent` (Core Image coordinates).
-    public static func image(_ layer: LocalAdjustment, extent: CGRect) -> CIImage {
+    /// Coverage 0...1 as a gray image over `extent` (Core Image coordinates). `source` is the
+    /// photo file, for masks found in the picture itself (subject).
+    public static func image(_ layer: LocalAdjustment, extent: CGRect, source: URL? = nil) -> CIImage {
         let w = extent.width, h = extent.height
         func point(_ p: CGPoint) -> CIVector { CIVector(x: extent.minX + p.x * w, y: extent.maxY - p.y * h) }
         var mask: CIImage
@@ -130,6 +135,8 @@ public enum LocalMask {
                 .scaledBy(x: layer.radii.width * w / unit, y: layer.radii.height * h / unit)))
         case .brush:
             mask = brush(layer, size: extent.size).transformed(by: CGAffineTransform(translationX: extent.minX, y: extent.minY))
+        case .subject:
+            mask = SubjectMask.image(for: source, extent: extent, feather: layer.feather)
         }
         if layer.invert { mask = mask.applyingFilter("CIColorInvert") }
         return mask.cropped(to: extent)
@@ -226,11 +233,11 @@ extension ColorPipeline {
                 adjusted = BasicColorPipeline.dehaze(adjusted, a, reference: reference)
                 adjusted = try BasicColorPipeline.tone(adjusted, adjustments: a)
                 if a.definition > 0 || a.sharpness > 0 { adjusted = BasicColorPipeline.sharpen(adjusted, a, reference: reference) }
-                result = LocalMask.blend(adjusted, over: result, mask: LocalMask.image(layer, extent: reference)).cropped(to: reference)
+                result = LocalMask.blend(adjusted, over: result, mask: LocalMask.image(layer, extent: reference, source: edits.source)).cropped(to: reference)
             }
         }
         if let id = edits.maskOverlay, let layer = edits.locals.first(where: { $0.id == id }) {
-            result = LocalMask.overlay(result, mask: LocalMask.image(layer, extent: reference)).cropped(to: reference)
+            result = LocalMask.overlay(result, mask: LocalMask.image(layer, extent: reference, source: edits.source)).cropped(to: reference)
         }
         return result
     }

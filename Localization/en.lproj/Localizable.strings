@@ -909,11 +909,15 @@
 "最多 %lld 个局部调整。" = "Up to %lld local adjustments.";
 "在画面上涂抹要调整的地方；按住 ⌥ 擦除。" = "Paint over the areas to adjust; hold ⌥ to erase.";
 "已添加%@。拖动画面上的控制点调整范围。" = "Added a %@. Drag the handles on the picture to set where it applies.";
+"正在识别主体…" = "Finding the subject…";
+"没有找到明显的主体（人物、动物或前景物体）。可以改用画笔或椭圆。" = "No clear subject (person, animal or object in front) found. Try the brush or an ellipse instead.";
+"已选中主体，红色是调整的范围。用反转按钮改为调整背景。" = "Subject selected; red shows what's adjusted. Use the invert button to adjust the background instead.";
 "只调整画面的一部分：渐变适合压暗天空，椭圆适合提亮主体，画笔可以涂出任何地方。" = "Adjust just part of the picture: a gradient suits darkening a sky, an ellipse brightening a subject, and the brush can paint any area.";
 "只调整画面的一部分：比如用渐变压暗天空、用椭圆提亮人物，或者用画笔涂出要改的地方。" = "Adjust just part of the picture: darken the sky with a gradient, brighten a person with an ellipse, or paint over what you want to change with the brush.";
 "渐变：从一条线开始逐渐过渡到另一条线，常用来压暗天空。" = "Gradient: fades from one line to another, often used to darken a sky.";
 "椭圆：调整椭圆里面（或外面）的部分，常用来提亮主体、压暗四周。" = "Ellipse: adjusts inside (or outside) an ellipse, often used to brighten a subject or darken the surroundings.";
 "画笔：涂到哪里就调整哪里；按住 ⌥ 擦除。" = "Brush: adjusts wherever you paint; hold ⌥ to erase.";
+"主体：自动找出人物、动物或前景物体，只调整它们；反转后调整背景。" = "Subject: finds people, animals or objects in front automatically and adjusts only them; invert to adjust the background.";
 "把这一层作用的范围标成红色" = "Show where this layer applies in red";
 "隐藏蒙版" = "Hide mask";
 "显示蒙版" = "Show mask";
@@ -934,9 +938,12 @@
 "拖动画面上的圆点，放好渐变。" = "Drag the dots on the photo to place the gradient.";
 "拖动中心和边上的点，放好椭圆。" = "Drag the center and edge dots to place the ellipse.";
 "在画面上涂抹；按住 ⌥ 擦除。" = "Paint on the photo; hold ⌥ to erase.";
+"已自动选中主体；反转可改为背景。" = "Subject selected automatically; invert for the background.";
+"正在调整背景（主体以外）。" = "Adjusting the background (everything but the subject).";
 "在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。" = "Drag the two dots on the picture: the solid-line side gets the full effect and the dashed-line side none. Drag the middle dot to move both.";
 "拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。" = "Drag the center to move the ellipse and the edge dots to resize it; Feather softens the edge.";
 "在画面上涂抹；按住 ⌥ 临时擦除。" = "Paint on the picture; hold ⌥ to erase for a moment.";
+"用 macOS 的主体识别（和「照片」里抠出主体相同）找出前景里的人物、动物和物体。羽化让边缘更柔和；反转按钮改为调整背景，比如压暗背景、突出人物。" = "Uses macOS subject detection (the same as lifting a subject in Photos) to find people, animals and objects in front. Feather softens the edge; the invert button switches to the background, for example to darken it so a person stands out.";
 "完全生效的一侧" = "Full-effect side";
 "过渡结束的一侧" = "End of the fade";
 "整体移动" = "Move both";
@@ -945,6 +952,7 @@
 "改变高度" = "Change height";
 
 /* LocalAdjustments.swift */
+"主体" = "Subject";
 "椭圆" = "Ellipse";
 "渐变" = "Gradient";
 "画笔" = "Brush";

@@ -68,6 +68,8 @@ public enum ImageExporter {
     /// Grades, straightens and crops, resizes, then adds the watermark.
     public static func render(_ url: URL, edits: MediaEdits, options: ImageExportOptions) throws -> Rendered {
         try Task.checkCancellation()
+        var edits = edits
+        edits.source = url
         let input = try ImageGradeSession.decode(url)
         let headroom = max(1, input.contentHeadroom)
         let graded = try ColorPipeline.grade(input, edits: edits, sourceHeadroom: headroom)

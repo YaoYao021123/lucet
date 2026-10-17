@@ -62,6 +62,9 @@ public struct MediaEdits: Sendable, Equatable {
     public var locals: [LocalAdjustment]
     /// Preview only: tints this layer's mask red. Never saved or exported.
     public var maskOverlay: UUID?
+    /// The photo file, for masks found in the picture itself (subject). Set by whoever decodes
+    /// the photo; not part of the recipe.
+    public var source: URL?
 
     public init(degrees: Double = 0, lut: CreativeLUT? = nil, strength: Double = 1, hdrEffect: Bool = false,
                 adjustments: BasicAdjustments = .init(), geometry: GeometryAdjustments = .init(),
@@ -257,6 +260,8 @@ public actor ImageGradeSession {
 
     public func frame(edits: MediaEdits) throws -> GradeFrame {
         try Task.checkCancellation()
+        var edits = edits
+        edits.source = url
         let graded = try ColorPipeline.grade(image, edits: edits, sourceHeadroom: headroom)
         let output = try ColorPipeline.geometry(graded, edits: edits)
         let before = try ColorPipeline.geometry(image, edits: edits)
