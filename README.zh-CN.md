@@ -20,7 +20,7 @@
 
 ### 调完是什么样
 
-GitHub 上没法拖动，下面四张会自己来回扫；[官网](https://yaoyao021123.github.io/pic_review_edit/)上可以亲手拖中间那条线对比。都是光集的真实输出，没有额外修图。
+GitHub 上没法拖动，下面四张会自己来回扫；[官网](https://yaoyao021123.github.io/lucet/)上可以亲手拖中间那条线对比。都是光集的真实输出，没有额外修图。
 
 <table>
 <tr>
@@ -75,7 +75,7 @@ AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片�
 
 - 原片从不被修改；没有账号，不上传照片。
 - 能做什么、还做不到什么，都写清楚（见下方「现在的限制」）。
-- 欢迎一起做：想法、问题、你自己的照片故事，都可以到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们。如果你也在用 [Claude Code](https://claude.com/claude-code) 或别的 AI 工具做东西，欢迎分享你的做法。
+- 欢迎一起做：想法、问题、你自己的照片故事，都可以到 [Issues](https://github.com/YaoYao021123/lucet/issues) 告诉我们。如果你也在用 [Claude Code](https://claude.com/claude-code) 或别的 AI 工具做东西，欢迎分享你的做法。
 
 ## 它能做什么
 
@@ -153,14 +153,14 @@ AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片�
 
 **系统要求**：Apple 芯片（M 系列）的 Mac，macOS 15 或更高。界面有中文和英文，跟随系统语言，也可以在菜单栏「Lucet 光集 › Language · 语言」里切换。
 
-1. 到 [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest) 下载最新的 `Lucet-…-arm64.zip`，解压，把「Lucet 光集」拖进「应用程序」。
+1. 到 [Releases](https://github.com/YaoYao021123/lucet/releases/latest) 下载最新的 `Lucet-…-arm64.zip`，解压，把「Lucet 光集」拖进「应用程序」。
 2. 第一次打开会被系统拦下（提示无法验证开发者），因为目前的版本还没有经过 Apple 公证。放行方法：先双击打开一次，看到提示后点「完成」→ 打开「系统设置 › 隐私与安全性」→ 滚动到最下面 → 在「Lucet 光集」旁点「仍要打开」。只需要一次。
 
 想自己构建（需要 Xcode 命令行工具，`xcode-select --install`）：
 
 ```sh
-git clone https://github.com/YaoYao021123/pic_review_edit.git
-cd pic_review_edit
+git clone https://github.com/YaoYao021123/lucet.git
+cd lucet
 bash scripts/run-workbench.sh
 ```
 
@@ -207,7 +207,7 @@ Lucet 光集还是早期版本，诚实地说：
 
 ## 反馈
 
-遇到问题或想要某个功能，欢迎到 [Issues](https://github.com/YaoYao021123/pic_review_edit/issues) 告诉我们，附上一张截图会很有帮助。
+遇到问题或想要某个功能，欢迎到 [Issues](https://github.com/YaoYao021123/lucet/issues) 告诉我们，附上一张截图会很有帮助。
 
 ## 开发
 

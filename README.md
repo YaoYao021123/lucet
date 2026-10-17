@@ -20,7 +20,7 @@ Photos, videos and Live Photos. A Mac color tool for DJI and iPhone shooters, in
 
 ### What it does to a photo
 
-GitHub can't run a drag slider, so these sweep by themselves; on the [website](https://yaoyao021123.github.io/pic_review_edit/en/) you can drag the line yourself. All four are Lucet's real output, with no extra retouching.
+GitHub can't run a drag slider, so these sweep by themselves; on the [website](https://yaoyao021123.github.io/lucet/en/) you can drag the line yourself. All four are Lucet's real output, with no extra retouching.
 
 <table>
 <tr>
@@ -75,7 +75,7 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 
 - Originals are never changed. No account, no uploaded photos.
 - We say plainly what it can and can't do yet (see "Current limitations" below).
-- Build it with us: ideas, problems and your own photo stories are welcome in [Issues](https://github.com/YaoYao021123/pic_review_edit/issues). If you also build things with [Claude Code](https://claude.com/claude-code) or other AI tools, tell us how you work.
+- Build it with us: ideas, problems and your own photo stories are welcome in [Issues](https://github.com/YaoYao021123/lucet/issues). If you also build things with [Claude Code](https://claude.com/claude-code) or other AI tools, tell us how you work.
 
 ## Features
 
@@ -160,14 +160,14 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 
 **Requirements**: a Mac with Apple silicon (M-series) running macOS 15 or later. The interface is in English and Simplified Chinese and follows your Mac's language; you can also switch it under **Lucet 光集 › Language · 语言** in the menu bar.
 
-1. Download the latest `Lucet-…-arm64.zip` from [Releases](https://github.com/YaoYao021123/pic_review_edit/releases/latest), unzip it and drag **Lucet 光集** into Applications.
+1. Download the latest `Lucet-…-arm64.zip` from [Releases](https://github.com/YaoYao021123/lucet/releases/latest), unzip it and drag **Lucet 光集** into Applications.
 2. The first launch is blocked ("can't verify the developer") because this version isn't notarized by Apple yet. To allow it: double-click it once and click Done → open **System Settings › Privacy & Security** → scroll to the bottom → click **Open Anyway** next to Lucet 光集. You only need to do this once.
 
 To build it yourself (needs the Xcode Command Line Tools, `xcode-select --install`):
 
 ```sh
-git clone https://github.com/YaoYao021123/pic_review_edit.git
-cd pic_review_edit
+git clone https://github.com/YaoYao021123/lucet.git
+cd lucet
 bash scripts/run-workbench.sh
 ```
 
@@ -214,7 +214,7 @@ Lucet is an early version. Honestly:
 
 ## Feedback
 
-Problems or feature ideas are welcome in [Issues](https://github.com/YaoYao021123/pic_review_edit/issues); a screenshot helps a lot.
+Problems or feature ideas are welcome in [Issues](https://github.com/YaoYao021123/lucet/issues); a screenshot helps a lot.
 
 ## Development
 

@@ -49,7 +49,7 @@ swift run --configuration release media-benchmark
 
 `website/` 是纯静态页面（无构建步骤、无外部依赖）：中文在 `website/index.html`，英文在 `website/en/index.html`，两页内容要一起更新。浏览器语言不是中文的访客第一次会被带到英文页；导航栏的「English / 中文」会记住选择。本地预览：`python3 -m http.server --directory website`。推送到 `main` 或 `improve-workbench`（默认分支）后由 `.github/workflows/pages.yml` 发布到 GitHub Pages（需在仓库 Settings › Pages 把来源设为 GitHub Actions）。
 
-社交分享预览（`<head>` 里的 `og:` / `twitter:` 标签）使用绝对地址，默认假定站点在 `https://yaoyao021123.github.io/pic_review_edit/`；换域名时请把 `website/index.html` 中该块的所有地址一起改掉。分享图是 `website/assets/og.jpg`（1200×630）。发布后可以用 opengraph.xyz 之类的预览工具检查；各平台会缓存预览，改图后可能要等一会儿或在平台的调试工具里刷新。
+社交分享预览（`<head>` 里的 `og:` / `twitter:` 标签）使用绝对地址，默认假定站点在 `https://yaoyao021123.github.io/lucet/`；换域名时请把 `website/index.html` 中该块的所有地址一起改掉。分享图是 `website/assets/og.jpg`（1200×630）。发布后可以用 opengraph.xyz 之类的预览工具检查；各平台会缓存预览，改图后可能要等一会儿或在平台的调试工具里刷新。
 
 页面和 README 里的截图由应用自带的快照模式生成：`bash scripts/make-site-screenshots.sh <示例照片文件夹> <主图> [示例视频] [自动对比用的照片]`。`SHOT_LANG=en` 生成英文界面（放在 `website/assets/en/`，建议用英文文件名的示例照片）；`SKY_PHOTO`（局部调整截图和天空前后对比）、`MATCH_REFERENCE`（匹配色调的参考图）、`SIMILAR_DIR` 与 `COMPARE_FILES`（重复与相似、并排选片）、`REMOVE_RECIPE`（「去除」前后对比，`scripts/site-remove.json` 对应官网那张日落照片）可选。前后对比图和 README 里的 GIF 不含文字，两种语言共用。快照无法呈现 Liquid Glass 材质，想要真实玻璃效果，可以自己截一张图替换 `website/assets/shot-edit.jpg`（文件名不变即可）。示例照片会公开展示，请只用你有权公开的照片。
 
