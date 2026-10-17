@@ -97,6 +97,17 @@ final class LessonPhoto: @unchecked Sendable {
     /// Mean brightness per cell of a grid `columns` wide (rows follow the photo's shape).
     func relief(columns: Int) -> Relief {
         if let cached = reliefCache[columns] { return cached }
+        let result = Self.grid(luma, width: width, height: height, columns: columns)
+        reliefCache[columns] = result
+        return result
+    }
+
+    /// The same grid for other pixel bytes (an edited copy of the photo), for scenes that reshape the relief.
+    func relief(of pixels: [UInt8], columns: Int) -> Relief {
+        pixels.count == width * height * 4 ? Self.grid(Self.luma(pixels), width: width, height: height, columns: columns) : relief(columns: columns)
+    }
+
+    private static func grid(_ luma: [Double], width: Int, height: Int, columns: Int) -> Relief {
         let rows = max(4, Int((Double(columns) * Double(height) / Double(width)).rounded()))
         var cells = [Double](repeating: 0, count: columns * rows)
         for row in 0..<rows {
@@ -108,9 +119,7 @@ final class LessonPhoto: @unchecked Sendable {
                 cells[row * columns + column] = sum / Double((x1 - x0) * (y1 - y0))
             }
         }
-        let result = Relief(columns: columns, rows: rows, luma: cells)
-        reliefCache[columns] = result
-        return result
+        return Relief(columns: columns, rows: rows, luma: cells)
     }
 
     /// Pixel numbers spread evenly over the photo (a fixed pick, so the same dots move when the
