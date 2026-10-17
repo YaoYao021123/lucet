@@ -594,6 +594,12 @@ struct InfoPanel: View {
                 }
                 .padding(.vertical, 8)
             }
+            if let id = editor.url?.standardizedFileURL.path, let labels = app.content.labels[id], !labels.isEmpty {
+                InspectorSection(L("画面内容"), help: L("在这台 Mac 上识别，用于在素材库里按内容搜索。")) {
+                    Text(labels.prefix(8).map(ContentLabels.displayName).joined(separator: L("、")))
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                }
+            }
             InspectorSection(L("编辑记录")) {
                 VStack(alignment: .leading, spacing: 4) {
                     let summary = editor.editSummary

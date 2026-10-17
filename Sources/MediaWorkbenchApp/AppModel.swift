@@ -106,6 +106,7 @@ final class AppModel {
     let thumbnails: ThumbnailStore
     let editor: EditorModel
     let similar: SimilarityIndex
+    let content: ContentIndex
     /// Browse view shows only groups of similar shots and bursts.
     var showGroups = false {
         didSet { if showGroups { similar.refresh(library.entries, missing: library.missing) } }
@@ -161,6 +162,7 @@ final class AppModel {
         thumbnails = ThumbnailStore(drafts: drafts)
         editor = EditorModel(drafts: drafts)
         similar = SimilarityIndex(root: root)
+        content = ContentIndex(root: root)
         exports = ExportQueue()
         if let data = UserDefaults.standard.data(forKey: "guangji.export"),
            let settings = try? JSONDecoder().decode(ExportSettings.self, from: data) {
@@ -188,6 +190,8 @@ final class AppModel {
             MainActor.assumeIsolated { Task { await self?.library.checkMissing() } }
         }
         exports.onFinish = { [weak self] job in self?.exportFinished(job) }
+        library.contentLabels = content.labels
+        content.onChange = { [weak self] labels in self?.library.contentLabels = labels }
         Self.current = self
         terminationObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
                                                                      object: nil, queue: .main) { [weak self] _ in
@@ -199,6 +203,12 @@ final class AppModel {
     }
 
     var currentEntry: LibraryEntry? { library.entry(library.currentID) }
+
+    /// The library search box: file names, and what photos show (labelled on first use).
+    func search(_ text: String) {
+        library.filter.search = text
+        if !text.trimmingCharacters(in: .whitespaces).isEmpty { content.refresh(library.entries, missing: library.missing) }
+    }
 
     // MARK: Messages
 

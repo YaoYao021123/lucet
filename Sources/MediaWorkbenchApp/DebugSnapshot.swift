@@ -151,6 +151,7 @@ enum DebugSnapshot {
         case "export": app.enqueueCurrentExport(to: URL(fileURLWithPath: argument))
         case "watermark": app.exportSettings.image.watermark = argument == "off" ? nil : Watermark(text: argument.replacingOccurrences(of: "\\n", with: "\n"))
         case "naming": app.exportSettings.naming = argument
+        case "search": app.search(argument)
         case "live":
             app.editor.selectLiveRange()
             Task { @MainActor in

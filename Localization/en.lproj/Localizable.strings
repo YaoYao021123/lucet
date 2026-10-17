@@ -499,6 +499,8 @@
 "在地图中打开" = "Open in Maps";
 "导出时默认移除位置信息。" = "Location is removed on export by default.";
 "正在读取信息…" = "Reading info…";
+"在这台 Mac 上识别，用于在素材库里按内容搜索。" = "Recognized on this Mac, for searching the library by content.";
+"画面内容" = "Contents";
 "编辑记录" = "Edit history";
 "尚未编辑。" = "Not edited yet.";
 "编辑以配方自动保存，原片从不修改。" = "Edits are saved automatically as a recipe. The original is never changed.";
@@ -882,7 +884,9 @@
 "添加照片或视频…" = "Add Photos or Videos…";
 "导入文件夹…" = "Import Folder…";
 "添加素材" = "Add Media";
-"搜索文件名" = "Search file names";
+"搜索文件名或画面内容" = "Search names or contents";
+"按文件名，或按画面里有什么来找：天空、山、海、狗、日落……在这台 Mac 上识别，不会上传。" = "Find by file name, or by what's in the picture: sky, mountain, sea, dog, sunset… Recognized on this Mac; nothing is uploaded.";
+"正在识别画面内容 %lld/%lld" = "Recognizing contents %lld/%lld";
 "还没有素材" = "No media yet";
 "导入后，照片和视频会列在这里。也可以把文件直接拖进窗口。" = "Imported photos and videos appear here. You can also drag files into the window.";
 "⌘/⇧ 点按多选" = "⌘/⇧-click to multi-select";

@@ -90,8 +90,14 @@ struct LibraryFilter: Equatable, Sendable {
         case .hideRejected: if entry.flag == .reject { return false }
         case .rejected: if entry.flag != .reject { return false }
         }
-        if !search.isEmpty, !entry.name.localizedCaseInsensitiveContains(search) { return false }
         return true
+    }
+
+    /// The search box finds file names and, for photos, what they show.
+    func matches(_ entry: LibraryEntry, labels: [String]?) -> Bool {
+        guard matches(entry) else { return false }
+        guard !search.isEmpty else { return true }
+        return entry.name.localizedCaseInsensitiveContains(search) || ContentLabels.matches(labels ?? [], query: search)
     }
 }
 
@@ -104,6 +110,8 @@ final class LibraryModel {
     private(set) var entries: [LibraryEntry] = []
     private(set) var visible: [LibraryEntry] = []
     var filter = LibraryFilter() { didSet { if filter != oldValue { refreshVisible() } } }
+    /// What each photo shows (ContentIndex), for searching by content.
+    var contentLabels: [String: [String]] = [:] { didSet { if !filter.search.isEmpty { refreshVisible() } } }
     var selection: Set<String> = []
     /// The item open in the editor.
     var currentID: String?
@@ -264,7 +272,8 @@ final class LibraryModel {
 
     private func refreshVisible() {
         let filter = self.filter
-        visible = filter.isActive ? entries.filter(filter.matches) : entries
+        let labels = contentLabels
+        visible = filter.isActive ? entries.filter { filter.matches($0, labels: labels[$0.id]) } : entries
         visiblePositions = Dictionary(uniqueKeysWithValues: visible.enumerated().map { ($1.id, $0) })
     }
 

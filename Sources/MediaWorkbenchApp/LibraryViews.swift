@@ -119,12 +119,20 @@ struct LibrarySidebar: View {
             HStack(spacing: 6) {
                 HStack(spacing: 4) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.tertiary)
-                    TextField("搜索文件名", text: Binding(get: { library.filter.search }, set: { library.filter.search = $0 }))
+                    TextField("搜索文件名或画面内容", text: Binding(get: { library.filter.search }, set: { app.search($0) }))
                         .textFieldStyle(.plain)
+                        .help("按文件名，或按画面里有什么来找：天空、山、海、狗、日落……在这台 Mac 上识别，不会上传。")
                 }
                 .padding(.horizontal, 7).frame(height: 24)
                 .background(WorkbenchTheme.well, in: RoundedRectangle(cornerRadius: 6))
                 FilterMenu(library: library)
+            }
+            if let progress = app.content.progress, !library.filter.search.isEmpty {
+                HStack(spacing: 6) {
+                    ProgressView(value: Double(progress.done), total: Double(max(1, progress.total))).frame(width: 60).controlSize(.small)
+                    Text(L("正在识别画面内容 \(progress.done)/\(progress.total)")).font(.caption).foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                }
             }
         }
         .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 8)

@@ -8,18 +8,23 @@ struct MediaProbe {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
         guard let command = arguments.first,
-              ((["inspect", "lut", "straighten", "details", "analyze", "auto", "similar"].contains(command) && arguments.count == 2)
+              ((["inspect", "lut", "straighten", "details", "analyze", "auto", "similar", "labels"].contains(command) && arguments.count == 2)
                 || (command == "auto" && arguments.count == 3)
                 || (["render", "match"].contains(command) && (4...5).contains(arguments.count))
                 || (command == "live" && (3...4).contains(arguments.count))
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | similar <文件夹> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | similar <文件夹> | labels <图片> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
             let url = URL(fileURLWithPath: arguments[1]).standardizedFileURL
+            if command == "labels" {
+                // labels <image>: what content search knows about a photo
+                print((ContentLabels.classify(url) ?? []).joined(separator: " "))
+                return
+            }
             if command == "render" || command == "match" {
                 // render <image> <recipe.json | -> <out.jpg> [long edge]: the image with a saved recipe applied
                 //   (local adjustments included; LUT references are skipped).
