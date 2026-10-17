@@ -274,6 +274,8 @@
 "已自动保存" = "Autosaved";
 "保存失败" = "Save failed";
 "编辑未能保存" = "Edits couldn't be saved";
+"这一步用到的 LUT 已无法读取。" = "The LUT this step used can no longer be read.";
+"已回到：%@。可撤销（⌘Z）。" = "Back to: %@. You can undo this (⌘Z).";
 "已保存版本快照。" = "Snapshot saved.";
 "快照未保存" = "Snapshot not saved";
 "已恢复快照：%@，可撤销。" = "Restored snapshot: %@. Undoable.";
@@ -371,6 +373,28 @@
 "HDR 封面增益图写入失败" = "Writing the HDR key photo gain map failed";
 "HDR 封面未保留亮度范围" = "The HDR key photo didn't keep its brightness range";
 
+/* HistoryLog.swift */
+"原图" = "Original";
+"打开时的编辑" = "Edits When Opened";
+"清除历史时的编辑" = "Edits When History Was Cleared";
+"复位全部" = "Reset All";
+"基础调整 %lld 项" = "%lld Basic Adjustments";
+"移除 LUT" = "Remove LUT";
+"LUT 强度 %lld%%" = "LUT Strength %lld%%";
+"裁剪与拉直" = "Crop & Straighten";
+"添加%@" = "Add %@";
+"删除局部调整" = "Delete Local Adjustment";
+"开关调整" = "Turn Adjustments On/Off";
+"视频片段" = "Video clip";
+"修改" = "Change";
+
+/* HistoryViews.swift */
+"历史记录：回到之前的任意一步" = "History: go back to any earlier step";
+"历史记录" = "History";
+"清除" = "Clear";
+"只保留当前这一步" = "Keep only the current step";
+"关闭光集后仍会保留，每张最多 80 步。点一步就回到那时；之后再修改，会替换它后面的步骤。" = "Kept after you quit Lucet, up to 80 steps per photo. Click a step to go back to it; editing from there replaces the steps after it.";
+
 /* ImageExport.swift */
 "文件扩展名需与导出格式 %@ 一致。" = "The file extension must match the export format %@.";
 "系统不支持写入 %@。" = "This Mac can't write %@.";
@@ -395,7 +419,6 @@
 "打开一张照片或一段视频后，在这里调色。" = "Open a photo or video to adjust it here.";
 "正在读取…" = "Loading…";
 "编辑自动保存为配方，原片从不修改。" = "Edits are saved automatically as a recipe. The original is never changed.";
-"复位全部" = "Reset All";
 "恢复原片画面（可撤销）" = "Go back to the original look (undoable)";
 "自动" = "Auto";
 "根据这张照片自动调整曝光、影调、白平衡和色彩（A）。可撤销。" = "Adjusts exposure, tone, white balance and color for this photo automatically (A). Undoable.";
@@ -423,7 +446,6 @@
 "复位%@" = "Reset %@";
 "一键套用整套调色（不影响裁切、片段与声音）。可把当前调色存为自己的预设。" = "Apply a whole look in one click (crop, clip and audio stay as they are). You can save the current look as your own preset.";
 "预设" = "Presets";
-"原图" = "Original";
 "删除预设「%@」" = "Delete Preset “%@”";
 "存为预设" = "Save as Preset";
 "把当前调色存为自己的预设" = "Save the current look as your own preset";
@@ -1057,7 +1079,6 @@
 "拖动选择 Live 封面" = "Drag to choose the Live key photo";
 "封面位置" = "Key photo position";
 "正在生成缩略图…" = "Generating thumbnails…";
-"视频片段" = "Video clip";
 "拖动调整入点（I）" = "Drag to set the in point (I)";
 "拖动调整出点（O）" = "Drag to set the out point (O)";
 

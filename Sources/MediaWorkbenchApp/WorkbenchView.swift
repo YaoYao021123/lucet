@@ -313,6 +313,7 @@ struct WorkbenchToolbar: ToolbarContent {
                     .help("撤销（⌘Z）").disabled(!editor.canUndo)
                 Button(action: editor.redo) { Image(systemName: "arrow.uturn.forward") }
                     .help("重做（⇧⌘Z）").disabled(!editor.canRedo)
+                HistoryButton(editor: editor)
                 Menu {
                     Button("关闭对比") { editor.compareMode = .off }
                     Button("原片（\\ 或 M）") { editor.compareMode = .original }

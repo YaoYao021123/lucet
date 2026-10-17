@@ -35,7 +35,7 @@ enum DebugSnapshot {
                     // The inspector isn't always presented for an accessory-policy window,
                     // so render it in its own offscreen window: "panel:name" or "panel:name@1600".
                     let parts = argument.split(separator: "@").map(String.init)
-                    perform("panel-open", parts.count > 1 ? parts[1] : "1400")
+                    perform(parts[0].hasPrefix("history") ? "panel-open-history" : "panel-open", parts.count > 1 ? parts[1] : "1400")
                     try? await Task.sleep(for: .seconds(1.5))
                     if let window = panelWindow, let view = window.contentView { write(view, named: parts[0]) }
                     panelWindow?.close(); panelWindow = nil
@@ -64,14 +64,15 @@ enum DebugSnapshot {
             if app.library.entry(id) == nil { app.library.add([URL(fileURLWithPath: argument)]) }
             app.open(id)
         case "mode": app.mode = argument == "edit" ? .edit : .browse
-        case "panel-open":
-            let size = NSSize(width: 330, height: Double(argument) ?? 1400)
+        case "panel-open", "panel-open-history":
+            let size = NSSize(width: command == "panel-open" ? 330 : 300, height: Double(argument) ?? 1400)
             let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: -6000, y: 0), size: size),
                                   styleMask: [.borderless], backing: .buffered, defer: false)
             window.appearance = workbenchWindow?.effectiveAppearance
             window.backgroundColor = .windowBackgroundColor
             window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: InspectorView(app: app)
+            let content: AnyView = command == "panel-open" ? AnyView(InspectorView(app: app)) : AnyView(HistoryList(editor: app.editor))
+            window.contentView = NSHostingView(rootView: content
                 .frame(width: size.width, height: size.height)
                 .background(Color(nsColor: .underPageBackgroundColor)))
             window.orderFront(nil)

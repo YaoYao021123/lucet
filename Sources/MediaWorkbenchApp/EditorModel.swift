@@ -152,6 +152,11 @@ final class EditorModel {
     @ObservationIgnored private var revision = 0
     @ObservationIgnored private var session = UUID()
     @ObservationIgnored private var history: EditHistory<EditorSnapshot>?
+    /// Named steps of this file's edits, saved with the drafts (the History list).
+    private(set) var historyLog: HistoryLog?
+    @ObservationIgnored private var historyWrite: Task<Void, Never>?
+    /// The next saved state came from undo or redo, so it matches an existing step.
+    @ObservationIgnored private var navigatingHistory = false
     @ObservationIgnored private var sourceStamp: SourceStamp?
     @ObservationIgnored private var companionStamp: SourceStamp?
     @ObservationIgnored private var imageSession: ImageGradeSession?
@@ -324,6 +329,7 @@ final class EditorModel {
                     loadFilmstrip(input, duration: duration, token: token)
                 }
                 history = EditHistory(snapshot); updateUndoState()
+                startHistoryLog(selected, stamp: stamp)
                 trackedEdits = edits
                 isLoaded = true; isLoading = false
                 draftStatus = loaded.0 == nil ? L("自动保存") : L("已恢复上次的编辑")
@@ -351,6 +357,7 @@ final class EditorModel {
         detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = false; status = ""; filmstrip = []
         history = nil; updateUndoState()
+        historyLog = nil
         imageSession = nil
     }
 
@@ -438,11 +445,13 @@ final class EditorModel {
 
     func undo() {
         guard let value = history?.undo() else { return }
+        navigatingHistory = true
         restore(value); status = L("已撤销")
     }
 
     func redo() {
         guard let value = history?.redo() else { return }
+        navigatingHistory = true
         restore(value); status = L("已重做")
     }
 
@@ -658,13 +667,55 @@ final class EditorModel {
         saveTask?.cancel(); saveTask = nil
         guard suspended == 0, isLoaded, let sourceStamp, let url else { return }
         do {
-            try drafts.save(currentRecipe(), source: sourceStamp, companion: companionStamp)
+            let recipe = try currentRecipe()
+            try drafts.save(recipe, source: sourceStamp, companion: companionStamp)
             draftStatus = L("已自动保存")
             onRecipeSaved?(url)
+            if var log = historyLog, log.record(recipe, navigating: navigatingHistory) { historyLog = log; writeHistory(log) }
+            navigatingHistory = false
         } catch {
             draftStatus = L("保存失败")
             onNotice?(Notice(title: L("编辑未能保存"), message: error.localizedDescription))
         }
+    }
+
+    // MARK: History list
+
+    private func startHistoryLog(_ source: URL, stamp: SourceStamp) {
+        guard let recipe = try? currentRecipe() else { historyLog = nil; return }
+        var log = drafts.loadHistory(for: source) ?? HistoryLog(opening: recipe, source: stamp)
+        // Changed elsewhere since (pasted, synced): that becomes a step of its own.
+        if log.record(recipe) { writeHistory(log) }
+        historyLog = log
+    }
+
+    /// Writes in order, off the main thread.
+    private func writeHistory(_ log: HistoryLog) {
+        let previous = historyWrite, store = drafts
+        historyWrite = Task.detached(priority: .utility) {
+            await previous?.value
+            try? store.saveHistory(log)
+        }
+    }
+
+    /// Goes back (or forward) to a step in the History list. ⌘Z returns to where you were.
+    func jumpToHistory(_ index: Int) {
+        guard var log = historyLog, index != log.position, let recipe = log.jump(to: index) else { return }
+        let lut: CreativeLUT?
+        do { lut = try recipe.lut.map { try drafts.loadLUT($0) } } catch {
+            status = L("这一步用到的 LUT 已无法读取。"); return
+        }
+        historyLog = log
+        writeHistory(log)
+        restoreRecipe(recipe, lut: lut)
+        status = L("已回到：\(log.label(index))。可撤销（⌘Z）。")
+    }
+
+    func clearHistory() {
+        guard var log = historyLog else { return }
+        log.clear()
+        historyLog = log
+        writeHistory(log)
     }
 
     func saveSnapshot(named name: String) {
