@@ -154,6 +154,18 @@ final class EditorModel {
     @ObservationIgnored private var history: EditHistory<EditorSnapshot>?
     /// Named steps of this file's edits, saved with the drafts (the History list).
     private(set) var historyLog: HistoryLog?
+    /// Set while editing a photo's version in a project: edits are saved into the project
+    /// (shared look plus this photo's own part), not into the photo's own recipe.
+    struct ProjectContext: Equatable {
+        let id: UUID
+        let name: String
+        let count: Int
+        /// The recipe last stored, so only what changed since is passed on.
+        var start: EditRecipe
+    }
+    private(set) var projectContext: ProjectContext?
+    /// Stores a project version: (project, photo, new recipe, previous recipe).
+    @ObservationIgnored var onProjectSave: ((UUID, URL, EditRecipe, EditRecipe) -> Void)?
     @ObservationIgnored private var historyWrite: Task<Void, Never>?
     /// The next saved state came from undo or redo, so it matches an existing step.
     @ObservationIgnored private var navigatingHistory = false
@@ -237,9 +249,10 @@ final class EditorModel {
 
     // MARK: Opening
 
-    func open(_ selected: URL) {
-        if selected == url, isLoaded || isLoading { return }
+    func open(_ selected: URL, project: ProjectContext? = nil) {
+        if selected == url, isLoaded || isLoading, project?.id == projectContext?.id { return }
         flushDraft()
+        projectContext = project
         cancelWork()
         teardownPlayer()
         suspended += 1
@@ -278,10 +291,11 @@ final class EditorModel {
                 }
                 let movieInput = input
                 let meta = input == selected ? info : try await MediaInspector.inspect(input)
+                let projectRecipe = project?.start
                 let loaded = await Task.detached(priority: .userInitiated) { () -> (EditRecipe?, CreativeLUT?, String?, CaptureInfo?) in
                     let capture = CaptureInfo.read(selected)
                     do {
-                        guard let recipe = try drafts.load(selected) else { return (nil, nil, nil, capture) }
+                        guard let recipe = try projectRecipe ?? drafts.load(selected) else { return (nil, nil, nil, capture) }
                         let lut = try recipe.lut.map { try drafts.loadLUT($0) }
                         return (recipe, lut, nil, capture)
                     } catch { return (nil, nil, error.localizedDescription, capture) }
@@ -668,9 +682,20 @@ final class EditorModel {
         guard suspended == 0, isLoaded, let sourceStamp, let url else { return }
         do {
             let recipe = try currentRecipe()
-            try drafts.save(recipe, source: sourceStamp, companion: companionStamp)
-            draftStatus = L("已自动保存")
-            onRecipeSaved?(url)
+            if var context = projectContext {
+                // A project version: the app splits it into the shared look and this photo's part.
+                if recipe != context.start {
+                    try recipe.validate()
+                    onProjectSave?(context.id, url, recipe, context.start)
+                    context.start = recipe
+                    projectContext = context
+                }
+                draftStatus = L("已保存到项目「\(context.name)」")
+            } else {
+                try drafts.save(recipe, source: sourceStamp, companion: companionStamp)
+                draftStatus = L("已自动保存")
+                onRecipeSaved?(url)
+            }
             if var log = historyLog, log.record(recipe, navigating: navigatingHistory) { historyLog = log; writeHistory(log) }
             navigatingHistory = false
         } catch {
@@ -683,7 +708,12 @@ final class EditorModel {
 
     private func startHistoryLog(_ source: URL, stamp: SourceStamp) {
         guard let recipe = try? currentRecipe() else { historyLog = nil; return }
-        var log = drafts.loadHistory(for: source) ?? HistoryLog(opening: recipe, source: stamp)
+        let variant = projectContext.map { "project:" + $0.id.uuidString }
+        var log = drafts.loadHistory(for: source, variant: variant) ?? {
+            var fresh = HistoryLog(opening: recipe, source: stamp)
+            fresh.variant = variant
+            return fresh
+        }()
         // Changed elsewhere since (pasted, synced): that becomes a step of its own.
         if log.record(recipe) { writeHistory(log) }
         historyLog = log
@@ -719,7 +749,7 @@ final class EditorModel {
     }
 
     func saveSnapshot(named name: String) {
-        guard let sourceStamp, isLoaded else { return }
+        guard let sourceStamp, isLoaded, projectContext == nil else { return }
         do {
             let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try drafts.saveSnapshot(currentRecipe(), name: title.isEmpty ? Date().formatted(date: .abbreviated, time: .shortened) : title,
@@ -731,7 +761,7 @@ final class EditorModel {
     func snapshots() -> [SavedSnapshot] { url.map { drafts.snapshots(for: $0) } ?? [] }
 
     func restoreSnapshot(_ value: SavedSnapshot) {
-        guard let url else { return }
+        guard let url, projectContext == nil else { return }
         do {
             let recipe = try drafts.restoreSnapshot(value, for: url)
             let lut = try recipe.lut.map { try drafts.loadLUT($0) }

@@ -21,6 +21,9 @@ struct InspectorView: View {
                                   title: { $0.title }, accessibilityTitle: L("检查器"))
                 .padding(.horizontal, 12).padding(.vertical, 8)
             WorkbenchTheme.hairline.frame(height: 1)
+            if editor.isLoaded, let context = editor.projectContext {
+                ProjectEditBar(app: app, context: context)
+            }
             if editor.isLoaded {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {

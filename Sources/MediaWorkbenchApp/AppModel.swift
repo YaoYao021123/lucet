@@ -30,6 +30,8 @@ enum ActiveSheet: Identifiable {
     case matchLook
     case compare([String])
     case photosImport
+    case newProject([String])
+    case renameProject(UUID)
 
     var id: String {
         switch self {
@@ -43,6 +45,8 @@ enum ActiveSheet: Identifiable {
         case .livePreview(let resources): "live-\(resources.identifier)"
         case .lesson(let id): "lesson-\(id)"
         case .matchLook: "match-look"
+        case .newProject: "new-project"
+        case .renameProject(let id): "rename-project-\(id)"
         case .photosImport: "photos-import"
         case .compare(let ids): "compare-\(ids.joined(separator: "|").hashValue)"
         }
@@ -109,6 +113,19 @@ final class AppModel {
     let editor: EditorModel
     let similar: SimilarityIndex
     let content: ContentIndex
+    /// Projects: photos gathered for one job, each project with one shared look.
+    var projects: [Project] = []
+    /// The project the library shows; nil for the whole library.
+    var currentProjectID: UUID? {
+        didSet { if currentProjectID != oldValue { projectScopeChanged() } }
+    }
+    /// While editing inside a project: slider changes stay with this photo instead of going to the shared look.
+    var projectPhotoOnly = false {
+        // Edits made so far still belong where they were made.
+        willSet { if newValue != projectPhotoOnly { editor.flushDraft() } }
+    }
+    @ObservationIgnored let projectStore: ProjectStore
+    @ObservationIgnored var projectSaveTask: Task<Void, Never>?
     /// Browse view shows only groups of similar shots and bursts.
     var showGroups = false {
         didSet { if showGroups { similar.refresh(library.entries, missing: library.missing) } }
@@ -165,6 +182,8 @@ final class AppModel {
         editor = EditorModel(drafts: drafts)
         similar = SimilarityIndex(root: root)
         content = ContentIndex(root: root)
+        projectStore = ProjectStore(root: root)
+        projects = projectStore.load()
         exports = ExportQueue()
         if let data = UserDefaults.standard.data(forKey: "guangji.export"),
            let settings = try? JSONDecoder().decode(ExportSettings.self, from: data) {
@@ -192,6 +211,9 @@ final class AppModel {
             MainActor.assumeIsolated { Task { await self?.library.checkMissing() } }
         }
         exports.onFinish = { [weak self] job in self?.exportFinished(job) }
+        editor.onProjectSave = { [weak self] project, url, recipe, previous in
+            self?.storeProjectEdit(project, url: url, recipe: recipe, previous: previous)
+        }
         library.contentLabels = content.labels
         content.onChange = { [weak self] labels in self?.library.contentLabels = labels }
         Self.current = self
@@ -272,6 +294,8 @@ final class AppModel {
                 let collected = try await Task.detached(priority: .userInitiated) { try LibraryFiles.collect(urls) }.value
                 guard !collected.files.isEmpty else { show(L("没有找到支持的照片或视频。")); return }
                 let ids = library.add(collected.files, liveCompanions: collected.liveStills)
+                // Imported while a project is open: they join it.
+                if let project = currentProjectID { addToProject(ids, projectID: project) }
                 if collected.files.count == 1, let id = ids.first {
                     open(id)
                 } else {
@@ -290,7 +314,7 @@ final class AppModel {
         library.currentID = id
         if !library.selection.contains(id) || library.selection.count > 1 { library.select(id) }
         mode = .edit
-        editor.open(entry.url)
+        editor.open(entry.url, project: editContext(for: id))
     }
 
     func openSelection() {
@@ -475,9 +499,14 @@ final class AppModel {
     func autoEnhance() {
         guard editor.isLoaded else { return }
         let simple = colorMode == .simple
-        guard let summary = editor.applyAuto(title: { parameter in
-            simple ? SimpleControl.all.first { $0.parameter == parameter }?.title ?? parameter.title : parameter.title
-        }) else { show(L("正在分析画面，请稍后再试。"), seconds: 2); return }
+        var result: String?
+        // Auto fixes this photo; in a project it must not move everyone's look.
+        onlyThisPhoto {
+            result = editor.applyAuto(title: { parameter in
+                simple ? SimpleControl.all.first { $0.parameter == parameter }?.title ?? parameter.title : parameter.title
+            })
+        }
+        guard let summary = result else { show(L("正在分析画面，请稍后再试。"), seconds: 2); return }
         show(summary, actions: [
             .init(title: L("对比")) { [weak self] in self?.editor.compareMode = self?.editor.isVideo == true ? .original : .split },
             .init(title: L("撤销")) { [weak self] in self?.editor.undo() }
@@ -524,7 +553,8 @@ final class AppModel {
     func pasteSettings() {
         guard let (recipe, lut) = clipboard else { return }
         let others = library.selection.subtracting([library.currentID ?? ""])
-        if mode == .edit || others.isEmpty {
+        // In a project the others already share the look; pasting changes the open photo only.
+        if mode == .edit || others.isEmpty || currentProject != nil {
             if editor.isLoaded { editor.applyLook(recipe, lut: lut, name: L("粘贴的设置")) }
             return
         }
@@ -671,11 +701,13 @@ final class AppModel {
         guard !entries.isEmpty else { return }
         editor.flushDraft()
         let settings = exportSettings, store = drafts
+        // Inside a project, its photos are exported as the project shows them.
+        let recipes = projectRecipes(for: entries.map(\.id))
         exports.enqueue(L("存到「照片」· \(entries.count) 项")) { report in
             let folder = try PhotosSaver.stagingFolder()
             defer { try? FileManager.default.removeItem(at: folder) }
             let batch = folder.appendingPathComponent("export")
-            let result = try await Self.runBatchExport(entries, to: batch, settings: settings, store: store, report: report)
+            let result = try await Self.runBatchExport(entries, to: batch, settings: settings, store: store, recipes: recipes, report: report)
             let items = PhotosSaver.items(in: batch)
             report(nil, L("正在存入「照片」…"))
             try await PhotosSaver.save(items)
@@ -822,6 +854,8 @@ final class AppModel {
         guard !entries.isEmpty else { return }
         editor.flushDraft()
         let settings = exportSettings, store = drafts
+        let recipes = projectRecipes(for: entries.map(\.id))
+        let prefix = currentProject.map { ExportNaming.safeName($0.name) + "-" } ?? L("光集导出-")
         let panel = NSOpenPanel()
         panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
         panel.prompt = L("导出到这里")
@@ -829,15 +863,16 @@ final class AppModel {
         present(panel) { [weak self] urls in
             guard let self, let directory = urls.first else { return }
             let stamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false)).replacingOccurrences(of: ":", with: "")
-            let destination = directory.appendingPathComponent(L("光集导出-") + stamp)
+            let destination = directory.appendingPathComponent(prefix + stamp)
             self.exports.enqueue(L("导出 \(entries.count) 项")) { report in
-                try await Self.runBatchExport(entries, to: destination, settings: settings, store: store, report: report)
+                try await Self.runBatchExport(entries, to: destination, settings: settings, store: store, recipes: recipes, report: report)
             }
         }
     }
 
     private nonisolated static func runBatchExport(_ entries: [LibraryEntry], to destination: URL, settings: ExportSettings,
-                                                   store: DraftStore, report: @escaping ExportQueue.Report) async throws -> ExportQueue.Result {
+                                                   store: DraftStore, recipes: [String: EditRecipe] = [:],
+                                                   report: @escaping ExportQueue.Report) async throws -> ExportQueue.Result {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
         var completed = 0, skipped = 0
         var log = [L("光集批量导出记录"), L("原片保留；下列路径仅记录本次结果。"), ""]
@@ -850,7 +885,7 @@ final class AppModel {
             try Task.checkCancellation()
             report(Double(index) / Double(entries.count), "\(index + 1)/\(entries.count) · \(entry.name)")
             do {
-                let recipe = try store.load(entry.url) ?? EditRecipe()
+                let recipe = try recipes[entry.id] ?? store.load(entry.url) ?? EditRecipe()
                 var lut: CreativeLUT?
                 if let reference = recipe.lut {
                     let key = reference.file + reference.encoding.rawValue
@@ -1044,7 +1079,7 @@ final class AppModel {
     func trySuggestion(_ suggestion: CoachSuggestion, concept: Concept) {
         guard editor.isLoaded else { return }
         learner.update(concept) { $0.tried += 1 }
-        editor.applySuggestion(suggestion)
+        onlyThisPhoto { editor.applySuggestion(suggestion) }
         for action in suggestion.actions {
             switch action {
             case .straighten: editor.autoStraighten()
@@ -1071,7 +1106,7 @@ final class AppModel {
 
     func tryTutorSuggestion(_ item: TutorSuggestion) {
         if let concept = item.concept { trySuggestion(item.suggestion, concept: concept) }
-        else { editor.applySuggestion(item.suggestion) }
+        else { onlyThisPhoto { editor.applySuggestion(item.suggestion) } }
     }
 
     // MARK: Keyboard (single-key shortcuts, like Lightroom / Resolve)

@@ -17,6 +17,8 @@ public struct HistoryLog: Codable, Equatable, Sendable {
     /// How the first step came about.
     public enum Start: String, Codable, Sendable { case opened, cleared }
     public var source: SourceStamp?
+    /// Set for a photo's version inside a project, so each version keeps its own history.
+    public var variant: String?
     public private(set) var steps: [HistoryStep]
     public private(set) var position: Int
     public private(set) var start = Start.opened
@@ -120,23 +122,24 @@ extension EditRecipe {
 }
 
 extension DraftStore {
-    func historyLocation(for source: URL) -> URL {
-        root.appendingPathComponent("history").appendingPathComponent(Self.digest(source.standardizedFileURL.path) + ".json")
+    func historyLocation(for source: URL, variant: String? = nil) -> URL {
+        let key = source.standardizedFileURL.path + (variant.map { "#" + $0 } ?? "")
+        return root.appendingPathComponent("history").appendingPathComponent(Self.digest(key) + ".json")
     }
 
     /// The saved history, if it belongs to this exact file (same size and date).
-    public func loadHistory(for source: URL) -> HistoryLog? {
-        let file = historyLocation(for: source)
+    public func loadHistory(for source: URL, variant: String? = nil) -> HistoryLog? {
+        let file = historyLocation(for: source, variant: variant)
         guard let bytes = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize, bytes < 16_000_000,
               let data = try? Data(contentsOf: file), let log = try? JSONDecoder().decode(HistoryLog.self, from: data),
               !log.steps.isEmpty, log.steps.indices.contains(log.position),
-              let stamp = log.source, (try? SourceStamp(source)) == stamp else { return nil }
+              log.variant == variant, let stamp = log.source, (try? SourceStamp(source)) == stamp else { return nil }
         return log
     }
 
     public func saveHistory(_ log: HistoryLog) throws {
         guard let stamp = log.source else { return }
-        let file = historyLocation(for: URL(fileURLWithPath: stamp.path))
+        let file = historyLocation(for: URL(fileURLWithPath: stamp.path), variant: log.variant)
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONEncoder().encode(log).write(to: file, options: .atomic)
     }

@@ -74,10 +74,17 @@ struct LibraryFilter: Equatable, Sendable {
     var minimumRating = 0
     var flags = Flags.all
     var search = ""
+    /// The open project's photos; nil shows the whole library.
+    var members: Set<String>?
 
-    var isActive: Bool { kind != .all || minimumRating > 0 || flags != .all || !search.isEmpty }
+    var isActive: Bool { isRefined || members != nil }
+    /// Filters the person set (type, rating, flags, search), apart from the open project.
+    var isRefined: Bool { kind != .all || minimumRating > 0 || flags != .all || !search.isEmpty }
+    /// No filters, still inside the open project.
+    var cleared: LibraryFilter { LibraryFilter(members: members) }
 
     func matches(_ entry: LibraryEntry) -> Bool {
+        if let members, !members.contains(entry.id) { return false }
         switch kind {
         case .all: break
         case .photos: if entry.isVideo { return false }

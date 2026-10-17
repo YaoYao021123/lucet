@@ -20,7 +20,7 @@ struct ThumbnailImage: View {
             }
         }
         .clipped()
-        .task(id: "\(version)#\(entry.id)") {
+        .task(id: "\(store.contextKey)#\(version)#\(entry.id)") {
             if let hit = store.cached(entry.id) { image = hit; return }
             image = await store.load(entry)
         }
@@ -66,8 +66,20 @@ struct LibraryContextMenu: View {
         Button("排除") { app.flag(.reject) }
         Button("取消标记") { app.flag(.none) }
         Divider()
-        Button("粘贴调色设置") { app.pasteSettings() }.disabled(!app.hasClipboard)
-        Button("同步调色…") { app.sheet = .sync }.disabled(!app.editor.isLoaded || app.library.selection.subtracting([app.library.currentID ?? ""]).isEmpty)
+        if app.currentProject == nil {
+            Button("粘贴调色设置") { app.pasteSettings() }.disabled(!app.hasClipboard)
+            Button("同步调色…") { app.sheet = .sync }.disabled(!app.editor.isLoaded || app.library.selection.subtracting([app.library.currentID ?? ""]).isEmpty)
+        }
+        Menu("添加到项目") {
+            ForEach(app.projects.filter { $0.id != app.currentProjectID }) { project in
+                Button(project.name) { app.addToProject(Array(app.library.selection.isEmpty ? [entry.id] : app.library.selection), projectID: project.id) }
+            }
+            if app.projects.contains(where: { $0.id != app.currentProjectID }) { Divider() }
+            Button("新建项目…") { app.sheet = .newProject(Array(app.library.selection.isEmpty ? [entry.id] : app.library.selection)) }
+        }
+        if app.currentProject != nil {
+            Button("从项目中移除") { app.removeFromProject(app.library.selection.isEmpty ? [entry.id] : app.library.selection) }
+        }
         Button("导出…") { app.exportSelection() }
         Button("拼图 Live…") { app.openCollage() }
         if app.library.selection.count > 1 {
@@ -91,6 +103,10 @@ struct LibrarySidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if !library.entries.isEmpty || !app.projects.isEmpty {
+                SidebarProjects(app: app).padding(.bottom, 6)
+                WorkbenchTheme.hairline.frame(height: 1)
+            }
             if library.entries.isEmpty {
                 emptyState
             } else {
@@ -105,7 +121,7 @@ struct LibrarySidebar: View {
         VStack(spacing: 8) {
             HStack {
                 Text("素材库").font(.headline)
-                Text("\(library.visible.count)" + (library.filter.isActive ? " / \(library.entries.count)" : ""))
+                Text("\(library.visible.count)" + (library.filter.isRefined ? " / \(library.filter.members?.count ?? library.entries.count)" : ""))
                     .font(.callout).foregroundStyle(.secondary).monospacedDigit()
                 Spacer()
                 if app.isImporting { ProgressView().controlSize(.small) }
@@ -165,6 +181,7 @@ struct LibrarySidebar: View {
                                    missing: library.missing.contains(entry.id))
                             .id(entry.id)
                             .contentShape(Rectangle())
+                            .draggable(entry.id)
                             .onTapGesture { click(entry) }
                             .contextMenu { LibraryContextMenu(app: app, entry: entry) }
                     }
@@ -270,10 +287,10 @@ struct FilterMenu: View {
                 ForEach(LibraryFilter.Flags.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             Divider()
-            Button("清除筛选") { library.filter = LibraryFilter() }.disabled(!library.filter.isActive)
+            Button("清除筛选") { library.filter = library.filter.cleared }.disabled(!library.filter.isRefined)
         } label: {
-            Image(systemName: library.filter.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                .foregroundStyle(library.filter.isActive ? WorkbenchTheme.accent : .secondary)
+            Image(systemName: library.filter.isRefined ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                .foregroundStyle(library.filter.isRefined ? WorkbenchTheme.accent : .secondary)
         }
         .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
         .help("筛选：类型、评级、选用 / 排除")
@@ -289,6 +306,7 @@ struct BrowseGrid: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if let project = app.currentProject { ProjectBar(app: app, project: project) }
             toolbar
             if library.visible.isEmpty {
                 empty
@@ -307,6 +325,7 @@ struct BrowseGrid: View {
                                              current: entry.id == library.currentID,
                                              missing: library.missing.contains(entry.id))
                                         .id(entry.id)
+                                        .draggable(entry.id)
                                         .onTapGesture {
                                             // One handler (no double-tap recognizer) keeps single clicks instant.
                                             endTextEditing()
@@ -334,10 +353,10 @@ struct BrowseGrid: View {
 
     private var toolbar: some View {
         HStack(spacing: 12) {
-            Text(library.filter.isActive ? L("筛选结果 \(library.visible.count) 项") : L("全部 \(library.entries.count) 项"))
+            Text(library.filter.isRefined ? L("筛选结果 \(library.visible.count) 项") : L("全部 \(library.visible.count) 项"))
                 .font(.callout).foregroundStyle(.secondary)
-            if library.filter.isActive {
-                Button("清除筛选") { library.filter = LibraryFilter() }.buttonStyle(.borderless).font(.callout)
+            if library.filter.isRefined {
+                Button("清除筛选") { library.filter = library.filter.cleared }.buttonStyle(.borderless).font(.callout)
             }
             Spacer()
             Toggle(isOn: Binding(get: { app.showGroups }, set: { app.showGroups = $0 })) {
@@ -368,7 +387,7 @@ struct BrowseGrid: View {
                 }
             } else {
                 Text("没有符合筛选条件的素材").font(.title3)
-                Button("清除筛选") { library.filter = LibraryFilter() }.glassButton()
+                Button("清除筛选") { library.filter = library.filter.cleared }.glassButton()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

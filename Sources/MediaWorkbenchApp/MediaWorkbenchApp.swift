@@ -72,7 +72,7 @@ struct WorkbenchCommands: Commands {
         CommandGroup(replacing: .saveItem) {
             Button("保存配方") { editor.flushDraft(); editor.status = L("已保存 · 原片保留") }
                 .keyboardShortcut("s").disabled(!editor.isLoaded)
-            Button("快照与版本…") { app.sheet = .snapshots }.disabled(!editor.isLoaded)
+            Button("快照与版本…") { app.sheet = .snapshots }.disabled(!editor.isLoaded || editor.projectContext != nil)
             Divider()
             Button("导出当前…", action: app.exportCurrent).keyboardShortcut("e").disabled(!editor.isLoaded)
             Button("导出所选…", action: app.exportSelection).keyboardShortcut("e", modifiers: [.command, .shift])
@@ -87,12 +87,30 @@ struct WorkbenchCommands: Commands {
             Divider()
             Button("拷贝调色设置", action: app.copySettings).keyboardShortcut("c", modifiers: [.command, .shift]).disabled(!editor.isLoaded)
             Button("粘贴调色设置", action: app.pasteSettings).keyboardShortcut("v", modifiers: [.command, .shift]).disabled(!app.hasClipboard)
-            Button("同步调色到所选…") { app.sheet = .sync }.disabled(!editor.isLoaded)
+            // Inside a project the colour is already shared; Sync would write the photos' own edits.
+            Button("同步调色到所选…") { app.sheet = .sync }.disabled(!editor.isLoaded || app.currentProject != nil)
             Button("存为预设…") { app.sheet = .savePreset }.disabled(!editor.isLoaded)
             Button("匹配另一张照片的色调…") { app.sheet = .matchLook }.disabled(!editor.isLoaded || editor.isVideo)
             Button("AI 调色") { app.aiLook() }.disabled(!editor.isLoaded || editor.isVideo || AdaptiveLUT.shared == nil)
             Button("导出调色为 LUT…", action: app.exportGradeLUT).disabled(!editor.isLoaded)
             Button("撤回上次同步", action: app.undoBatch).disabled(app.lastBatch.isEmpty)
+        }
+        CommandMenu("项目") {
+            Button("新建项目（所选照片）…") { app.sheet = .newProject(Array(app.library.selection)) }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+            Button("显示全部素材") { app.currentProjectID = nil }.disabled(app.currentProjectID == nil)
+            if !app.projects.isEmpty {
+                Menu("打开项目") {
+                    ForEach(app.projects) { project in Button(project.name) { app.currentProjectID = project.id } }
+                }
+            }
+            Divider()
+            Button("用当前照片的颜色作为项目调色") { app.adoptLookFromCurrent() }.disabled(app.currentProject == nil || !editor.isLoaded)
+            Button("统一明暗与色温") { app.evenOutProject() }.disabled((app.currentProject?.photos.count ?? 0) < 2)
+            Button("导出项目…") { app.exportProject() }.disabled(app.currentProject?.photos.isEmpty ?? true)
+            Divider()
+            Button("重命名项目…") { if let id = app.currentProjectID { app.sheet = .renameProject(id) } }.disabled(app.currentProject == nil)
+            Button("删除项目…") { if let id = app.currentProjectID { app.deleteProject(id) } }.disabled(app.currentProject == nil)
         }
         CommandMenu("照片") {
             Button("上一项") { app.step(-1) }.keyboardShortcut(.upArrow, modifiers: [.command])

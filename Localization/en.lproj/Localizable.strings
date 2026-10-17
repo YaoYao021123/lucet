@@ -12,12 +12,26 @@
 "无法导出 LUT" = "Couldn't export the LUT";
 "无法分析画面颜色。" = "Couldn't analyze the image's colors.";
 "AI 调色" = "AI Look";
+"已套用为这张照片生成的 AI 调色（强度 %lld%%）。在「风格 LUT」里调整强度。" = "Applied the AI Look made for this photo (strength %lld%%). Adjust the strength under Creative LUT.";
 "撤销" = "Undo";
 "无法生成 AI 调色" = "Couldn't Make an AI Look";
 "匹配：%@" = "Match: %@";
 "无法读取「%@」。" = "Couldn't read “%@”.";
 "已向「%@」的色调靠拢。在「风格 LUT」里用强度调整多少。" = "Moved toward the colors of “%@”. Use Strength under “Creative LUT” to set how much.";
 "无法匹配色调" = "Couldn't match the colors";
+
+/* AppModel+Projects.swift */
+"新项目" = "New Project";
+"已新建空项目「%@」。在「全部素材」里选中照片，右键「添加到项目」。" = "Created the empty project “%@”. Select photos in All Photos and choose Add to Project from the right-click menu.";
+"所选照片已经在项目「%@」里。" = "The selected photos are already in “%@”.";
+"删除项目「%@」？" = "Delete the project “%@”?";
+"只删除项目和它的调色。照片留在素材库里，它们自己的编辑和原文件都不受影响。" = "Only the project and its colors are deleted. The photos stay in your library, and their own edits and original files aren't affected.";
+"删除项目" = "Delete Project";
+"取消" = "Cancel";
+"整个项目已改用这张照片的颜色；各自的曝光、裁剪和局部调整保持不变。" = "The whole project now uses this photo's colors; each photo keeps its own exposure, crop and local adjustments.";
+"项目里至少要有两张照片才能统一。" = "Evening out needs at least two photos in the project.";
+"正在统一 %lld 张的明暗与色温…" = "Evening out %lld photos…";
+"已统一 %lld 张的明暗与色温：每张都向整组的中间值靠拢，保留了各自的氛围。" = "Evened out %lld photos: each moved toward the group's middle brightness and white balance, keeping its own mood.";
 
 /* AppModel.swift */
 "完整" = "Full";
@@ -39,7 +53,6 @@
 "清空素材库？" = "Clear the library?";
 "将从光集移除全部 %lld 项。原文件、「照片」里的图片和已保存的编辑都不会被删除，之后可以重新添加。" = "All %lld items will be removed from Lucet. Original files, pictures in Photos and saved edits are not deleted, and you can add them again later.";
 "清空" = "Clear";
-"取消" = "Cancel";
 "素材库已清空；原文件未改动。" = "Library cleared; original files are untouched.";
 "找到「%@」现在的位置（它可能被移动或重命名了）" = "Find where “%@” is now (it may have been moved or renamed)";
 "选择" = "Choose";
@@ -92,8 +105,8 @@
 "新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。" = "Creates a Live folder: JPEG key photo + paired MOV + settings record.";
 "制作 Live · %@" = "Make Live · %@";
 "系统配对检查通过" = "Passed the system pairing check";
-"导出到这里" = "Export Here";
 "光集导出-" = "Lucet Export-";
+"导出到这里" = "Export Here";
 "光集批量导出记录" = "Lucet batch export log";
 "原片保留；下列路径仅记录本次结果。" = "Originals are untouched; the paths below record only this export.";
 "完成 %lld 项；跳过或失败 %lld 项。" = "%lld done; %lld skipped or failed.";
@@ -281,6 +294,7 @@
 "已自动调整：%@%@" = "Auto adjusted: %@%@";
 "正在识别地平线…" = "Finding the horizon…";
 "自动拉直失败：%@" = "Auto straighten failed: %@";
+"已保存到项目「%@」" = "Saved to “%@”";
 "已自动保存" = "Autosaved";
 "保存失败" = "Save failed";
 "编辑未能保存" = "Edits couldn't be saved";
@@ -887,6 +901,9 @@
 "取消标记" = "Unflag";
 "粘贴调色设置" = "Paste Adjustments";
 "同步调色…" = "Sync Adjustments…";
+"添加到项目" = "Add to Project";
+"新建项目…" = "New Project…";
+"从项目中移除" = "Remove from Project";
 "导出…" = "Export…";
 "拼图 Live…" = "Collage Live…";
 "并排比较所选" = "Compare Selected Side by Side";
@@ -1127,6 +1144,15 @@
 "存为预设…" = "Save as Preset…";
 "导出调色为 LUT…" = "Export Adjustments as LUT…";
 "撤回上次同步" = "Undo Last Sync";
+"项目" = "Projects";
+"新建项目（所选照片）…" = "New Project from Selection…";
+"显示全部素材" = "Show All Photos";
+"打开项目" = "Open Project";
+"用当前照片的颜色作为项目调色" = "Use This Photo's Colors for the Project";
+"统一明暗与色温" = "Even Out";
+"导出项目…" = "Export Project…";
+"重命名项目…" = "Rename Project…";
+"删除项目…" = "Delete Project…";
 "上一项" = "Previous";
 "下一项" = "Next";
 "向左旋转" = "Rotate Left";
@@ -1369,6 +1395,26 @@
 "光集没有存入「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集，或改为保存到文件夹。" = "Lucet doesn't have permission to save to Photos. Allow it in System Settings › Privacy & Security › Photos, or save to a folder instead.";
 "光集-照片-%@" = "Lucet-Photo-%@";
 
+/* ProjectViews.swift */
+"全部素材" = "All Photos";
+"新建项目：把所选照片放在一起，用同一套颜色" = "New project: put the selected photos together, with one set of colors";
+"为一次旅行、一篇帖子或一组客片建一个项目，里面的照片共用一套颜色。" = "Make a project for a trip, a post or a client shoot; its photos share one set of colors.";
+"重命名…" = "Rename…";
+"让项目里每张照片的亮度和冷暖向整组的中间值靠拢，看起来像同一时间拍的一组" = "Moves each photo's brightness and white balance toward the group's middle, so the set looks like it was shot together";
+"导出项目里的全部照片（项目里的版本）" = "Export every photo in the project (their project versions)";
+"只这张" = "This Photo";
+"整个项目" = "Whole Project";
+"项目「%@」里的版本" = "Version in “%@”";
+"调整范围" = "Adjustment Scope";
+"滑块只改这一张。曲线、色轮、HSL 和 LUT 仍对整个项目生效。" = "Sliders change only this photo. Curves, color wheels, HSL and LUTs still apply to the whole project.";
+"新建项目" = "New Project";
+"先建一个空项目；之后在「全部素材」里选中照片，右键「添加到项目」。" = "Start with an empty project, then select photos in All Photos and choose Add to Project from the right-click menu.";
+"把所选的 %lld 张放进一个项目。它们会共用一套颜色：以当前打开的照片（或第一张）为准；曝光、裁剪和局部调整各自保留。" = "Puts the %lld selected items in a project. They'll share one set of colors, taken from the open photo (or the first one); each keeps its own exposure, crop and local adjustments.";
+"项目名称" = "Project Name";
+"照片可以同时在几个项目里，每个项目里是各自的版本；照片在素材库里自己的编辑不会改变。" = "A photo can be in several projects, with its own version in each; its own edits in the library don't change.";
+"重命名项目" = "Rename Project";
+"重命名" = "Rename";
+
 /* Sheets.swift */
 "导出副本" = "Export a Copy";
 "导出会在后台进行，你可以继续浏览和编辑。原片从不修改。" = "Exports run in the background, so you can keep browsing and editing. Originals are never changed.";
@@ -1563,6 +1609,3 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
-
-/* Not used by the current code (kept until reviewed) */
-"已套用为这张照片生成的 AI 调色（强度 %lld%%）。在「风格 LUT」里调整强度。" = "Applied the AI Look made for this photo (strength %lld%%). Adjust the strength under Creative LUT.";

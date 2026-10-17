@@ -23,11 +23,13 @@ struct SheetContent: View {
         case .matchLook: MatchLookSheet(app: app)
         case .photosImport: PhotosImportSheet(app: app)
         case .compare(let ids): CullingSheet(app: app, ids: ids)
+        case .newProject(let ids): NewProjectSheet(app: app, ids: ids)
+        case .renameProject(let id): RenameProjectSheet(app: app, projectID: id)
         }
     }
 }
 
-private struct SheetHeader: View {
+struct SheetHeader: View {
     let title: String
     var subtitle: String?
     var body: some View {

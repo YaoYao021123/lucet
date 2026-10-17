@@ -152,6 +152,11 @@ enum DebugSnapshot {
         case "watermark": app.exportSettings.image.watermark = argument == "off" ? nil : Watermark(text: argument.replacingOccurrences(of: "\\n", with: "\n"))
         case "naming": app.exportSettings.naming = argument
         case "search": app.search(argument)
+        case "selectall": app.library.selection = Set(app.library.visible.map(\.id))
+        case "newproject": app.createProject(named: argument, from: app.library.visible.map(\.id).filter(app.library.selection.contains))
+        case "project": app.currentProjectID = app.projects.first { $0.name == argument }?.id
+        case "projectscope": app.projectPhotoOnly = argument == "photo"
+        case "evenout": app.evenOutProject()
         case "live":
             app.editor.selectLiveRange()
             Task { @MainActor in
