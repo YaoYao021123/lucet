@@ -279,7 +279,8 @@ footer .wrap{display:grid;gap:10px}
           <li><b>Gradient</b>: fades from one line to another, most often to darken a sky</li>
           <li><b>Ellipse</b>: brighten a subject, or invert it to darken the surroundings</li>
           <li><b>Brush</b>: adjust wherever you paint; hold ⌥ to erase</li>
-          <li>Each layer has its own exposure, contrast, highlights, shadows, temperature, saturation, clarity and more; “Show mask” paints its area red</li>
+          <li><b>Subject</b>: finds people, animals and objects in front automatically; invert it for the background</li>
+          <li>Each layer has its own exposure, contrast, highlights, shadows, temperature, saturation, clarity, dehaze and more; “Show mask” paints its area red</li>
           <li>Masks stick to the picture: crop or rotate later and they stay in place</li>
         </ul>
       </div>
@@ -296,6 +297,29 @@ footer .wrap{display:grid;gap:10px}
     </div>
     <div class="window" style="margin-bottom:24px">
       <img src="../assets/en/shot-local.jpg" width="2415" height="1514" alt="Dragging the gradient's two lines on the picture; the layer's sliders on the right" loading="lazy">
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">Remove</p>
+        <h3>Something in the way? Paint it out</h3>
+        <p>Brush over a wire, a passer-by, litter or a dust spot with Remove. When you let go, Lucet finds similar texture nearby and fills the spot in naturally.</p>
+        <ul>
+          <li>Classic PatchMatch completion, computed on your Mac: no model download, nothing uploaded</li>
+          <li>The filled area follows your color adjustments like the rest of the photo</li>
+          <li>Works best on smaller things; remove large areas in a few goes</li>
+        </ul>
+      </div>
+      <div>
+        <div class="compare" style="--pos:50%">
+          <img src="../assets/sky-before.jpg" width="1200" height="675" alt="Before: a wetland at sunset with a sign in the lower right" loading="lazy">
+          <img class="after" src="../assets/remove-after.jpg" width="1200" height="675" alt="After: the sign is filled in with the surrounding grass and water" loading="lazy">
+          <span class="tag l">Original</span><span class="tag r">Sign removed</span>
+          <div class="line"></div>
+          <input type="range" min="0" max="100" value="50" aria-label="Drag to compare before and after Remove">
+        </div>
+        <p class="small" style="margin-top:12px">Three brush strokes over the sign. Real output from Lucet.</p>
+      </div>
     </div>
 
     <div class="feature stack">
@@ -336,16 +360,17 @@ footer .wrap{display:grid;gap:10px}
 
     <div class="feature stack">
       <div class="text">
-        <p class="kicker">Similar shots & bursts · Compare and cull</p>
+        <p class="kicker">Duplicates & similar shots · Compare and cull</p>
         <h3>Took several shots of the same scene? See them side by side and keep the best</h3>
-        <p>Turn on “Similar & Bursts” and Lucet groups shots with nearly the same framing and colors, plus photos the same camera took less than 2 seconds apart. Click Compare to see them side by side, press P to pick and X to reject, or choose “Keep Only This One”.</p>
+        <p>Turn on “Duplicates & Similar” and Lucet groups shots with nearly the same framing and colors, plus photos the same camera took less than 2 seconds apart. Click Compare to see them side by side, press P to pick and X to reject, or choose “Keep Only This One”.</p>
         <ul>
+          <li>Files that are exactly the same (one photo imported twice, a Finder copy; videos too) come first, ready to reject or remove from the library in one click; files on disk are never deleted</li>
           <li>“Zoom to 100%” zooms every photo to the same spot and pans them together, so you can tell which is sharpest</li>
-          <li>The comparison runs on your Mac and takes under a second for dozens of photos; videos aren't compared</li>
+          <li>The comparison runs on your Mac and takes under a second for dozens of photos</li>
         </ul>
       </div>
       <div class="pair">
-        <div class="window"><img src="../assets/en/shot-similar.jpg" width="2415" height="960" alt="The Similar & Bursts view: three photos of the same scene grouped together" loading="lazy"></div>
+        <div class="window"><img src="../assets/en/shot-similar.jpg" width="2415" height="960" alt="The Duplicates &amp; Similar view: three photos of the same scene grouped together" loading="lazy"></div>
         <div class="shot"><img src="../assets/en/sheet-compare.jpg" width="1920" height="1488" alt="Compare and cull: three similar photos side by side, ready to pick, reject or keep only one" loading="lazy"></div>
       </div>
     </div>
@@ -373,12 +398,26 @@ footer .wrap{display:grid;gap:10px}
         <p>Exports go straight into Photos on your Mac by default, and with iCloud Photos on they sync to your iPhone. Trim a video to 3 seconds or less and it becomes a real Live Photo. Files work too, or share directly with the system share sheet.</p>
         <ul>
           <li>JPEG, HEIC or PNG, optionally resized for social media</li>
+          <li>HDR photos export with a gain map and stay HDR, edits included</li>
+          <li>Export presets, file-name patterns (date, number, size) and an optional text watermark</li>
           <li>Capture time and camera info are kept; location is removed by default</li>
           <li>Exports run in the background while you move on to the next photo</li>
           <li>Originals are never changed; every export is a new copy</li>
         </ul>
       </div>
       <div class="shot"><img src="../assets/en/sheet-export.jpg" width="960" height="1040" alt="The export window: save to Photos or a folder, with format, quality and size options" loading="lazy" style="width:min(100%,440px)"></div>
+    </div>
+
+    <div class="feature stack">
+      <div class="text">
+        <p class="kicker">And also</p>
+        <h3>A film look, a history you can go back through, and search by what's in the picture</h3>
+        <ul>
+          <li><b>Dehaze, Fade, Grain, Black &amp; White</b> in Full mode's effects; Dehaze estimates how hazy each area is with the dark-channel method</li>
+          <li><b>History</b>: every change has a name; click one to go back to it, even after quitting</li>
+          <li><b>Search by content</b>: type “sky”, “dog” or “sunset” in the library and photos showing it appear, recognized on your Mac</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>

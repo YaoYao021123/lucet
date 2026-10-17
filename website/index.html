@@ -287,7 +287,8 @@ footer .wrap{display:grid;gap:10px}
           <li><b>渐变</b>：从一条线逐渐过渡到另一条线，最常用来压暗天空</li>
           <li><b>椭圆</b>：提亮主体，或者反转过来压暗四周</li>
           <li><b>画笔</b>：涂到哪里就调哪里，按住 ⌥ 擦除</li>
-          <li>每一层都有自己的曝光、对比度、高光、阴影、色温、饱和度、清晰度等；点「显示蒙版」用红色看清范围</li>
+          <li><b>主体</b>：自动找出人物、动物和前景物体，反转就调整背景</li>
+          <li>每一层都有自己的曝光、对比度、高光、阴影、色温、饱和度、清晰度、去雾等；点「显示蒙版」用红色看清范围</li>
           <li>范围跟着照片内容走：之后再裁剪、旋转，蒙版也不会错位</li>
         </ul>
       </div>
@@ -304,6 +305,29 @@ footer .wrap{display:grid;gap:10px}
     </div>
     <div class="window" style="margin-bottom:24px">
       <img src="assets/shot-local.jpg" width="2415" height="1514" alt="在画面上拖动渐变的两条线；右侧是这一层的滑块" loading="lazy">
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">去除</p>
+        <h3>画面里多了一样东西？涂掉它</h3>
+        <p>用「去除」画笔涂抹电线、路人、垃圾或镜头上的灰尘，松开后光集会在周围找相似的纹理，把它自然地补上。</p>
+        <ul>
+          <li>经典的 PatchMatch 补全，在你的 Mac 上计算，不需要下载模型，也不会上传照片</li>
+          <li>补好的区域之后照样跟着调色走</li>
+          <li>适合较小的东西；很大的区域可以分几次去除</li>
+        </ul>
+      </div>
+      <div>
+        <div class="compare" style="--pos:50%">
+          <img src="assets/sky-before.jpg" width="1200" height="675" alt="去除前：日落湿地，右下角有一块指示牌" loading="lazy">
+          <img class="after" src="assets/remove-after.jpg" width="1200" height="675" alt="去除后：指示牌被周围的草地和水面补上" loading="lazy">
+          <span class="tag l">原图</span><span class="tag r">去除指示牌</span>
+          <div class="line"></div>
+          <input type="range" min="0" max="100" value="50" aria-label="拖动对比去除前后">
+        </div>
+        <p class="small" style="margin-top:12px">在指示牌上涂了三笔。光集的真实输出。</p>
+      </div>
     </div>
 
     <div class="feature stack">
@@ -344,16 +368,17 @@ footer .wrap{display:grid;gap:10px}
 
     <div class="feature stack">
       <div class="text">
-        <p class="kicker">相似与连拍 · 并排选片</p>
+        <p class="kicker">重复与相似 · 并排选片</p>
         <h3>同一个场景拍了好几张？并排看，只留最好的</h3>
-        <p>打开「相似与连拍」，光集会把构图和颜色几乎一样的几张、以及同一台相机 2 秒内连续拍下的照片归成一组。点「并排比较」，几张照片并排显示，按 P 选用、X 排除，或者「只保留选中的这张」。</p>
+        <p>打开「重复与相似」，光集会把构图和颜色几乎一样的几张、以及同一台相机 2 秒内连续拍下的照片归成一组。点「并排比较」，几张照片并排显示，按 P 选用、X 排除，或者「只保留选中的这张」。</p>
         <ul>
+          <li>内容完全相同的文件（同一张导入了两次、Finder 里的副本，视频也算）排在最前面，一键排除或移出素材库，硬盘上的文件不会被删除</li>
           <li>「放大到 100%」：所有照片同时放大到同一个位置，拖动时一起平移，适合比较谁更清楚</li>
-          <li>比对在本机进行，几十张照片不到一秒；视频不参与比对</li>
+          <li>比对在本机进行，几十张照片不到一秒</li>
         </ul>
       </div>
       <div class="pair">
-        <div class="window"><img src="assets/shot-similar.jpg" width="2415" height="960" alt="「相似与连拍」视图：同一场景的三张照片归成一组" loading="lazy"></div>
+        <div class="window"><img src="assets/shot-similar.jpg" width="2415" height="960" alt="「重复与相似」视图：同一场景的三张照片归成一组" loading="lazy"></div>
         <div class="shot"><img src="assets/sheet-compare.jpg" width="1920" height="1488" alt="并排选片：三张相似照片并排显示，可以选用、排除或只保留一张" loading="lazy"></div>
       </div>
     </div>
@@ -381,12 +406,26 @@ footer .wrap{display:grid;gap:10px}
         <p>导出时默认直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。把一段视频剪成 3 秒以内，还能做成真正的 Live Photo。想要文件也行，或者直接用系统共享发给朋友。</p>
         <ul>
           <li>JPEG / HEIC / PNG，可缩小到社交平台常用尺寸</li>
+          <li>HDR 照片带增益图导出，调过色也仍是 HDR</li>
+          <li>导出预设、文件名规则（日期、序号、尺寸），以及可选的文字水印</li>
           <li>默认保留拍摄时间、相机信息，移除位置信息</li>
           <li>导出在后台进行，你可以接着调下一张</li>
           <li>原片从不被修改，导出的永远是一份新副本</li>
         </ul>
       </div>
       <div class="shot"><img src="assets/sheet-export.jpg" width="960" height="1010" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸选项" loading="lazy" style="width:min(100%,440px)"></div>
+    </div>
+
+    <div class="feature stack">
+      <div class="text">
+        <p class="kicker">还有这些</p>
+        <h3>胶片感、历史记录、按内容找照片</h3>
+        <ul>
+          <li><b>去雾、褪色、颗粒、黑白</b>：在「完整」模式的效果里，去雾用暗通道估计每个区域的雾有多重</li>
+          <li><b>历史记录</b>：每一次修改都有名字，点一下就回到那时，关掉再打开也还在</li>
+          <li><b>按内容搜索</b>：在素材库输入「天空」「狗」「日落」，画面里有它的照片就会出来，在本机识别</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>

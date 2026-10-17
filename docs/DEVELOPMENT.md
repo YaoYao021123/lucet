@@ -7,7 +7,7 @@
 ```sh
 bash scripts/run-workbench.sh              # 构建 Release 并打开 .build/MediaWorkbench.app
 bash scripts/run-workbench.sh --build-only
-bash scripts/test-workbench.sh             # 115 项测试
+bash scripts/test-workbench.sh             # 147 项测试
 bash scripts/dev-build.sh                  # 快速 Debug 构建，输出可执行文件路径
 bash scripts/package-release.sh            # 生成 dist/Lucet-<版本>-arm64.zip（临时签名，未公证）
 ```
@@ -21,6 +21,7 @@ swift run media-probe details <素材>        # 打印「信息」页的全部�
 swift run media-probe analyze <图片>        # 画面统计与教练提示
 swift run media-probe auto <图片> [对比.jpg] # 「自动」的取值，可输出前后对比图
 swift run media-probe similar <文件夹>       # 相似照片与连拍分组（含指纹用时）
+swift run media-probe labels <图片>         # 按内容搜索用的画面标签（Vision）
 swift run media-probe render <图片> <配方.json|-> <输出.jpg> [长边]   # 套用配方（含局部调整）导出
 swift run media-probe match <图片> <参考图> <输出.jpg> [长边]          # 「匹配色调」的结果
 swift run --configuration release media-benchmark
@@ -61,11 +62,11 @@ swift run --configuration release media-benchmark
 
 ## 代码结构
 
-- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、局部调整（`LocalAdjustments`：蒙版、画布坐标映射）、`CubeLUT`、导出 LUT 与匹配色调（`LookTransfer`）、相似照片与连拍（`SimilarPhotos`）、`Scopes`、`ImageExport`、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）、界面语言（`Localization`）。
+- `Sources/MediaCore`：引擎，可单独测试。包括调色管线（`ColorPipeline`、`GradeStages`、`BasicAdjustments`）、局部调整（`LocalAdjustments`：蒙版、画布坐标映射；`SubjectMask`：Vision 主体蒙版）、去除（`Inpainting`：多尺度 PatchMatch 补全；`Retouch`：接入管线与缓存）、胶片效果（`FilmEffects`：暗通道去雾、褪色、颗粒、黑白）、`CubeLUT`、导出 LUT 与匹配色调（`LookTransfer`）、相似照片与连拍（`SimilarPhotos`）、完全相同的文件（`ExactDuplicates`）、按内容搜索（`ContentLabels`）、`Scopes`、`ImageExport`（含 HDR 增益图导出 `HDRGain`）、导出预设外的命名与水印（`ExportExtras`）、历史记录（`HistoryLog`）、视频与 Live（`VideoPipeline`、`LivePhotoPipeline`、`LiveCollagePipeline`）、配方 / 预设 / LUT 缓存（`EditRecipe`）、界面语言（`Localization`）。
 - 移植自合作伙伴网页版 Lucet（Apache-2.0）的算法：相似照片分组（`review.py`）、色彩迁移与导出 LUT（`engine.py`）、局部蒙版（`masks.py`）。参考源码放在 `reference/`（不进 Git）；各文件开头注明了来源和改动。
 - `Sources/MediaWorkbenchApp`：界面。
   - 模型：`AppModel` 负责协调（导入、导出、同步、快捷键），`LibraryModel` 管理素材库，`EditorModel` 管理当前文档，`ExportQueue` 是导出队列，`ThumbnailStore` 生成缩略图。
-  - 视图：`WorkbenchView`、`LibraryViews`、`InspectorView`、`GradeControls`、`MediaCanvas`、`MediaTimeline`、`Sheets`、`LocalAdjustmentViews`（局部调整面板与画布控制点）、`CullingViews`（相似与连拍、并排选片）、`LanguageMenu`。
+  - 视图：`WorkbenchView`、`LibraryViews`、`InspectorView`、`GradeControls`、`MediaCanvas`、`MediaTimeline`、`Sheets`、`LocalAdjustmentViews`（局部调整面板与画布控制点）、`CullingViews`（重复与相似、并排选片）、`HistoryViews`（历史记录）、`LanguageMenu`。
 - 数据位置：`~/Library/Application Support/Guangji`（素材库 `library.json`、配方、快照、预设、LUT、相似照片指纹 `fingerprints.json`）。
 
 ### 开发：无屏幕录制权限的界面截图

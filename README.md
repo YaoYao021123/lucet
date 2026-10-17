@@ -84,17 +84,20 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 
 **Change just part of the picture: local adjustments**
 - A **gradient** to darken a sky, an **ellipse** to brighten a subject (or invert it to darken the surroundings), and a **brush** that adjusts wherever you paint (hold ⌥ to erase).
-- Each layer has its own exposure, contrast, highlights, shadows, whites, blacks, temperature, tint, saturation, vibrance, clarity, sharpness and noise reduction. "Show mask" marks its area in red.
+- **Subject** finds the people, animals and objects in front automatically (the same on-device detection as lifting a subject in Photos); invert it to work on the background instead.
+- **Remove**: paint over a wire, a passer-by, litter or a dust spot and it's filled in from its surroundings (PatchMatch, computed on your Mac, no download).
+- Each layer has its own exposure, contrast, highlights, shadows, whites, blacks, temperature, tint, saturation, vibrance, clarity, sharpness, noise reduction and dehaze. "Show mask" marks its area in red.
 - Masks stick to the picture's content, so cropping or rotating later doesn't shift them.
 
 <p align="center"><img src="website/assets/en/shot-local.jpg" alt="Dragging a gradient's two lines on the picture to darken the sky" width="860"></p>
 
 **Like another photo's colors? Match colors and export LUTs**
 - Pick a photo whose colors you like, and this photo's overall brightness and color move toward it (Reinhard color transfer in Lab space). The result is a LUT you can dial back with Strength, or undo.
-- Export your adjustments as a `.cube` LUT for DaVinci Resolve, Final Cut Pro or Premiere. (Noise reduction, clarity, sharpness and vignette depend on neighboring pixels, so they can't be part of a LUT.)
+- Export your adjustments as a `.cube` LUT for DaVinci Resolve, Final Cut Pro or Premiere. (Noise reduction, dehaze, clarity, sharpness, vignette and grain depend on neighboring pixels or position, so they can't be part of a LUT.)
 
-**Cull: similar shots and bursts**
-- "Similar & Bursts" groups shots with nearly the same framing and colors, and photos one camera took less than 2 seconds apart.
+**Cull: duplicates, similar shots and bursts**
+- "Duplicates & Similar" finds files that are exactly the same (one photo imported twice, a Finder copy; videos too) and lets you reject or remove the extra copies in one click. Files on disk are never deleted.
+- It also groups shots with nearly the same framing and colors, and photos one camera took less than 2 seconds apart.
 - "Compare" shows 2–8 photos side by side: P to pick, X to reject, 1–5 to rate, "Keep Only This One". "Zoom to 100%" zooms them all to the same spot and pans them together, so you can tell which is sharpest.
 
 <table>
@@ -108,6 +111,8 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 - Exports **save straight into Photos** by default; with iCloud Photos on, they sync to your iPhone. Or save files, or share with the system share sheet.
 - Trim a video to 3 seconds or less to make a real **Live Photo**, or combine several clips into a "Collage Live".
 - JPEG / HEIC / PNG, optionally resized for social media. Capture time and camera info are kept; location is removed by default. Exports run in the background.
+- **HDR photos stay HDR**: they export with a gain map, so highlights stay bright on HDR screens, edits included.
+- **Export presets** (full size, social 2048 px, print 300 dpi, or your own), **file names** from `{name}` `{date}` `{seq}` `{width}` `{height}`, and an optional **text watermark** (position, color, size, opacity, shadow).
 
 **Ready for DJI footage**
 - Opens MP4 / MOV from DJI drones and cameras (including 10-bit HEVC). The Info tab lists codec, bit depth, bitrate, frame rate, color space and recording device.
@@ -130,10 +135,13 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 
 **When you want to go deeper**
 - Switch to **Full** for scopes (histogram, waveform, parade, vectorscope), color wheels, curves, the HSL color mixer and creative LUTs, processed in a fixed DaVinci-style order where every step can be switched off to compare.
+- **Film look**: Dehaze (clears distant haze, or adds it), Fade, Grain and Black & White, next to Vignette.
 - Compare with the original, split view, clipping display, 100% zoom, named versions, copy and paste adjustments, and batch sync.
+- **History**: every change is a named step ("Exposure +0.30", "Add Subject"). Click one to go back to it, even after quitting.
 
 **Organize**
-- Import folders or drag files into the window. Thumbnails show each photo as edited. Ratings 0–5, pick / reject, filters by type and rating, search. A HEIC or JPG with a same-name MOV becomes a Live Photo automatically.
+- Import folders or drag files into the window. Thumbnails show each photo as edited. Ratings 0–5, pick / reject, filters by type and rating. A HEIC or JPG with a same-name MOV becomes a Live Photo automatically.
+- **Search by content**: type "sky", "dog" or "sunset" (or 天空, 狗, 日落) and photos showing it appear, recognized on your Mac.
 - If you move or rename an original in Finder, Lucet says "Original file not found"; point it to the new location and ratings and adjustments are kept.
 
 ## Install
@@ -176,7 +184,7 @@ Video: Space plays, `I` / `O` set in and out points, `C` sets the key photo. Sin
 ## Privacy
 
 - Originals are **never changed**. Adjustments are saved as a small recipe file, and a new copy is made only when you export.
-- No account, no analytics, **no photo uploads**. The library, recipes, photo fingerprints for "Similar & Bursts" and learning history live in `~/Library/Application Support/Guangji`.
+- No account, no analytics, **no photo uploads**. Subject detection and content search use Apple's on-device recognition. The library, recipes, edit history, photo fingerprints and content labels, and learning history live in `~/Library/Application Support/Guangji`.
 - The only thing that goes online is the optional "Ask About This Photo". It's off by default; after you add your own key (stored in the Keychain), it sends data only when you click Ask: a thumbnail up to 1024 px on the long edge without capture or location info (can be turned off), plus image statistics and the current settings. It's billed to your account and may not be reachable from mainland China.
 
 ## Current limitations
@@ -185,7 +193,8 @@ Lucet is an early version. Honestly:
 
 - Apple silicon Macs with macOS 15+ only.
 - Not notarized by Apple yet; the first launch needs to be allowed by hand (see Install).
-- Adjusted HDR photos are exported at standard brightness (SDR); the original's HDR gain map isn't kept.
+- HDR photos are previewed at standard brightness while you edit them (the export keeps HDR).
+- Remove works best on smaller things; very large areas can show soft patches, so remove them in a few goes.
 - Video trimming still uses sliders; no multi-track editing, transitions or titles. Local adjustments are for photos only for now.
 - Common camera RAW files open, but they're treated as regular images, not developed as RAW; this is lightly tested.
 - Log footage such as D-Log needs its conversion LUT imported by hand; automatic detection is planned.
