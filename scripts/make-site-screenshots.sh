@@ -83,13 +83,16 @@ jpg() { sips -s format jpeg -s formatOptions 90 "$1" --out "$2" >/dev/null 2>&1;
 # inspector's) and the panel render is scaled to the column's real width, so nothing is guessed.
 PANEL_DY=16
 inspector_x() { # <window.png> -> x where the inspector column starts
-  ffmpeg -loglevel error -y -i "$1" -vf "crop=2940:1:0:1400,format=gray" -f rawvideo -pix_fmt gray - |
+  ffmpeg -loglevel error -y -i "$1" -vf "crop=2940:1200:0:300,format=gray" -f rawvideo -pix_fmt gray - |
     python3 -c "
 import sys
-row = sys.stdin.buffer.read()
-# the inspector is the solid band at the right edge: it starts just after the last dark (canvas) pixel
-dark = [i for i in range(2000, len(row)) if row[i] < 24]
-print(dark[-1] + 1 if dark else '')"
+data = sys.stdin.buffer.read()
+rows = [data[y * 2940:(y + 1) * 2940] for y in range(0, 1200, 25)]
+# In each row the inspector starts just after the last dark (canvas) pixel. A dark control inside the
+# inspector (a slider track, a histogram) can only push that further right, so the leftmost answer
+# over many rows is the column's real edge.
+edges = [max(i for i in range(2000, 2940) if row[i] < 24) + 1 for row in rows if any(row[i] < 24 for i in range(2000, 2940))]
+print(min(edges) if edges else '')"
 }
 with_panel() { # <window.png> <panel.png> <window x offset kept on the left> <out.png>
   local x; x="$(inspector_x "$1")"

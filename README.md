@@ -69,7 +69,7 @@ The Douyin photography creator Zhang Xiaoyang explains histograms, curves and ap
 
 ### The web edition
 
-A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms for grouping similar shots, matching colors, exporting a grade as a LUT and local masks have been rebuilt on Core Image in this Mac app.
+A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms for grouping similar shots, matching colors, exporting a grade as a LUT and local masks have been rebuilt on Core Image in this Mac app, and its choice of model for AI Look, [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT) by Zeng et al. (Apache-2.0), runs here in plain Swift (see `assets/models/NOTICE.md`).
 
 ### What we care about
 
@@ -83,6 +83,7 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 - **Auto (A)** reads the photo's own brightness and color and sets exposure, tone, white balance and color. It holds back: white backdrops and snow stay bright, night stays night, sunsets stay warm. Not happy? ⌘Z.
 - **Six sliders**: Brightness, Contrast, Highlights, Shadows, Warmth and Vividness, each explained in one plain sentence.
 - **Preset thumbnails** preview every preset on your photo; click to apply. Save your own presets.
+- **AI Look** makes a grade for this particular photo: a small neural network (Image-Adaptive-3DLUT) looks at the whole picture and mixes three learned LUTs. It runs on your Mac and starts at 75% strength.
 - **Drag to crop** right on the photo in the Crop tab, with straighten, rotate and flip, and a warning when the horizon tilts.
 
 **Change just part of the picture: local adjustments**
@@ -187,7 +188,7 @@ Video: Space plays, `I` / `O` set in and out points, `C` sets the key photo. Sin
 ## Privacy
 
 - Originals are **never changed**. Adjustments are saved as a small recipe file, and a new copy is made only when you export.
-- No account, no analytics, **no photo uploads**. Subject detection and content search use Apple's on-device recognition. The library, recipes, edit history, photo fingerprints and content labels, and learning history live in `~/Library/Application Support/Guangji`.
+- No account, no analytics, **no photo uploads**. Subject detection and content search use Apple's on-device recognition; AI Look's model ships inside the app and runs locally. The library, recipes, edit history, photo fingerprints and content labels, and learning history live in `~/Library/Application Support/Guangji`.
 - The only thing that goes online is the optional "Ask About This Photo". It's off by default; after you add your own key (stored in the Keychain), it sends data only when you click Ask: a thumbnail up to 1024 px on the long edge without capture or location info (can be turned off), plus image statistics and the current settings. It's billed to your account and may not be reachable from mainland China.
 
 ## Current limitations
