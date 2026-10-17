@@ -302,6 +302,22 @@
 "局部调整" = "Local Adjustments";
 "已关闭" = "Turned off";
 
+/* ExportExtras.swift */
+"右下" = "Bottom Right";
+"左下" = "Bottom Left";
+"底部居中" = "Bottom Center";
+"右上" = "Top Right";
+"左上" = "Top Left";
+"文件名规则不能为空，最长 100 个字符。" = "The file-name pattern can't be empty and can be up to 100 characters.";
+"「{」没有对应的「}」。" = "A “{” has no matching “}”.";
+"不认识 {%@}，可用 {name} {date} {seq} {width} {height}。" = "Unknown {%@}. Available: {name} {date} {seq} {width} {height}.";
+"文件名不能包含 / \\ : * ? \" < > | 等符号。" = "File names can't contain / \\ : * ? \" < > |";
+
+/* ExportPresets.swift */
+"原始尺寸 · 高质量" = "Full Size · High Quality";
+"社交平台 · 长边 2048" = "Social · 2048 px Long Edge";
+"打印 · 300 dpi" = "Print · 300 dpi";
+
 /* ExportQueue.swift */
 "已取消，原片保留" = "Canceled; original kept";
 
@@ -1286,18 +1302,43 @@
 "保存到" = "Save to";
 "直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。Live 片段会存为真正的 Live Photo。" = "Saves straight into Photos on your Mac; with iCloud Photos on, it syncs to your iPhone. Live clips are saved as real Live Photos.";
 "存为文件，可以选择位置。" = "Saves a file wherever you choose.";
+"只导出有效的 Live 片段（0.5–3 秒）" = "Only export valid Live clips (0.5–3 seconds)";
+"存到「照片」" = "Save to Photos";
+"选择位置…" = "Choose Location…";
+"选择文件夹…" = "Choose Folder…";
+"存为导出预设" = "Save as Export Preset";
+"预设名称" = "Preset name";
+"存储" = "Save";
+"保存照片格式、尺寸、分辨率、文件名规则和水印。" = "Saves the photo format, size, resolution, file-name pattern and watermark.";
+"删除预设" = "Delete Preset";
+"一键套用常用的导出设置，或把现在的设置存成预设" = "Apply common export settings in one click, or save the current settings as a preset";
 "质量" = "Quality";
 "原始尺寸" = "Original size";
 "长边 4096 px" = "Long edge 4096 px";
 "长边 2048 px" = "Long edge 2048 px";
 "长边 1080 px（社交平台）" = "Long edge 1080 px (social media)";
+"打印分辨率" = "Print Resolution";
+"72 dpi（屏幕）" = "72 dpi (screen)";
+"300 dpi（打印）" = "300 dpi (print)";
+"只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量" = "Only written into the file, telling print software how many pixels go in an inch; the pixel count doesn't change";
 "这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。" = "This is an HDR photo. After adjusting, it's exported at standard brightness (SDR) and may look a little darker than the original on an iPhone.";
 "保留拍摄信息（时间、相机、镜头）" = "Keep capture info (time, camera, lens)";
 "移除位置信息" = "Remove location";
-"只导出有效的 Live 片段（0.5–3 秒）" = "Only export valid Live clips (0.5–3 seconds)";
-"存到「照片」" = "Save to Photos";
-"选择位置…" = "Choose Location…";
-"选择文件夹…" = "Choose Folder…";
+"文件名" = "File Name";
+"插入" = "Insert";
+"原文件名 {name}" = "Original Name {name}";
+"拍摄日期 {date}" = "Capture Date {date}";
+"序号 {seq}" = "Number {seq}";
+"宽度 {width}" = "Width {width}";
+"高度 {height}" = "Height {height}";
+"例如：%@" = "Example: %@";
+"添加文字水印" = "Add Text Watermark";
+"© 你的名字" = "© Your Name";
+"文字" = "Text";
+"不透明度" = "Opacity";
+"阴影（在明亮或杂乱的背景上更清楚）" = "Shadow (clearer on bright or busy backgrounds)";
+"水印" = "Watermark";
+"大小按照片短边的百分比计算，所以不同尺寸的导出看起来一样。水印只加在照片上。" = "Size is a percentage of the photo's short edge, so exports of any size look the same. Watermarks are added to photos only.";
 "同步调色" = "Sync Adjustments";
 "风格 LUT 与强度" = "Creative LUT and strength";
 "离线或已被修改的原片会跳过并计数。同步后可在提示中一键撤回。" = "Originals that are offline or have changed are skipped and counted. You can undo the sync from the notice afterwards.";
@@ -1308,7 +1349,6 @@
 "恢复" = "Restore";
 "尚未保存快照" = "No snapshots yet";
 "保存当前的基础调整、色轮、曲线、HSL 与 LUT，可套用到任意照片或视频。" = "Saves the current basic adjustments, color wheels, curves, HSL and LUT so you can apply them to any photo or video.";
-"预设名称" = "Preset name";
 "保存" = "Save";
 "⏎ 或 空格" = "⏎ or Space";
 "上一项 / 下一项" = "Previous / next";

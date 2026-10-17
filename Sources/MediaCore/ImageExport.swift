@@ -20,50 +20,101 @@ public struct ImageExportOptions: Codable, Equatable, Sendable {
     public var keepMetadata = true
     /// Drop GPS data even when other metadata is kept.
     public var removeLocation = true
+    /// Print resolution written into the file (72 when nil). Pixels are unchanged.
+    public var dpi: Int?
+    /// Text drawn onto exported photos; nil for none.
+    public var watermark: Watermark?
     public init() {}
+
+    private enum CodingKeys: String, CodingKey { case format, quality, maxLongEdge, keepMetadata, removeLocation, dpi, watermark }
+    /// Missing keys keep their defaults, so settings saved by older versions still load.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        format = (try? values.decodeIfPresent(Format.self, forKey: .format)) ?? .jpeg
+        quality = min(1, max(0.1, try values.decodeIfPresent(Double.self, forKey: .quality) ?? 0.9))
+        maxLongEdge = try values.decodeIfPresent(Int.self, forKey: .maxLongEdge)
+        keepMetadata = try values.decodeIfPresent(Bool.self, forKey: .keepMetadata) ?? true
+        removeLocation = try values.decodeIfPresent(Bool.self, forKey: .removeLocation) ?? true
+        dpi = (try values.decodeIfPresent(Int.self, forKey: .dpi)).map { min(1200, max(72, $0)) }
+        watermark = try? values.decodeIfPresent(Watermark.self, forKey: .watermark)
+    }
 }
 
 public enum ImageExporter {
+    /// A finished picture waiting to be written: its size can name the file first.
+    public struct Rendered: @unchecked Sendable {
+        public let bitmap: CGImage
+        let properties: [CFString: Any]
+        let format: ImageExportOptions.Format
+        public var width: Int { bitmap.width }
+        public var height: Int { bitmap.height }
+    }
+
     /// Writes a new file. Refuses the source path; refuses other existing files
     /// unless `allowReplacing` is set (the user confirmed in a save panel).
     public static func export(_ url: URL, to output: URL, edits: MediaEdits, options: ImageExportOptions,
                               allowReplacing: Bool = false) throws {
+        try validate(output, format: options.format, source: url, allowReplacing: allowReplacing)
+        try write(try render(url, edits: edits, options: options), to: output, source: url, allowReplacing: allowReplacing)
+    }
+
+    /// Grades, straightens and crops, resizes, then adds the watermark.
+    public static func render(_ url: URL, edits: MediaEdits, options: ImageExportOptions) throws -> Rendered {
         try Task.checkCancellation()
-        guard output.isFileURL, output.standardizedFileURL != url.standardizedFileURL else { throw VideoWorkError.outputExists }
-        guard output.pathExtension.lowercased() == options.format.fileExtension
-                || (options.format == .jpeg && output.pathExtension.lowercased() == "jpeg") else {
-            throw VideoWorkError.failed(L("文件扩展名需与导出格式 \(options.format.title) 一致。"))
-        }
-        if !allowReplacing, FileManager.default.fileExists(atPath: output.path) { throw VideoWorkError.outputExists }
         let input = try ImageGradeSession.decode(url)
         let headroom = max(1, input.contentHeadroom)
         let graded = try ColorPipeline.grade(input, edits: edits, sourceHeadroom: headroom)
-        var transformed = try ColorPipeline.geometry(graded, edits: edits)
-        if let limit = options.maxLongEdge, limit >= 16 {
-            let longEdge = max(transformed.extent.width, transformed.extent.height)
-            if longEdge > CGFloat(limit) {
-                let scale = CGFloat(limit) / longEdge
-                transformed = transformed.applyingFilter("CILanczosScaleTransform", parameters: [
-                    kCIInputScaleKey: scale, kCIInputAspectRatioKey: 1
-                ])
-                transformed = transformed.cropped(to: CGRect(x: transformed.extent.minX, y: transformed.extent.minY,
-                    width: floor(transformed.extent.width), height: floor(transformed.extent.height)))
-            }
-        }
+        var transformed = resized(try ColorPipeline.geometry(graded, edits: edits), options: options)
+        if let watermark = options.watermark { transformed = watermark.drawn(over: transformed) }
         try Task.checkCancellation()
         let bitmap = try ColorPipeline.sdrBitmap(transformed, headroom: edits.hasGrade ? 1 : headroom)
         var properties: [CFString: Any] = [kCGImagePropertyOrientation: 1]
         if options.keepMetadata { properties.merge(metadata(of: url, removeLocation: options.removeLocation,
                                                             width: bitmap.width, height: bitmap.height)) { _, new in new } }
-        if options.format.isLossy { properties[kCGImageDestinationLossyCompressionQuality] = min(1, max(0.1, options.quality)) }
-
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(data, options.format.type.identifier as CFString, 1, nil) else {
-            throw VideoWorkError.failed(L("系统不支持写入 \(options.format.title)。"))
+        if let dpi = options.dpi {
+            properties[kCGImagePropertyDPIWidth] = dpi
+            properties[kCGImagePropertyDPIHeight] = dpi
         }
-        CGImageDestinationAddImage(destination, bitmap, properties as CFDictionary)
+        if options.format.isLossy { properties[kCGImageDestinationLossyCompressionQuality] = min(1, max(0.1, options.quality)) }
+        return Rendered(bitmap: bitmap, properties: properties, format: options.format)
+    }
+
+    /// The pixel size an export will have, without rendering it.
+    public static func outputSize(source: CGSize, edits: MediaEdits, options: ImageExportOptions) -> CGSize {
+        let blank = CIImage(color: .black).cropped(to: CGRect(origin: .zero, size: source))
+        let shaped = (try? ColorPipeline.geometry(blank, edits: edits)) ?? blank
+        return resized(shaped, options: options).extent.size
+    }
+
+    private static func resized(_ image: CIImage, options: ImageExportOptions) -> CIImage {
+        guard let limit = options.maxLongEdge, limit >= 16 else { return image }
+        let longEdge = max(image.extent.width, image.extent.height)
+        guard longEdge > CGFloat(limit) else { return image }
+        let scaled = image.applyingFilter("CILanczosScaleTransform", parameters: [kCIInputScaleKey: CGFloat(limit) / longEdge, kCIInputAspectRatioKey: 1])
+        return scaled.cropped(to: CGRect(x: scaled.extent.minX, y: scaled.extent.minY,
+                                         width: floor(scaled.extent.width), height: floor(scaled.extent.height)))
+    }
+
+    /// Checked before rendering too, so a wrong name fails at once.
+    private static func validate(_ output: URL, format: ImageExportOptions.Format, source: URL, allowReplacing: Bool) throws {
+        guard output.isFileURL, output.standardizedFileURL != source.standardizedFileURL else { throw VideoWorkError.outputExists }
+        guard output.pathExtension.lowercased() == format.fileExtension
+                || (format == .jpeg && output.pathExtension.lowercased() == "jpeg") else {
+            throw VideoWorkError.failed(L("文件扩展名需与导出格式 \(format.title) 一致。"))
+        }
+        if !allowReplacing, FileManager.default.fileExists(atPath: output.path) { throw VideoWorkError.outputExists }
+    }
+
+    public static func write(_ rendered: Rendered, to output: URL, source: URL, allowReplacing: Bool = false) throws {
+        let format = rendered.format
+        try validate(output, format: format, source: source, allowReplacing: allowReplacing)
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, format.type.identifier as CFString, 1, nil) else {
+            throw VideoWorkError.failed(L("系统不支持写入 \(format.title)。"))
+        }
+        CGImageDestinationAddImage(destination, rendered.bitmap, rendered.properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
-        let temporary = output.deletingLastPathComponent().appendingPathComponent(".workbench-\(UUID().uuidString).\(options.format.fileExtension)")
+        let temporary = output.deletingLastPathComponent().appendingPathComponent(".workbench-\(UUID().uuidString).\(format.fileExtension)")
         defer { try? FileManager.default.removeItem(at: temporary) }
         try (data as Data).write(to: temporary, options: .atomic)
         try Task.checkCancellation()

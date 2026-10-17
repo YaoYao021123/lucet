@@ -28,6 +28,12 @@ struct MediaProbe {
                 var options = ImageExportOptions()
                 options.maxLongEdge = arguments.count == 5 ? Int(arguments[4]) : 1600
                 options.keepMetadata = false
+                // WATERMARK="text" (and WATERMARK_POSITION=topLeft…) draws a watermark, as in export.
+                if let text = ProcessInfo.processInfo.environment["WATERMARK"] {
+                    var mark = Watermark(text: text)
+                    if let position = ProcessInfo.processInfo.environment["WATERMARK_POSITION"].flatMap(Watermark.Position.init) { mark.position = position }
+                    options.watermark = mark
+                }
                 var edits = MediaEdits()
                 if command == "render" {
                     if arguments[2] != "-" {

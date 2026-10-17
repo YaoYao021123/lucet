@@ -43,15 +43,25 @@ struct ExportOptionsSheet: View {
     let app: AppModel
     let target: ExportTarget
     @UIState private var settings = ExportSettings()
+    @UIState private var exampleDay = ""
+    @UIState private var naming = false
+    @UIState private var presetName = ""
+    /// The watermark text, kept while the watermark is switched off and on again.
+    @AppStorage("export.watermarkText") private var watermarkText = ""
 
     private var entries: [LibraryEntry] { target == .current ? app.currentEntry.map { [$0] } ?? [] : app.library.actionTargets }
     private var hasImages: Bool { target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo } }
     private var hasVideos: Bool { target == .current ? app.editor.isVideo : entries.contains { $0.isVideo || $0.hasLiveCompanion } }
+    private var presets: [ExportPreset] { ExportPreset.builtIns + app.exportPresets }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SheetHeader(title: target == .current ? L("导出副本") : L("导出 \(entries.count) 项"),
-                        subtitle: L("导出会在后台进行，你可以继续浏览和编辑。原片从不修改。"))
+            HStack(alignment: .top) {
+                SheetHeader(title: target == .current ? L("导出副本") : L("导出 \(entries.count) 项"),
+                            subtitle: L("导出会在后台进行，你可以继续浏览和编辑。原片从不修改。"))
+                Spacer()
+                presetMenu
+            }
             Form {
                 Section {
                     Picker("保存到", selection: $settings.destination) {
@@ -64,34 +74,7 @@ struct ExportOptionsSheet: View {
                          : "存为文件，可以选择位置。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                if hasImages {
-                    Section("照片") {
-                        Picker("格式", selection: $settings.image.format) {
-                            ForEach(ImageExportOptions.Format.allCases, id: \.self) { Text($0.title).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        if settings.image.format.isLossy {
-                            LabeledContent("质量") {
-                                HStack {
-                                    Slider(value: $settings.image.quality, in: 0.5...1)
-                                    Text("\(Int(settings.image.quality * 100))").monospacedDigit().frame(width: 30)
-                                }
-                            }
-                        }
-                        Picker("尺寸", selection: Binding(get: { settings.image.maxLongEdge ?? 0 }, set: { settings.image.maxLongEdge = $0 == 0 ? nil : $0 })) {
-                            Text("原始尺寸").tag(0)
-                            Text("长边 4096 px").tag(4096)
-                            Text("长边 2048 px").tag(2048)
-                            Text("长边 1080 px（社交平台）").tag(1080)
-                        }
-                        if target == .current, app.editor.sourceIsHDR, app.editor.edits.hasGrade {
-                            Label("这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。",
-                                  systemImage: "sun.max").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Toggle("保留拍摄信息（时间、相机、镜头）", isOn: $settings.image.keepMetadata)
-                        Toggle("移除位置信息", isOn: $settings.image.removeLocation).disabled(!settings.image.keepMetadata)
-                    }
-                }
+                if hasImages { photoSection }
                 if hasVideos {
                     Section("视频") {
                         Picker("编码", selection: $settings.codec) {
@@ -102,23 +85,187 @@ struct ExportOptionsSheet: View {
                         }
                     }
                 }
+                namingSection
+                if hasImages { watermarkSection }
             }
             .formStyle(.grouped)
-            .scrollDisabled(true)
+            .frame(maxHeight: 560)
             HStack {
                 Spacer()
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
                 Button(settings.destination == .photos ? L("存到「照片」") : target == .current ? L("选择位置…") : L("选择文件夹…")) {
+                    if let mark = settings.image.watermark, mark.cleanedText.isEmpty { settings.image.watermark = nil }
                     app.exportSettings = settings
                     app.confirmExport(target)
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(entries.isEmpty)
+                .disabled(entries.isEmpty || ExportNaming.problem(settings.naming) != nil)
             }
         }
         .padding(22)
-        .frame(width: 480)
-        .onAppear { settings = app.exportSettings }
+        .frame(width: 500)
+        .onAppear {
+            settings = app.exportSettings
+            if let first = entries.first { exampleDay = ExportNaming.day(of: first.url) }
+        }
+        .alert("存为导出预设", isPresented: $naming) {
+            TextField("预设名称", text: $presetName)
+            Button("取消", role: .cancel) {}
+            Button("存储") { savePreset() }.disabled(presetName.trimmingCharacters(in: .whitespaces).isEmpty)
+        } message: {
+            Text("保存照片格式、尺寸、分辨率、文件名规则和水印。")
+        }
+    }
+
+    private var presetMenu: some View {
+        Menu {
+            ForEach(presets) { preset in
+                Button { settings = preset.applied(to: settings) } label: {
+                    if preset.matches(settings) { Label(preset.name, systemImage: "checkmark") } else { Text(preset.name) }
+                }
+            }
+            Divider()
+            Button("存为预设…") { presetName = ""; naming = true }
+            if !app.exportPresets.isEmpty {
+                Menu("删除预设") {
+                    ForEach(app.exportPresets) { preset in
+                        Button(preset.name) { app.exportPresets.removeAll { $0.id == preset.id } }
+                    }
+                }
+            }
+        } label: {
+            Text(presets.first { $0.matches(settings) }?.name ?? L("预设"))
+        }
+        .menuStyle(.button).fixedSize()
+        .help("一键套用常用的导出设置，或把现在的设置存成预设")
+    }
+
+    private var photoSection: some View {
+        Section("照片") {
+            Picker("格式", selection: $settings.image.format) {
+                ForEach(ImageExportOptions.Format.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            if settings.image.format.isLossy {
+                LabeledContent("质量") {
+                    HStack {
+                        Slider(value: $settings.image.quality, in: 0.5...1)
+                        Text("\(Int((settings.image.quality * 100).rounded()))").monospacedDigit().frame(width: 30)
+                    }
+                }
+            }
+            Picker("尺寸", selection: Binding(get: { settings.image.maxLongEdge ?? 0 }, set: { settings.image.maxLongEdge = $0 == 0 ? nil : $0 })) {
+                Text("原始尺寸").tag(0)
+                Text("长边 4096 px").tag(4096)
+                Text("长边 2048 px").tag(2048)
+                Text("长边 1080 px（社交平台）").tag(1080)
+            }
+            Picker("打印分辨率", selection: Binding(get: { settings.image.dpi ?? 72 }, set: { settings.image.dpi = $0 == 72 ? nil : $0 })) {
+                Text("72 dpi（屏幕）").tag(72)
+                Text("150 dpi").tag(150)
+                Text("300 dpi（打印）").tag(300)
+            }
+            .help("只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量")
+            if target == .current, app.editor.sourceIsHDR, app.editor.edits.hasGrade {
+                Label("这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。",
+                      systemImage: "sun.max").font(.caption).foregroundStyle(.secondary)
+            }
+            Toggle("保留拍摄信息（时间、相机、镜头）", isOn: $settings.image.keepMetadata)
+            Toggle("移除位置信息", isOn: $settings.image.removeLocation).disabled(!settings.image.keepMetadata)
+        }
+    }
+
+    private var namingSection: some View {
+        Section {
+            LabeledContent("文件名") {
+                HStack(spacing: 6) {
+                    TextField("文件名", text: $settings.naming, prompt: Text(ExportNaming.defaultPattern)).labelsHidden()
+                    Menu("插入") {
+                        Button("原文件名 {name}") { insert("name") }
+                        Button("拍摄日期 {date}") { insert("date") }
+                        Button("序号 {seq}") { insert("seq") }
+                        Button("宽度 {width}") { insert("width") }
+                        Button("高度 {height}") { insert("height") }
+                    }
+                    .menuStyle(.button).fixedSize()
+                }
+            }
+        } footer: {
+            if let problem = ExportNaming.problem(settings.naming) {
+                Text(problem).font(.caption).foregroundStyle(.red)
+            } else {
+                Text(L("例如：\(example)")).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            }
+        }
+    }
+
+    /// The first file's name under the current pattern (the capture day is read once, on appear).
+    private var example: String {
+        let first = entries.first
+        let stem = first?.url.deletingPathExtension().lastPathComponent ?? "DJI_0001"
+        let size: CGSize? = target == .current ? app.editor.metadata.map { CGSize(width: $0.displayWidth, height: $0.displayHeight) } : nil
+        let named = target == .current && settings.destination == .folder && settings.naming == ExportNaming.defaultPattern
+            ? stem + L("-编辑")
+            : ExportNaming.name(settings.naming, .init(name: stem, day: exampleDay.isEmpty ? "20261016" : exampleDay, sequence: 1,
+                                                       total: max(1, entries.count), width: size.map { Int($0.width) }, height: size.map { Int($0.height) }))
+        return named + "." + (first?.isVideo ?? false ? "mov" : settings.image.format.fileExtension)
+    }
+
+    private func insert(_ token: String) {
+        let separator = settings.naming.isEmpty || settings.naming.hasSuffix("-") || settings.naming.hasSuffix("_") ? "" : "-"
+        settings.naming += separator + "{\(token)}"
+    }
+
+    private var watermark: Binding<Watermark> {
+        Binding(get: { settings.image.watermark ?? Watermark(text: watermarkText) },
+                set: { settings.image.watermark = $0; watermarkText = $0.text })
+    }
+
+    private var watermarkSection: some View {
+        Section {
+            Toggle("添加文字水印", isOn: Binding(get: { settings.image.watermark != nil },
+                                              set: { settings.image.watermark = $0 ? Watermark(text: watermarkText) : nil }))
+            if settings.image.watermark != nil {
+                TextField("文字", text: watermark.text, prompt: Text("© 你的名字"), axis: .vertical).lineLimit(1...2)
+                Picker("位置", selection: watermark.position) {
+                    ForEach(Watermark.Position.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                Picker("颜色", selection: watermark.ink) {
+                    ForEach(Watermark.Ink.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                LabeledContent("大小") {
+                    HStack {
+                        Slider(value: watermark.size, in: 1...8)
+                        Text(String(format: "%.1f%%", watermark.wrappedValue.size)).monospacedDigit().frame(width: 40, alignment: .trailing)
+                    }
+                }
+                LabeledContent("不透明度") {
+                    HStack {
+                        Slider(value: watermark.opacity, in: 0.05...1)
+                        Text("\(Int((watermark.wrappedValue.opacity * 100).rounded()))%").monospacedDigit().frame(width: 40, alignment: .trailing)
+                    }
+                }
+                Toggle("阴影（在明亮或杂乱的背景上更清楚）", isOn: watermark.shadow)
+            }
+        } header: {
+            Text("水印")
+        } footer: {
+            if settings.image.watermark != nil {
+                Text("大小按照片短边的百分比计算，所以不同尺寸的导出看起来一样。水印只加在照片上。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func savePreset() {
+        let name = presetName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        var image = settings.image
+        if let mark = image.watermark, mark.cleanedText.isEmpty { image.watermark = nil }
+        let preset = ExportPreset(id: UUID().uuidString, name: name, image: image, naming: settings.naming)
+        app.exportPresets.removeAll { $0.name == name }
+        app.exportPresets.append(preset)
     }
 }
 

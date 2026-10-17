@@ -75,6 +75,8 @@ struct ExportSettings: Codable, Equatable {
     var liveOnly = false
     /// Casual users want results in Photos (and on their phone), not in a folder.
     var destination = ExportDestination.photos
+    /// File-name pattern, see ExportNaming.
+    var naming = ExportNaming.defaultPattern
 
     init() {}
     init(from decoder: Decoder) throws {
@@ -83,6 +85,7 @@ struct ExportSettings: Codable, Equatable {
         codec = try values.decodeIfPresent(VideoCodecChoice.self, forKey: .codec) ?? .h264
         liveOnly = try values.decodeIfPresent(Bool.self, forKey: .liveOnly) ?? false
         destination = try values.decodeIfPresent(ExportDestination.self, forKey: .destination) ?? .photos
+        naming = try values.decodeIfPresent(String.self, forKey: .naming) ?? ExportNaming.defaultPattern
     }
 }
 
@@ -127,6 +130,10 @@ final class AppModel {
     var collageDrafts: [CollageDraftPane] = []
     var exportSettings: ExportSettings {
         didSet { if let data = try? JSONEncoder().encode(exportSettings) { UserDefaults.standard.set(data, forKey: "guangji.export") } }
+    }
+    /// Export presets the user saved (built-in ones are in ExportPreset.builtIns).
+    var exportPresets = ExportPresetStore.load() {
+        didSet { ExportPresetStore.save(exportPresets) }
     }
 
     /// What this user knows and wants to learn; drives the coach.
@@ -589,16 +596,22 @@ final class AppModel {
         guard let source = editor.url, let input = editor.mediaURL, editor.isLoaded else { return }
         let settings = exportSettings
         let edits = editor.edits, clip = editor.clip, video = editor.isVideo
-        let name = source.deletingPathExtension().lastPathComponent + "." + (video ? "mov" : settings.image.format.fileExtension)
-        let id = exports.enqueue(share ? L("共享 \(name)") : L("存到「照片」· \(name)")) { report in
+        let size = videoOutputSize
+        let title = source.deletingPathExtension().lastPathComponent + "." + (video ? "mov" : settings.image.format.fileExtension)
+        let id = exports.enqueue(share ? L("共享 \(title)") : L("存到「照片」· \(title)")) { report in
             let folder = try PhotosSaver.stagingFolder()
-            let output = folder.appendingPathComponent(name)
+            var output = folder
             if video {
+                output = folder.appendingPathComponent(Self.exportName(source, settings: settings, index: 0, total: 1, size: size) + ".mov")
                 try await VideoPipeline.export(input, to: output, clip: clip, edits: edits, codec: settings.codec) { report($0, nil) }
             } else {
                 report(nil, L("正在渲染…"))
-                try await Task.detached(priority: .userInitiated) {
-                    try ImageExporter.export(input, to: output, edits: edits, options: settings.image)
+                output = try await Task.detached(priority: .userInitiated) {
+                    let rendered = try ImageExporter.render(input, edits: edits, options: settings.image)
+                    let name = Self.exportName(source, settings: settings, index: 0, total: 1, size: CGSize(width: rendered.width, height: rendered.height))
+                    let output = folder.appendingPathComponent(name + "." + settings.image.format.fileExtension)
+                    try ImageExporter.write(rendered, to: output, source: input)
+                    return output
                 }.value
             }
             if share { return ExportQueue.Result(outputs: [output], live: nil, summary: L("已准备好共享")) }
@@ -639,7 +652,10 @@ final class AppModel {
         let settings = exportSettings
         let video = editor.isVideo
         let panel = NSSavePanel()
-        let stem = source.deletingPathExtension().lastPathComponent + L("-编辑")
+        // Next to the original, the plain name gets "-编辑" so it can't be mistaken for it.
+        let stem = settings.naming == ExportNaming.defaultPattern
+            ? source.deletingPathExtension().lastPathComponent + L("-编辑")
+            : Self.exportName(source, settings: settings, index: 0, total: 1, size: video ? videoOutputSize : imageOutputSize)
         if video {
             panel.allowedContentTypes = [.quickTimeMovie]
             panel.nameFieldStringValue = stem + ".mov"
@@ -651,6 +667,27 @@ final class AppModel {
         present(panel) { [weak self] urls in
             if let output = urls.first { self?.enqueueCurrentExport(to: output) }
         }
+    }
+
+    /// Output size of the open photo with its edits and export size, for {width} and {height}.
+    private var imageOutputSize: CGSize? {
+        guard let metadata = editor.metadata else { return nil }
+        return ImageExporter.outputSize(source: CGSize(width: metadata.displayWidth, height: metadata.displayHeight),
+                                        edits: editor.edits, options: exportSettings.image)
+    }
+
+    /// Videos keep their size apart from rotation and crop.
+    private var videoOutputSize: CGSize? {
+        guard let metadata = editor.metadata else { return nil }
+        var options = ImageExportOptions(); options.maxLongEdge = nil
+        return ImageExporter.outputSize(source: CGSize(width: metadata.displayWidth, height: metadata.displayHeight), edits: editor.edits, options: options)
+    }
+
+    /// A file name (without extension) from the naming pattern.
+    nonisolated static func exportName(_ source: URL, settings: ExportSettings, index: Int, total: Int, size: CGSize?) -> String {
+        ExportNaming.name(settings.naming, .init(name: source.deletingPathExtension().lastPathComponent, day: ExportNaming.day(of: source),
+                                                 sequence: index + 1, total: total,
+                                                 width: size.map { Int($0.width.rounded()) }, height: size.map { Int($0.height.rounded()) }))
     }
 
     /// Queues an export of the open document with its current edits, captured now.
@@ -790,7 +827,12 @@ final class AppModel {
                     input = movie; info = try await MediaInspector.inspect(movie); liveInput = true
                 }
                 let edits = MediaEdits(recipe: recipe, lut: lut, isVideo: info.kind == .video)
-                let stem = entry.url.deletingPathExtension().lastPathComponent
+                var videoSize = CGSize(width: info.displayWidth, height: info.displayHeight)
+                if info.kind == .video {
+                    var plain = ImageExportOptions(); plain.maxLongEdge = nil
+                    videoSize = ImageExporter.outputSize(source: videoSize, edits: edits, options: plain)
+                }
+                let stem = exportName(entry.url, settings: settings, index: index, total: entries.count, size: videoSize)
                 var name = stem
                 if info.kind == .video {
                     let duration = info.durationSeconds ?? 0
@@ -804,8 +846,11 @@ final class AppModel {
                         try await VideoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits, codec: settings.codec)
                     }
                 } else if !settings.liveOnly {
-                    name = unique(stem, ext: settings.image.format.fileExtension, in: destination)
-                    try ImageExporter.export(input, to: destination.appendingPathComponent(name), edits: edits, options: settings.image)
+                    let rendered = try ImageExporter.render(input, edits: edits, options: settings.image)
+                    let named = exportName(entry.url, settings: settings, index: index, total: entries.count,
+                                           size: CGSize(width: rendered.width, height: rendered.height))
+                    name = unique(named, ext: settings.image.format.fileExtension, in: destination)
+                    try ImageExporter.write(rendered, to: destination.appendingPathComponent(name), source: input)
                 } else {
                     skipped += 1
                     log.append(L("跳过 · \(entry.name) · 静态照片没有动态片段"))
