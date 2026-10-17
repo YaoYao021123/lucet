@@ -34,7 +34,7 @@ public struct LocalAdjustment: Codable, Equatable, Sendable, Identifiable {
 
     /// The sliders a local layer offers (Lightroom's masking panel, minus the RAW-only ones).
     public static let parameters: [AdjustmentParameter] = [.exposure, .contrast, .highlights, .shadows, .whites, .blackPoint,
-                                                           .warmth, .tint, .saturation, .vibrance, .definition, .sharpness, .noiseReduction]
+                                                           .warmth, .tint, .saturation, .vibrance, .definition, .sharpness, .noiseReduction, .dehaze]
     public static let maximumLayers = 16
     public static let maximumPoints = 4096
 
@@ -223,6 +223,7 @@ extension ColorPipeline {
                 let a = layer.adjustments.sanitized
                 var adjusted = result
                 if a.noiseReduction > 0 { adjusted = BasicColorPipeline.denoise(adjusted, a) }
+                adjusted = BasicColorPipeline.dehaze(adjusted, a, reference: reference)
                 adjusted = try BasicColorPipeline.tone(adjusted, adjustments: a)
                 if a.definition > 0 || a.sharpness > 0 { adjusted = BasicColorPipeline.sharpen(adjusted, a, reference: reference) }
                 result = LocalMask.blend(adjusted, over: result, mask: LocalMask.image(layer, extent: reference)).cropped(to: reference)

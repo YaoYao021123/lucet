@@ -146,7 +146,7 @@ private struct LocalLayerControls: View {
             switch self {
             case .light: [.exposure, .contrast, .highlights, .shadows, .whites, .blackPoint]
             case .color: [.warmth, .tint, .saturation, .vibrance]
-            case .detail: [.definition, .sharpness, .noiseReduction]
+            case .detail: [.dehaze, .definition, .sharpness, .noiseReduction]
             }
         }
     }

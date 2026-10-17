@@ -155,7 +155,7 @@ struct ColorPanel: View {
                              help: L("LUT 把颜色映射为另一种风格。相机 Log 素材需先套用对应的转换 LUT。"), onReset: { editor.resetStage(.lut) }) {
                 LUTControls(app: app)
             }
-            InspectorSection(L("细节"), number: 6, isOn: stage(.detail), help: L("降噪在调色前进行，锐化与暗角在最后。"),
+            InspectorSection(L("细节"), number: 6, isOn: stage(.detail), help: L("降噪和去雾在调色之前，黑白在 HSL 之后；锐化、褪色、暗角和颗粒最后进行。"),
                              startsCollapsed: true, onReset: { editor.resetStage(.detail) }) {
                 VStack(spacing: 6) {
                     AdjustmentRows(editor: editor, section: .detail, hints: app.learner.hoverHints)

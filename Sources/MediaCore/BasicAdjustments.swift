@@ -26,7 +26,7 @@ public enum AdjustmentSection: String, CaseIterable, Codable, Sendable {
         case .whiteBalance: L("让白色看起来是白的：色温调冷暖（蓝–黄），色调调绿–洋红。")
         case .color: L("颜色有多浓：自然饱和度优先增强偏灰的颜色，饱和度同等增强所有颜色。")
         case .detail: L("边缘与纹理：清晰度增强大范围反差，锐度增强细小边缘，降噪抹平颗粒。")
-        case .effects: L("风格化效果，例如压暗边缘的暗角。")
+        case .effects: L("整体风格：去雾让远景更通透，褪色和颗粒像胶片，黑白去掉颜色，暗角压暗边缘。")
         }
     }
 
@@ -37,7 +37,7 @@ public enum AdjustmentSection: String, CaseIterable, Codable, Sendable {
         case .whiteBalance: [.warmth, .tint]
         case .color: [.vibrance, .saturation]
         case .detail: [.definition, .sharpness, .noiseReduction]
-        case .effects: [.vignette]
+        case .effects: [.dehaze, .fade, .grain, .monochrome, .vignette]
         }
     }
 }
@@ -60,6 +60,10 @@ public struct BasicAdjustments: Codable, Equatable, Sendable {
     public var sharpness = 0.0
     public var noiseReduction = 0.0
     public var vignette = 0.0
+    public var dehaze = 0.0
+    public var fade = 0.0
+    public var grain = 0.0
+    public var monochrome = 0.0
     public init() {}
     private struct Key: CodingKey {
         var stringValue: String
@@ -90,7 +94,15 @@ public struct BasicAdjustments: Codable, Equatable, Sendable {
         return result
     }
     public var isNeutral: Bool { self == Self() }
-    public var isDetailNeutral: Bool { definition == 0 && sharpness == 0 && noiseReduction == 0 && vignette == 0 }
+    public var isDetailNeutral: Bool {
+        definition == 0 && sharpness == 0 && noiseReduction == 0 && vignette == 0 && dehaze == 0 && fade == 0 && grain == 0 && monochrome == 0
+    }
+    /// Settings that depend on neighbouring pixels or position, so a LUT can't hold them.
+    public var withoutSpatial: Self {
+        var result = self
+        for p in [AdjustmentParameter.definition, .sharpness, .noiseReduction, .vignette, .dehaze, .grain] { result[p] = 0 }
+        return result
+    }
     public var isToneNeutral: Bool { exposure == 0 && isKernelNeutral }
     var isKernelNeutral: Bool {
         brilliance == 0 && highlights == 0 && shadows == 0 && brightness == 0 && contrast == 0 && whites == 0
@@ -104,6 +116,7 @@ public struct BasicAdjustments: Codable, Equatable, Sendable {
 public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identifiable {
     case exposure, brilliance, highlights, shadows, brightness, contrast, whites, blackPoint
     case warmth, tint, saturation, vibrance, definition, sharpness, noiseReduction, vignette
+    case dehaze, fade, grain, monochrome
     public var id: String { rawValue }
     public var title: String {
         switch self {
@@ -111,6 +124,7 @@ public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identi
         case .brightness: L("亮度"); case .contrast: L("对比度"); case .whites: L("白色"); case .blackPoint: L("黑色")
         case .warmth: L("色温"); case .tint: L("色调"); case .saturation: L("饱和度"); case .vibrance: L("自然饱和度")
         case .definition: L("清晰度"); case .sharpness: L("锐度"); case .noiseReduction: L("降噪"); case .vignette: L("暗角")
+        case .dehaze: L("去雾"); case .fade: L("褪色"); case .grain: L("颗粒"); case .monochrome: L("黑白")
         }
     }
     public var group: AdjustmentGroup {
@@ -120,7 +134,7 @@ public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identi
         default: .detail
         }
     }
-    public var range: ClosedRange<Double> { self == .exposure ? -4...4 : group == .detail ? 0...100 : -100...100 }
+    public var range: ClosedRange<Double> { self == .exposure ? -4...4 : self == .dehaze ? -100...100 : group == .detail ? 0...100 : -100...100 }
     public var section: AdjustmentSection {
         AdjustmentSection.allCases.first { $0.parameters.contains(self) } ?? .tone
     }
@@ -130,6 +144,7 @@ public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identi
         case .brightness: \.brightness; case .contrast: \.contrast; case .whites: \.whites; case .blackPoint: \.blackPoint
         case .warmth: \.warmth; case .tint: \.tint; case .saturation: \.saturation; case .vibrance: \.vibrance
         case .definition: \.definition; case .sharpness: \.sharpness; case .noiseReduction: \.noiseReduction; case .vignette: \.vignette
+        case .dehaze: \.dehaze; case .fade: \.fade; case .grain: \.grain; case .monochrome: \.monochrome
         }
     }
     public var explanation: String {
@@ -150,6 +165,10 @@ public enum AdjustmentParameter: String, CaseIterable, Codable, Sendable, Identi
         case .sharpness: L("增强细小边缘反差，不能恢复失焦时丢失的真实细节。")
         case .noiseReduction: L("使用单帧降噪；数值越大画面越平滑。视频不使用时序降噪，强度过大可能丢失纹理。")
         case .vignette: L("逐渐压暗画面边缘，引导注意力到中央。")
+        case .dehaze: L("往右减少雾气、霾和远处的灰白，远景更清楚、颜色更浓；往左增加朦胧感。用暗通道估计每个区域的雾有多重。")
+        case .fade: L("抬起最暗处、压低最亮处，像褪色的胶片，画面更柔和。")
+        case .grain: L("加入胶片颗粒，中间调最明显。颗粒大小随照片尺寸变化，预览和导出一致。")
+        case .monochrome: L("往右逐渐去掉颜色，100 为完全黑白。HSL 里各颜色的明亮度仍会影响黑白的深浅。")
         }
     }
 }
@@ -188,10 +207,14 @@ public enum BasicColorPipeline {
     public static func image(_ source: CIImage, adjustments: BasicAdjustments) throws -> CIImage {
         let a = adjustments.sanitized
         guard !a.isNeutral else { return source }
-        var result = try tone(source, adjustments: a)
+        var result = dehaze(source, a, reference: source.extent)
+        result = try tone(result, adjustments: a)
         result = denoise(result, a, reference: source.extent)
+        result = monochrome(result, a)
         result = sharpen(result, a, reference: source.extent)
+        result = fade(result, a)
         result = vignette(result, a, reference: source.extent)
+        result = grain(result, a, reference: source.extent)
         return result.cropped(to: source.extent)
     }
 

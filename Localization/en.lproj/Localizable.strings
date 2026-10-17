@@ -120,7 +120,7 @@
 "让白色看起来是白的：色温调冷暖（蓝–黄），色调调绿–洋红。" = "Makes white look white: Temperature moves between cool and warm (blue–yellow), Tint between green and magenta.";
 "颜色有多浓：自然饱和度优先增强偏灰的颜色，饱和度同等增强所有颜色。" = "How strong the colors are: Vibrance boosts muted colors first; Saturation boosts every color equally.";
 "边缘与纹理：清晰度增强大范围反差，锐度增强细小边缘，降噪抹平颗粒。" = "Edges and texture: Clarity adds broad local contrast, Sharpness crisps fine edges, Noise Reduction smooths grain.";
-"风格化效果，例如压暗边缘的暗角。" = "Stylistic effects, such as a vignette that darkens the edges.";
+"整体风格：去雾让远景更通透，褪色和颗粒像胶片，黑白去掉颜色，暗角压暗边缘。" = "Overall style: Dehaze clears distant views, Fade and Grain give a film look, Black & White removes color, and Vignette darkens the edges.";
 "阴影" = "Shadows";
 "高光" = "Highlights";
 "鲜明度" = "Brilliance";
@@ -136,6 +136,10 @@
 "清晰度" = "Clarity";
 "锐度" = "Sharpness";
 "降噪" = "Noise Reduction";
+"去雾" = "Dehaze";
+"褪色" = "Fade";
+"颗粒" = "Grain";
+"黑白" = "Black & White";
 "整体增加或减少曝光，以 EV 表示；+1 EV 将线性亮度加倍。过曝丢失的细节无法靠此恢复。" = "Raises or lowers overall exposure in EV; +1 EV doubles the linear light. It can't bring back detail that was blown out when shooting.";
 "平衡暗部、中间调与亮部。正值提亮暗部并收住高光；这是本地算法，不等同于苹果的空间自适应鲜明度。" = "Balances shadows, midtones and highlights. Positive values lift the shadows and hold back the highlights. This is Lucet's own algorithm, not Apple's spatially adaptive Brilliance.";
 "调整较亮区域；负值压低高光，尽量减少对暗部的影响。" = "Adjusts the brighter areas. Negative values pull highlights down while leaving the shadows mostly alone.";
@@ -152,6 +156,10 @@
 "增强细小边缘反差，不能恢复失焦时丢失的真实细节。" = "Adds contrast to fine edges. It can't restore real detail lost to missed focus.";
 "使用单帧降噪；数值越大画面越平滑。视频不使用时序降噪，强度过大可能丢失纹理。" = "Reduces noise frame by frame; higher values look smoother. Video doesn't use temporal noise reduction, and too much can lose texture.";
 "逐渐压暗画面边缘，引导注意力到中央。" = "Gradually darkens the edges to draw the eye to the center.";
+"往右减少雾气、霾和远处的灰白，远景更清楚、颜色更浓；往左增加朦胧感。用暗通道估计每个区域的雾有多重。" = "Right removes mist, haze and the gray wash over distant land, so far details are clearer and colors richer; left adds a soft haze. Estimates how hazy each area is with the dark-channel method.";
+"抬起最暗处、压低最亮处，像褪色的胶片，画面更柔和。" = "Lifts the darkest tones and lowers the brightest, like faded film, for a softer picture.";
+"加入胶片颗粒，中间调最明显。颗粒大小随照片尺寸变化，预览和导出一致。" = "Adds film grain, strongest in the midtones. Grain size follows the photo size, so the preview matches the export.";
+"往右逐渐去掉颜色，100 为完全黑白。HSL 里各颜色的明亮度仍会影响黑白的深浅。" = "Right gradually removes color; 100 is fully black and white. The HSL luminance of each color still sets how light or dark it turns.";
 "基础调色滤镜不可用，未应用调整。" = "The basic adjustment filter is unavailable, so no adjustments were applied.";
 
 /* BrandIdentity.swift */
@@ -222,7 +230,6 @@
 "自然增强" = "Natural Boost";
 "青橙电影" = "Teal & Orange";
 "柔和胶片" = "Soft Film";
-"黑白" = "Black & White";
 
 /* EditorModel.swift */
 "原片" = "Original";
@@ -382,7 +389,7 @@
 "分别调整 8 个色系的色相、饱和度与明亮度。" = "Adjust the hue, saturation and luminance of 8 color ranges separately.";
 "风格 LUT" = "Creative LUT";
 "LUT 把颜色映射为另一种风格。相机 Log 素材需先套用对应的转换 LUT。" = "A LUT maps colors to a different look. Camera Log footage needs its matching conversion LUT first.";
-"降噪在调色前进行，锐化与暗角在最后。" = "Noise reduction runs before color; sharpening and vignette run last.";
+"降噪和去雾在调色之前，黑白在 HSL 之后；锐化、褪色、暗角和颗粒最后进行。" = "Noise reduction and dehaze run before color grading, black and white after HSL; sharpening, fade, vignette and grain come last.";
 "整张照片变亮或变暗。" = "Makes the whole photo brighter or darker.";
 "亮的更亮、暗的更暗，画面更有力；往左更柔和。" = "Brights get brighter and darks darker for more punch. Drag left for a softer look.";
 "往左压暗最亮的地方，比如找回天空和云的层次。" = "Drag left to tone down the brightest areas, for example to bring back detail in the sky and clouds.";

@@ -117,22 +117,29 @@ public enum ColorPipeline {
         ])
     }
 
-    /// Fixed node order (DaVinci-style): input → noise reduction → basic →
-    /// wheels → curves → HSL → LUT → sharpening → vignette. Geometry follows separately.
+    /// Fixed node order (DaVinci-style): input → noise reduction → dehaze → basic → wheels →
+    /// curves → HSL → black and white → LUT → sharpening → fade → vignette → grain → local layers.
+    /// Geometry follows separately.
     public static func grade(_ image: CIImage, edits: MediaEdits, sourceHeadroom: Float = 1) throws -> CIImage {
         guard edits.hasGrade else { return image }
         let a = edits.adjustments.sanitized
         let reference = image.extent
         var result = toneMap(image, sourceHeadroom: sourceHeadroom)
-        if edits.isActive(.detail) { result = BasicColorPipeline.denoise(result, a) }
+        if edits.isActive(.detail) {
+            result = BasicColorPipeline.denoise(result, a)
+            result = BasicColorPipeline.dehaze(result, a, reference: reference)
+        }
         if edits.isActive(.basic) { result = try BasicColorPipeline.tone(result, adjustments: a) }
         if edits.isActive(.wheels) { result = try GradeKernels.wheels(result, edits.wheels) }
         if edits.isActive(.curves) { result = GradeKernels.curves(result, edits.curves) }
         if edits.isActive(.hsl) { result = try GradeKernels.hsl(result, edits.hsl) }
+        if edits.isActive(.detail) { result = BasicColorPipeline.monochrome(result, a) }
         if edits.hasLUT, let lut = edits.lut { result = applyLUT(result, lut: lut, strength: edits.strength, extent: reference) }
         if edits.isActive(.detail) {
             result = BasicColorPipeline.sharpen(result, a, reference: reference)
+            result = BasicColorPipeline.fade(result, a)
             result = BasicColorPipeline.vignette(result, a, reference: reference)
+            result = BasicColorPipeline.grain(result, a, reference: reference)
         }
         result = try applyLocals(result.cropped(to: reference), edits: edits, reference: reference)
         return result.cropped(to: reference)

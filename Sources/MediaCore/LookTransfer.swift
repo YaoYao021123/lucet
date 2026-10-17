@@ -28,12 +28,13 @@ extension CubeLUT {
 public enum LUTBaker {
     /// Bakes the per-pixel part of a grade (basic light and color, wheels, curves, HSL, LUT)
     /// into a .cube with sRGB / Rec.709 display encoding in and out, for use in other apps.
-    /// Noise reduction, clarity, sharpening and vignette depend on neighbouring pixels or
-    /// position, so they cannot live in a LUT and are left out.
+    /// Noise reduction, dehaze, clarity, sharpening, vignette and grain depend on neighbouring
+    /// pixels or position, so they cannot live in a LUT and are left out; fade and black and
+    /// white are per pixel and stay in.
     public static func bake(_ edits: MediaEdits, size: Int = 33, title: String) throws -> CubeLUT {
         precondition((2...65).contains(size))
         var colorOnly = edits
-        colorOnly.bypass.insert(.detail)
+        colorOnly.adjustments = edits.adjustments.withoutSpatial
         colorOnly.locals = []
         colorOnly.degrees = 0
         colorOnly.geometry = .init()

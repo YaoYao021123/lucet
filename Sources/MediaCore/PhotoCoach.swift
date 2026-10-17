@@ -175,7 +175,8 @@ public enum Concept: String, Codable, CaseIterable, Sendable, CodingKeyRepresent
             case .vibrance, .saturation: result.insert(.vibrance)
             case .sharpness, .definition: result.insert(.sharpening)
             case .noiseReduction: result.insert(.noise)
-            case .vignette: break
+            case .dehaze: result.insert(.contrast)
+            case .vignette, .fade, .grain, .monochrome: break
             }
         }
         if old.wheels != new.wheels { result.insert(.colorWheels) }
