@@ -242,7 +242,7 @@
 "HDR 高光扩展" = "HDR highlight expansion";
 "HDR 视频" = "HDR video";
 "HDR 视频 · 调色时按普通亮度预览" = "HDR video · previewed at standard brightness while adjusting";
-"HDR 照片 · 调色后为普通亮度" = "HDR photo · standard brightness after adjusting";
+"HDR 照片 · 调色时按普通亮度预览" = "HDR photo · previewed in SDR while editing";
 "HDR 照片" = "HDR photo";
 "HDR 照片 · 这块屏幕按普通亮度显示" = "HDR photo · this display shows it at standard brightness";
 "正在读取素材…" = "Loading…";
@@ -1321,7 +1321,9 @@
 "72 dpi（屏幕）" = "72 dpi (screen)";
 "300 dpi（打印）" = "300 dpi (print)";
 "只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量" = "Only written into the file, telling print software how many pixels go in an inch; the pixel count doesn't change";
-"这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。" = "This is an HDR photo. After adjusting, it's exported at standard brightness (SDR) and may look a little darker than the original on an iPhone.";
+"保留 HDR" = "Keep HDR";
+"PNG 不支持 HDR，会导出普通亮度。" = "PNG doesn't support HDR, so it exports in standard brightness.";
+"HDR 照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。" = "HDR photos export with a gain map: highlights are brighter on HDR screens, and other devices show the standard version. Your edits are kept.";
 "保留拍摄信息（时间、相机、镜头）" = "Keep capture info (time, camera, lens)";
 "移除位置信息" = "Remove location";
 "文件名" = "File Name";

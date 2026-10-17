@@ -166,9 +166,13 @@ struct ExportOptionsSheet: View {
                 Text("300 dpi（打印）").tag(300)
             }
             .help("只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量")
-            if target == .current, app.editor.sourceIsHDR, app.editor.edits.hasGrade {
-                Label("这是 HDR 照片。调色后会导出为普通亮度（SDR），在 iPhone 上看可能比原片暗一些。",
-                      systemImage: "sun.max").font(.caption).foregroundStyle(.secondary)
+            if target == .selection || app.editor.sourceIsHDR {
+                Toggle(isOn: $settings.image.keepHDR) {
+                    Text("保留 HDR")
+                    Text(settings.image.format == .png ? L("PNG 不支持 HDR，会导出普通亮度。")
+                         : L("HDR 照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。"))
+                }
+                .disabled(settings.image.format == .png)
             }
             Toggle("保留拍摄信息（时间、相机、镜头）", isOn: $settings.image.keepMetadata)
             Toggle("移除位置信息", isOn: $settings.image.removeLocation).disabled(!settings.image.keepMetadata)

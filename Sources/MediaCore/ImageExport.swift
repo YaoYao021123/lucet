@@ -24,9 +24,11 @@ public struct ImageExportOptions: Codable, Equatable, Sendable {
     public var dpi: Int?
     /// Text drawn onto exported photos; nil for none.
     public var watermark: Watermark?
+    /// HDR photos keep their brightness range: an SDR picture plus a gain map (JPEG and HEIC).
+    public var keepHDR = true
     public init() {}
 
-    private enum CodingKeys: String, CodingKey { case format, quality, maxLongEdge, keepMetadata, removeLocation, dpi, watermark }
+    private enum CodingKeys: String, CodingKey { case format, quality, maxLongEdge, keepMetadata, removeLocation, dpi, watermark, keepHDR }
     /// Missing keys keep their defaults, so settings saved by older versions still load.
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -37,17 +39,22 @@ public struct ImageExportOptions: Codable, Equatable, Sendable {
         removeLocation = try values.decodeIfPresent(Bool.self, forKey: .removeLocation) ?? true
         dpi = (try values.decodeIfPresent(Int.self, forKey: .dpi)).map { min(1200, max(72, $0)) }
         watermark = try? values.decodeIfPresent(Watermark.self, forKey: .watermark)
+        keepHDR = try values.decodeIfPresent(Bool.self, forKey: .keepHDR) ?? true
     }
 }
 
 public enum ImageExporter {
     /// A finished picture waiting to be written: its size can name the file first.
     public struct Rendered: @unchecked Sendable {
+        /// The SDR picture (the base image when there is a gain map).
         public let bitmap: CGImage
         let properties: [CFString: Any]
         let format: ImageExportOptions.Format
+        /// JPEG or HEIC data with the SDR base and an HDR gain map.
+        let hdrData: Data?
         public var width: Int { bitmap.width }
         public var height: Int { bitmap.height }
+        public var isHDR: Bool { hdrData != nil }
     }
 
     /// Writes a new file. Refuses the source path; refuses other existing files
@@ -64,10 +71,19 @@ public enum ImageExporter {
         let input = try ImageGradeSession.decode(url)
         let headroom = max(1, input.contentHeadroom)
         let graded = try ColorPipeline.grade(input, edits: edits, sourceHeadroom: headroom)
-        var transformed = resized(try ColorPipeline.geometry(graded, edits: edits), options: options)
-        if let watermark = options.watermark { transformed = watermark.drawn(over: transformed) }
+        let shaped = resized(try ColorPipeline.geometry(graded, edits: edits), options: options)
+        let transformed = options.watermark.map { $0.drawn(over: shaped) } ?? shaped
         try Task.checkCancellation()
         let bitmap = try ColorPipeline.sdrBitmap(transformed, headroom: edits.hasGrade ? 1 : headroom)
+        var hdrData: Data?
+        if options.keepHDR, options.format != .png, headroom > 1.05 {
+            // Unedited: the photo's own HDR. Edited: the grade works on the tone-mapped picture,
+            // so the original's highlight lift (HDR ÷ tone-mapped) is put back on top of it.
+            var hdr = edits.hasGrade ? resized(try ColorPipeline.geometry(HDRGain.restore(graded, original: input, headroom: headroom), edits: edits), options: options) : shaped
+            if let watermark = options.watermark { hdr = watermark.drawn(over: hdr) }
+            try Task.checkCancellation()
+            hdrData = HDRGain.encode(base: CIImage(cgImage: bitmap), hdr: hdr, format: options.format, quality: options.quality)
+        }
         var properties: [CFString: Any] = [kCGImagePropertyOrientation: 1]
         if options.keepMetadata { properties.merge(metadata(of: url, removeLocation: options.removeLocation,
                                                             width: bitmap.width, height: bitmap.height)) { _, new in new } }
@@ -76,7 +92,7 @@ public enum ImageExporter {
             properties[kCGImagePropertyDPIHeight] = dpi
         }
         if options.format.isLossy { properties[kCGImageDestinationLossyCompressionQuality] = min(1, max(0.1, options.quality)) }
-        return Rendered(bitmap: bitmap, properties: properties, format: options.format)
+        return Rendered(bitmap: bitmap, properties: properties, format: options.format, hdrData: hdrData)
     }
 
     /// The pixel size an export will have, without rendering it.
@@ -112,7 +128,17 @@ public enum ImageExporter {
         guard let destination = CGImageDestinationCreateWithData(data, format.type.identifier as CFString, 1, nil) else {
             throw VideoWorkError.failed(L("系统不支持写入 \(format.title)。"))
         }
-        CGImageDestinationAddImage(destination, rendered.bitmap, rendered.properties as CFDictionary)
+        if let hdr = rendered.hdrData, let source = CGImageSourceCreateWithData(hdr as CFData, nil) {
+            // The encoded HDR file plus our metadata; the gain map travels as auxiliary data.
+            CGImageDestinationAddImageFromSource(destination, source, 0, rendered.properties as CFDictionary)
+            for type in [kCGImageAuxiliaryDataTypeHDRGainMap, kCGImageAuxiliaryDataTypeISOGainMap] {
+                if let auxiliary = CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, type) {
+                    CGImageDestinationAddAuxiliaryDataInfo(destination, type, auxiliary)
+                }
+            }
+        } else {
+            CGImageDestinationAddImage(destination, rendered.bitmap, rendered.properties as CFDictionary)
+        }
         guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
         let temporary = output.deletingLastPathComponent().appendingPathComponent(".workbench-\(UUID().uuidString).\(format.fileExtension)")
         defer { try? FileManager.default.removeItem(at: temporary) }

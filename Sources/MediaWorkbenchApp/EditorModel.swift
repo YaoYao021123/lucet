@@ -204,7 +204,7 @@ final class EditorModel {
         if isVideo, hdrEffect { return L("HDR 高光扩展") }
         if !sourceIsHDR { return "" }
         if isVideo { return previewNeedsSDR ? L("HDR 视频 · 调色时按普通亮度预览") : L("HDR 视频") }
-        if edits.hasGrade { return L("HDR 照片 · 调色后为普通亮度") }
+        if edits.hasGrade { return L("HDR 照片 · 调色时按普通亮度预览") }
         return hdrPreview && screenHeadroom > 1 ? L("HDR 照片") : L("HDR 照片 · 这块屏幕按普通亮度显示")
     }
 
