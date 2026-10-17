@@ -9,7 +9,7 @@ enum ColorMode: String, CaseIterable {
     var title: String { self == .simple ? L("简单") : L("完整") }
 }
 
-enum WorkspaceMode: String, Sendable {
+enum WorkspaceMode: String, CaseIterable, Sendable {
     case browse, edit
 }
 

@@ -90,6 +90,21 @@ struct LocalAdjustmentSection: View {
                 Text(summary(layer)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 4)
+            if selected {
+                // Mask options live on the row instead of taking two lines of checkboxes below it.
+                Button { editor.showMask.toggle() } label: {
+                    Image(systemName: editor.showMask ? "circle.lefthalf.filled" : "circle.lefthalf.striped.horizontal")
+                }
+                .buttonStyle(.borderless).foregroundStyle(editor.showMask ? .primary : .secondary)
+                .help(editor.showMask ? L("隐藏蒙版") : L("把这一层作用的范围标成红色"))
+                .accessibilityLabel(L("显示蒙版"))
+                Button { editor.updateLocal(layer.id) { $0.invert.toggle() } } label: {
+                    Image(systemName: "arrow.left.arrow.right.circle" + (layer.invert ? ".fill" : ""))
+                }
+                .buttonStyle(.borderless).foregroundStyle(layer.invert ? .primary : .secondary)
+                .help(layer.invert ? L("已反转：调整范围之外的部分") : L("改为调整范围之外的部分"))
+                .accessibilityLabel(L("反转"))
+            }
             Button { editor.updateLocal(layer.id) { $0.enabled.toggle() } } label: {
                 Image(systemName: layer.enabled ? "eye" : "eye.slash")
             }
@@ -114,51 +129,115 @@ struct LocalAdjustmentSection: View {
     }
 }
 
-/// Mask options and sliders for the selected layer.
+/// The selected layer's sliders, grouped like the global controls: light, color, detail.
+/// Groups the layer uses are open; the rest stay closed with a one-line summary.
 private struct LocalLayerControls: View {
     let editor: EditorModel
     let layer: LocalAdjustment
+    /// nil until the user opens or closes a group: then the defaults stop applying.
+    @UIState private var opened: Set<Group>?
+
+    enum Group: CaseIterable, Hashable {
+        case light, color, detail
+        var title: String {
+            switch self { case .light: L("光线"); case .color: L("色彩"); case .detail: L("细节") }
+        }
+        var parameters: [AdjustmentParameter] {
+            switch self {
+            case .light: [.exposure, .contrast, .highlights, .shadows, .whites, .blackPoint]
+            case .color: [.warmth, .tint, .saturation, .vibrance]
+            case .detail: [.definition, .sharpness, .noiseReduction]
+            }
+        }
+    }
+
+    private func changed(_ group: Group) -> [AdjustmentParameter] { group.parameters.filter { layer.adjustments[$0] != 0 } }
+
+    private var open: Set<Group> {
+        if let opened { return opened }
+        let used = Set(Group.allCases.filter { !changed($0).isEmpty })
+        return used.isEmpty ? [.light] : used
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            WorkbenchTheme.hairline.frame(height: 1).padding(.vertical, 2)
-            Text(hint).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 14) {
-                Toggle("显示蒙版", isOn: Binding(get: { editor.showMask }, set: { editor.showMask = $0 }))
-                    .help("把这一层作用的范围标成红色")
-                Toggle("反转", isOn: Binding(get: { layer.invert }, set: { value in editor.updateLocal(layer.id) { $0.invert = value } }))
-                    .help("改为调整范围之外的部分")
-            }
-            .toggleStyle(.checkbox).font(.callout)
+            Text(hint).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                .help(detailedHint)
+                .padding(.top, 2)
             if layer.shape == .brush {
-                Picker("", selection: Binding(get: { editor.brushErase }, set: { editor.brushErase = $0 })) {
-                    Text("涂抹").tag(false)
-                    Text("擦除").tag(true)
+                HStack(spacing: 8) {
+                    Picker("", selection: Binding(get: { editor.brushErase }, set: { editor.brushErase = $0 })) {
+                        Text("涂抹").tag(false)
+                        Text("擦除").tag(true)
+                    }
+                    .pickerStyle(.segmented).labelsHidden().controlSize(.small).fixedSize()
+                    Spacer(minLength: 0)
+                    if !layer.strokes.isEmpty {
+                        Button("清除笔触") { editor.updateLocal(layer.id) { $0.strokes = [] } }.buttonStyle(.borderless).font(.caption)
+                    }
                 }
-                .pickerStyle(.segmented).labelsHidden().controlSize(.small)
                 ParameterRow(title: L("画笔大小"), value: (editor.brushRadius * 200).rounded(), range: 1...50, neutral: 8,
                              onChange: { editor.brushRadius = $0 / 200 })
-                if !layer.strokes.isEmpty {
-                    Button("清除笔触") { editor.updateLocal(layer.id) { $0.strokes = [] } }.buttonStyle(.borderless).font(.callout)
-                }
             }
             if layer.shape != .linear {
                 ParameterRow(title: L("羽化"), value: (layer.feather * 100).rounded(), range: 0...100, suffix: "%", neutral: 35,
                              onChange: { value in editor.updateLocal(layer.id) { $0.feather = value / 100 } }, onEditing: editor.beginEditing)
             }
-            VStack(spacing: 1) {
-                ForEach(LocalAdjustment.parameters) { parameter in
-                    ParameterRow(title: parameter.title, value: layer.adjustments[parameter], range: parameter.range,
-                                 step: parameter == .exposure ? 0.05 : 1, decimals: parameter == .exposure ? 2 : 0,
-                                 suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
-                                 onChange: { value in editor.updateLocal(layer.id) { $0.adjustments[parameter] = value } },
-                                 onEditing: editor.beginEditing)
+            ForEach(Group.allCases, id: \.self) { group in
+                groupHeader(group)
+                if open.contains(group) {
+                    VStack(spacing: 1) {
+                        ForEach(group.parameters) { parameter in
+                            ParameterRow(title: parameter.title, value: layer.adjustments[parameter], range: parameter.range,
+                                         step: parameter == .exposure ? 0.05 : 1, decimals: parameter == .exposure ? 2 : 0,
+                                         suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
+                                         onChange: { value in editor.updateLocal(layer.id) { $0.adjustments[parameter] = value } },
+                                         onEditing: editor.beginEditing)
+                        }
+                    }
+                    .padding(.leading, 4)
                 }
             }
         }
+        .padding(.top, 2)
+    }
+
+    private func groupHeader(_ group: Group) -> some View {
+        let isOpen = open.contains(group)
+        let values = changed(group).map { p in
+            p == .exposure ? String(format: "%@ %+.2f", p.title, layer.adjustments[p]) : String(format: "%@ %+.0f", p.title, layer.adjustments[p])
+        }
+        return Button {
+            var next = open
+            if isOpen { next.remove(group) } else { next.insert(group) }
+            withAnimation(.snappy(duration: 0.18)) { opened = next }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .rotationEffect(.degrees(isOpen ? 90 : 0))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 10)
+                Text(group.title).font(.caption.weight(.semibold)).foregroundStyle(values.isEmpty ? .secondary : .primary)
+                Text(values.isEmpty ? L("未调整") : values.joined(separator: " · "))
+                    .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 4)
     }
 
     private var hint: String {
+        switch layer.shape {
+        case .linear: L("拖动画面上的圆点，放好渐变。")
+        case .radial: L("拖动中心和边上的点，放好椭圆。")
+        case .brush: L("在画面上涂抹；按住 ⌥ 擦除。")
+        }
+    }
+
+    private var detailedHint: String {
         switch layer.shape {
         case .linear: L("在画面上拖动两个圆点：实线一侧完全生效，虚线一侧不受影响；拖中间的点整体移动。")
         case .radial: L("拖动中心移动椭圆，拖边上的点改变大小；羽化让边缘过渡更柔和。")

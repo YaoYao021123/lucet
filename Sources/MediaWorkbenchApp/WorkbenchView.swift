@@ -290,17 +290,22 @@ struct WorkbenchToolbar: ToolbarContent {
     let app: AppModel
     var editor: EditorModel { app.editor }
 
-    var body: some ToolbarContent {
-        ToolbarItem(placement: .principal) {
-            Picker("视图", selection: Binding(get: { app.mode }, set: { mode in
-                if mode == .edit, !editor.isLoaded { app.openSelection() } else { app.mode = mode }
-            })) {
-                Text("浏览").tag(WorkspaceMode.browse)
-                Text("编辑").tag(WorkspaceMode.edit)
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 130)
+    private var modeSwitch: some View {
+        GlassSegmentedControl(options: WorkspaceMode.allCases,
+                              selection: Binding(get: { app.mode }, set: { mode in
+                                  if mode == .edit, !editor.isLoaded { app.openSelection() } else { app.mode = mode }
+                              }),
+                              title: { $0 == .browse ? L("浏览") : L("编辑") }, accessibilityTitle: L("视图"), showsTrack: false)
+            .frame(width: 140)
             .help("浏览（G） / 编辑（E）")
+    }
+
+    var body: some ToolbarContent {
+        // Just the two words and a sliding glass highlight: no toolbar platter, no track.
+        if #available(macOS 26, *) {
+            ToolbarItem(placement: .principal) { modeSwitch }.sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .principal) { modeSwitch }
         }
         ToolbarItemGroup(placement: .primaryAction) {
             if app.mode == .edit {
