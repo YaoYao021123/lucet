@@ -222,6 +222,7 @@ final class AppModel {
             MainActor.assumeIsolated {
                 self?.editor.flushDraft()
                 self?.library.saveNow()
+                self?.saveProjectsNow()
             }
         }
     }

@@ -30,7 +30,7 @@ struct SidebarProjects: View {
                 ScrollView {
                     VStack(spacing: 1) {
                         ForEach(app.projects) { project in
-                            row(title: project.name, symbol: "folder", count: project.photos.count, selected: app.currentProjectID == project.id) {
+                            row(title: project.name, symbol: "folder", count: app.projectCount(project), selected: app.currentProjectID == project.id) {
                                 app.currentProjectID = project.id
                             }
                             .contextMenu { ProjectMenu(app: app, project: project) }

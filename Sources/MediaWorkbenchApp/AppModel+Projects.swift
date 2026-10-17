@@ -57,6 +57,15 @@ extension AppModel {
         }
     }
 
+    /// Writes the projects at once (quitting).
+    func saveProjectsNow() {
+        projectSaveTask?.cancel()
+        try? projectStore.save(projects)
+    }
+
+    /// Photos of a project that are still in the library.
+    func projectCount(_ project: Project) -> Int { project.photoIDs.filter { library.entry($0) != nil }.count }
+
     /// A name for a new project: the folder most of the photos come from, or a numbered one.
     func suggestedProjectName(for ids: [String]) -> String {
         let folders = ids.compactMap { library.entry($0)?.url.deletingLastPathComponent().lastPathComponent }
