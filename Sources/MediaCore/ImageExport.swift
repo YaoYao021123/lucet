@@ -86,6 +86,12 @@ public enum ImageExporter {
             if let watermark = options.watermark { hdr = watermark.drawn(over: hdr) }
             try Task.checkCancellation()
             hdrData = HDRGain.encode(base: CIImage(cgImage: bitmap), hdr: hdr, format: options.format, quality: options.quality)
+        } else if options.keepHDR, options.format != .png, ColorPipeline.hdrHeadroom(edits) > 1 {
+            // AI HDR: the edit as it is for ordinary screens, plus the predicted glow for HDR ones.
+            var hdr = resized(try ColorPipeline.geometry(ColorPipeline.applyHDR(graded, edits: edits), edits: edits), options: options)
+            if let watermark = options.watermark { hdr = watermark.drawn(over: hdr) }
+            try Task.checkCancellation()
+            hdrData = HDRGain.encode(base: CIImage(cgImage: bitmap), hdr: hdr, format: options.format, quality: options.quality)
         }
         var properties: [CFString: Any] = [kCGImagePropertyOrientation: 1]
         if options.keepMetadata { properties.merge(metadata(of: url, removeLocation: options.removeLocation,

@@ -65,6 +65,8 @@ public struct MediaEdits: Sendable, Equatable {
     /// The photo file, for masks found in the picture itself (subject). Set by whoever decodes
     /// the photo; not part of the recipe.
     public var source: URL?
+    /// AI HDR for ordinary photos, 0 (off) … 1 (the model's full glow). Photos only.
+    public var hdrAmount = 0.0
 
     public init(degrees: Double = 0, lut: CreativeLUT? = nil, strength: Double = 1, hdrEffect: Bool = false,
                 adjustments: BasicAdjustments = .init(), geometry: GeometryAdjustments = .init(),
@@ -81,6 +83,7 @@ public struct MediaEdits: Sendable, Equatable {
         self.init(degrees: recipe.degrees, lut: lut, strength: recipe.strength, hdrEffect: isVideo && recipe.hdrEffect,
                   adjustments: recipe.adjustments, geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
                   hsl: recipe.hsl, bypass: recipe.bypass, locals: recipe.locals)
+        hdrAmount = isVideo ? 0 : recipe.hdrAmount
     }
 
     public func isActive(_ stage: GradeStage) -> Bool { !bypass.contains(stage) }
@@ -262,12 +265,17 @@ public actor ImageGradeSession {
         try Task.checkCancellation()
         var edits = edits
         edits.source = url
-        let graded = try ColorPipeline.grade(image, edits: edits, sourceHeadroom: headroom)
-        let output = try ColorPipeline.geometry(graded, edits: edits)
+        // AI HDR is for ordinary photos; it glows on top of the edit.
+        let glow = headroom <= 1.05 ? ColorPipeline.hdrHeadroom(edits) : 1
+        func graded(_ picture: CIImage) throws -> CIImage {
+            let result = try ColorPipeline.grade(picture, edits: edits, sourceHeadroom: headroom)
+            return glow > 1 ? ColorPipeline.applyHDR(result, edits: edits) : result
+        }
+        let output = try ColorPipeline.geometry(try graded(image), edits: edits)
         let before = try ColorPipeline.geometry(image, edits: edits)
         var fullImage: CIImage?, fullBefore: CIImage?
         if let full, full !== image {
-            fullImage = try ColorPipeline.geometry(try ColorPipeline.grade(full, edits: edits, sourceHeadroom: headroom), edits: edits)
+            fullImage = try ColorPipeline.geometry(try graded(full), edits: edits)
             fullBefore = try ColorPipeline.geometry(full, edits: edits)
         } else if full != nil {
             fullImage = output; fullBefore = before
@@ -275,7 +283,7 @@ public actor ImageGradeSession {
         let fullSize = try ColorPipeline.geometrySize(width: Int(sourceSize.width.rounded()),
                                                      height: Int(sourceSize.height.rounded()), edits: edits)
         return GradeFrame(image: output, original: image, before: before,
-                          headroom: edits.hasGrade ? 1 : headroom, sourceHeadroom: headroom,
+                          headroom: glow > 1 ? glow : edits.hasGrade ? 1 : headroom, sourceHeadroom: headroom,
                           fullImage: fullImage, fullBefore: fullBefore, fullSize: fullSize)
     }
 }

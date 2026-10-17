@@ -69,7 +69,7 @@ The Douyin photography creator Zhang Xiaoyang explains histograms, curves and ap
 
 ### The web edition
 
-A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms for grouping similar shots, matching colors, exporting a grade as a LUT and local masks have been rebuilt on Core Image in this Mac app, and its choice of model for AI Look, [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT) by Zeng et al. (Apache-2.0), runs here in plain Swift (see `assets/models/NOTICE.md`).
+A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms for grouping similar shots, matching colors, exporting a grade as a LUT and local masks have been rebuilt on Core Image in this Mac app, and the models it chose, [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT) by Zeng et al. (Apache-2.0) for AI Look and [GMNet](https://github.com/qtlark/GMNet) by Liao et al. (MIT) for AI HDR, run here in plain Swift (see `assets/models/NOTICE.md`).
 
 ### What we care about
 
@@ -123,6 +123,7 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 - Trim a video to 3 seconds or less to make a real **Live Photo**, or combine several clips into a "Collage Live".
 - JPEG / HEIC / PNG, optionally resized for social media. Capture time and camera info are kept; location is removed by default. Exports run in the background.
 - **HDR photos stay HDR**: they export with a gain map, so highlights stay bright on HDR screens, edits included.
+- **AI HDR** for ordinary photos: a neural network (GMNet) predicts how much brighter each highlight should be. On an HDR screen the light glows; everywhere else the photo looks as you edited it. JPEG and HEIC exports carry it as a gain map.
 - **Export presets** (full size, social 2048 px, print 300 dpi, or your own), **file names** from `{name}` `{date}` `{seq}` `{width}` `{height}`, and an optional **text watermark** (position, color, size, opacity, shadow).
 
 **Ready for DJI footage**
@@ -196,7 +197,7 @@ Video: Space plays, `I` / `O` set in and out points, `C` sets the key photo. Sin
 ## Privacy
 
 - Originals are **never changed**. Adjustments are saved as a small recipe file, and a new copy is made only when you export.
-- No account, no analytics, **no photo uploads**. Subject detection and content search use Apple's on-device recognition; AI Look's model ships inside the app and runs locally. The library, recipes, edit history, photo fingerprints and content labels, and learning history live in `~/Library/Application Support/Guangji`.
+- No account, no analytics, **no photo uploads**. Subject detection and content search use Apple's on-device recognition; the AI Look and AI HDR models ship inside the app and run locally. The library, recipes, edit history, photo fingerprints and content labels, and learning history live in `~/Library/Application Support/Guangji`.
 - The only thing that goes online is the optional "Ask About This Photo". It's off by default; after you add your own key (stored in the Keychain), it sends data only when you click Ask: a thumbnail up to 1024 px on the long edge without capture or location info (can be turned off), plus image statistics and the current settings. It's billed to your account and may not be reachable from mainland China.
 
 ## Current limitations

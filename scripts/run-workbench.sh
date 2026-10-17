@@ -16,9 +16,10 @@ mkdir -p "$workbench_app/Contents/MacOS" "$workbench_app/Contents/Resources"
 # Pre-generated brand assets are durable source assets, never generated during a build.
 cp "$workbench_root/assets/brand/icons/AppIcon.icns" "$workbench_app/Contents/Resources/AppIcon.icns"
 cp "$workbench_root/assets/brand/runtime/EmptyLibrary-dark.png" "$workbench_app/Contents/Resources/EmptyLibrary-dark.png"
-# The AI Look model (Image-Adaptive-3DLUT, Apache-2.0) and its notice.
-cp "$workbench_root/assets/models/adaptive-lut.bin" "$workbench_app/Contents/Resources/adaptive-lut.bin"
-cp "$workbench_root/assets/models/NOTICE.md" "$workbench_app/Contents/Resources/adaptive-lut-NOTICE.md"
+# The AI Look (Image-Adaptive-3DLUT, Apache-2.0) and AI HDR (GMNet, MIT) models and their notice.
+rm -f "$workbench_app/Contents/Resources/adaptive-lut-NOTICE.md"
+cp "$workbench_root/assets/models/adaptive-lut.bin" "$workbench_root/assets/models/gmnet-realworld.bin" "$workbench_app/Contents/Resources/"
+cp "$workbench_root/assets/models/NOTICE.md" "$workbench_app/Contents/Resources/models-NOTICE.md"
 # Interface languages: Simplified Chinese (source text) and English (Localization/en.lproj).
 for lproj in "$workbench_root"/Localization/*.lproj; do
     rm -rf "$workbench_app/Contents/Resources/$(basename "$lproj")"

@@ -155,6 +155,7 @@ enum DebugSnapshot {
             if parts.count == 2, let parameter = AdjustmentParameter(rawValue: String(parts[0])), let value = Double(parts[1]) {
                 app.editor.setAdjustment(parameter, value)
             }
+        case "aihdr": app.editor.hdrAmount = min(1, max(0, Double(argument) ?? 1))
         case "export": app.enqueueCurrentExport(to: URL(fileURLWithPath: argument))
         case "watermark": app.exportSettings.image.watermark = argument == "off" ? nil : Watermark(text: argument.replacingOccurrences(of: "\\n", with: "\n"))
         case "naming": app.exportSettings.naming = argument

@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreImage
 import Foundation
 import ImageIO
 import MediaCore
@@ -11,12 +12,12 @@ struct MediaProbe {
               ((["inspect", "lut", "straighten", "details", "analyze", "auto", "similar", "labels"].contains(command) && arguments.count == 2)
                 || (command == "auto" && arguments.count == 3)
                 || (["render", "match"].contains(command) && (4...5).contains(arguments.count))
-                || (command == "ailook" && (3...4).contains(arguments.count))
+                || (["ailook", "aihdr"].contains(command) && (3...4).contains(arguments.count))
                 || (command == "live" && (3...4).contains(arguments.count))
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | similar <文件夹> | labels <图片> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | ailook <图片> <输出.jpg> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | similar <文件夹> | labels <图片> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | ailook <图片> <输出.jpg> [长边] | aihdr <图片> <输出.heic> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
@@ -41,6 +42,41 @@ struct MediaProbe {
                 try? FileManager.default.removeItem(at: output)
                 let lut = CreativeLUT(cube: model.lut(weights: weights, title: "AI Look"), name: "AI Look")
                 try ImageExporter.export(url, to: output, edits: MediaEdits(lut: lut, strength: 0.75), options: options)
+                print("已写入 \(output.path)")
+                return
+            }
+            if command == "aihdr" {
+                // aihdr <image> <out.heic|.jpg> [long edge]: 「AI HDR 光感」 at full strength; prints the time and the gain.
+                guard let model = AutoHDR.shared else { print("找不到 gmnet-realworld.bin"); exit(4) }
+                let start = Date()
+                guard let gain = model.gain(for: url) else { exit(4) }
+                let seconds = Date().timeIntervalSince(start)
+                var stats = [Float](repeating: 0, count: 4)
+                for (i, filter) in ["CIAreaMaximum", "CIAreaAverage"].enumerated() {
+                    var value = [Float](repeating: 0, count: 4)
+                    let probe = gain.applyingFilter(filter, parameters: [kCIInputExtentKey: CIVector(cgRect: gain.extent)])
+                    value.withUnsafeMutableBytes { ColorPipeline.shared.render(probe, toBitmap: $0.baseAddress!, rowBytes: 16,
+                                                                               bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBAf, colorSpace: nil) }
+                    stats[i] = value[0]
+                }
+                print(String(format: "gain map %d×%d in %.2f s · max %.2f stops · mean %.2f stops",
+                             Int(gain.extent.width), Int(gain.extent.height), seconds, stats[0], stats[1]))
+                // GAIN_PNG=path also saves the gain map, white = the full log2(5) stops.
+                if let path = ProcessInfo.processInfo.environment["GAIN_PNG"] {
+                    let gray = gain.applyingFilter("CIColorMatrix", parameters: [
+                        "inputRVector": CIVector(x: 1 / AutoHDR.maxStops, y: 0, z: 0, w: 0), "inputGVector": CIVector(x: 1 / AutoHDR.maxStops, y: 0, z: 0, w: 0),
+                        "inputBVector": CIVector(x: 1 / AutoHDR.maxStops, y: 0, z: 0, w: 0), "inputBiasVector": CIVector(x: 0, y: 0, z: 0, w: 1)])
+                    try ColorPipeline.shared.writePNGRepresentation(of: gray.cropped(to: gain.extent), to: URL(fileURLWithPath: path),
+                                                                    format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB())
+                }
+                var options = ImageExportOptions()
+                options.format = arguments[2].lowercased().hasSuffix(".jpg") ? .jpeg : .heic
+                options.maxLongEdge = arguments.count == 4 ? Int(arguments[3]) : nil
+                options.keepMetadata = false
+                let output = URL(fileURLWithPath: arguments[2])
+                try? FileManager.default.removeItem(at: output)
+                var edits = MediaEdits(); edits.hdrAmount = 1
+                try ImageExporter.export(url, to: output, edits: edits, options: options)
                 print("已写入 \(output.path)")
                 return
             }

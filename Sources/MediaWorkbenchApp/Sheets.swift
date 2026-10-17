@@ -169,11 +169,11 @@ struct ExportOptionsSheet: View {
                 Text("300 dpi（打印）").tag(300)
             }
             .help("只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量")
-            if target == .selection || app.editor.sourceIsHDR {
+            if target == .selection || app.editor.sourceIsHDR || app.editor.hdrAmount > 0 {
                 Toggle(isOn: $settings.image.keepHDR) {
                     Text("保留 HDR")
                     Text(settings.image.format == .png ? L("PNG 不支持 HDR，会导出普通亮度。")
-                         : L("HDR 照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。"))
+                         : L("HDR 照片和开了 AI HDR 光感的照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。"))
                 }
                 .disabled(settings.image.format == .png)
             }

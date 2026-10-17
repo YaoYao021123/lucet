@@ -69,7 +69,7 @@ AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片�
 
 ### 网页版与合作伙伴
 
-合作伙伴做了光集的网页版 Lucet（Apache-2.0 开源）。其中的相似照片分组、色彩匹配、调色导出为 LUT 和局部蒙版算法，已经用 Core Image 重写进了这个 Mac 版；网页版选用的 AI 调色模型 [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT)（Zeng 等，Apache-2.0）也在这里用纯 Swift 运行（见 `assets/models/NOTICE.md`）。
+合作伙伴做了光集的网页版 Lucet（Apache-2.0 开源）。其中的相似照片分组、色彩匹配、调色导出为 LUT 和局部蒙版算法，已经用 Core Image 重写进了这个 Mac 版；网页版选用的模型，AI 调色的 [Image-Adaptive-3DLUT](https://github.com/HuiZeng/Image-Adaptive-3DLUT)（Zeng 等，Apache-2.0）和 AI HDR 的 [GMNet](https://github.com/qtlark/GMNet)（Liao 等，MIT），也在这里用纯 Swift 运行（见 `assets/models/NOTICE.md`）。
 
 ### 我们在意的
 
@@ -123,6 +123,7 @@ AI 也会错，而且错得很像回事。有一张白桌子上的拿铁照片�
 - 视频裁到 3 秒以内可以做成真正的 **Live Photo**；还能把多段拼成一张「拼图 Live」。
 - 格式 JPEG / HEIC / PNG，可缩小到社交平台尺寸；默认保留拍摄时间和相机信息，移除位置信息。导出在后台进行，不挡着你继续调。
 - **HDR 照片导出后仍是 HDR**：带增益图导出，在 HDR 屏幕上高光依然明亮，调过色也一样。
+- **AI HDR 光感**：普通照片也能变成 HDR。神经网络（GMNet）判断每处高光该亮多少：HDR 屏幕上亮处发光，其他屏幕上照片就是你调好的样子。导出 JPEG、HEIC 时以增益图写入。
 - **导出预设**（原始尺寸、社交平台 2048、打印 300 dpi，或你自己存的），**文件名规则**可用 `{name}` `{date}` `{seq}` `{width}` `{height}`，还能加**文字水印**（位置、颜色、大小、不透明度、阴影）。
 
 **为 DJI 素材准备**
@@ -189,7 +190,7 @@ bash scripts/run-workbench.sh
 ## 隐私
 
 - 原片**从不被修改**。所有调整保存为一份很小的配方文件，导出时才生成新的副本。
-- 没有账号，没有统计，**不上传任何照片**。主体识别和按内容搜索用的是 Apple 的本机识别；AI 调色的模型随应用附带，在本机运行。素材库、配方、历史记录、照片指纹和内容标签、学习记录都在 `~/Library/Application Support/Guangji`。
+- 没有账号，没有统计，**不上传任何照片**。主体识别和按内容搜索用的是 Apple 的本机识别；AI 调色和 AI HDR 的模型随应用附带，在本机运行。素材库、配方、历史记录、照片指纹和内容标签、学习记录都在 `~/Library/Application Support/Guangji`。
 - 唯一会联网的是可选的「问问这张照片」：默认关闭；你填入自己的密钥（保存在钥匙串）后，只有点「提问」时才发送，内容是一张最长边 1024 px、不含拍摄和位置信息的缩略图（可在设置里关掉），加上画面统计与当前参数。按你的账户计费；中国大陆网络可能无法直接访问。
 
 ## 现在的限制

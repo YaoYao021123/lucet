@@ -105,7 +105,7 @@ public struct HistoryLog: Codable, Equatable, Sendable {
         }
         if old.bypass != new.bypass { parts.append(L("开关调整")) }
         if old.clip != new.clip { parts.append(L("视频片段")) }
-        if old.hdrEffect != new.hdrEffect || old.hdrPreview != new.hdrPreview { parts.append("HDR") }
+        if old.hdrEffect != new.hdrEffect || old.hdrPreview != new.hdrPreview || old.hdrAmount != new.hdrAmount { parts.append("HDR") }
         if parts.isEmpty { return L("修改") }
         return parts.count > 2 ? parts.prefix(2).joined(separator: L("、")) + L(" 等") : parts.joined(separator: L("、"))
     }

@@ -23,9 +23,11 @@ public struct EditRecipe: Codable, Equatable, Sendable {
     public var hsl = HSLAdjustments()
     public var bypass: Set<GradeStage> = []
     public var locals: [LocalAdjustment] = []
+    /// AI HDR for photos, 0…1 (0 = off).
+    public var hdrAmount = 0.0
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case version, adjustments, degrees, geometry, strength, hdrEffect, hdrPreview, lut, clip, wheels, curves, hsl, bypass, locals
+        case version, adjustments, degrees, geometry, strength, hdrEffect, hdrPreview, lut, clip, wheels, curves, hsl, bypass, locals, hdrAmount
     }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -43,6 +45,7 @@ public struct EditRecipe: Codable, Equatable, Sendable {
         lut = try values.decodeIfPresent(LUTReference.self, forKey: .lut)
         clip = try values.decodeIfPresent(ClipSettings.self, forKey: .clip)
         locals = try values.decodeIfPresent([LocalAdjustment].self, forKey: .locals) ?? []
+        hdrAmount = min(1, max(0, try values.decodeIfPresent(Double.self, forKey: .hdrAmount) ?? 0))
     }
     public func validate() throws {
         guard (1...Self.currentVersion).contains(version), adjustments == adjustments.sanitized, wheels.isValid, degrees.isFinite, (-10...10).contains(degrees),

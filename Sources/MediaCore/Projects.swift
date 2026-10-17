@@ -47,10 +47,12 @@ public struct ProjectPhoto: Codable, Equatable, Sendable, Identifiable {
     public var clip: ClipSettings?
     public var hdrEffect = false
     public var hdrPreview = true
+    /// AI HDR strength; per photo, like the crop.
+    public var hdrAmount = 0.0
     public var added = Date()
     public init(id: String) { self.id = id }
 
-    private enum CodingKeys: String, CodingKey { case id, offsets, geometry, degrees, locals, clip, hdrEffect, hdrPreview, added }
+    private enum CodingKeys: String, CodingKey { case id, offsets, geometry, degrees, locals, clip, hdrEffect, hdrPreview, hdrAmount, added }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         id = try values.decode(String.self, forKey: .id)
@@ -61,6 +63,7 @@ public struct ProjectPhoto: Codable, Equatable, Sendable, Identifiable {
         clip = try values.decodeIfPresent(ClipSettings.self, forKey: .clip)
         hdrEffect = try values.decodeIfPresent(Bool.self, forKey: .hdrEffect) ?? false
         hdrPreview = try values.decodeIfPresent(Bool.self, forKey: .hdrPreview) ?? true
+        hdrAmount = min(1, max(0, try values.decodeIfPresent(Double.self, forKey: .hdrAmount) ?? 0))
         added = try values.decodeIfPresent(Date.self, forKey: .added) ?? Date()
     }
 
@@ -96,6 +99,7 @@ public struct Project: Codable, Equatable, Sendable, Identifiable {
             if let recipe = start(id) {
                 photo.geometry = recipe.geometry; photo.degrees = recipe.degrees; photo.locals = recipe.locals
                 photo.clip = recipe.clip; photo.hdrEffect = recipe.hdrEffect; photo.hdrPreview = recipe.hdrPreview
+                photo.hdrAmount = recipe.hdrAmount
                 for p in Self.perPhotoParameters { photo.setOffset(p, recipe.adjustments[p] - look.adjustments[p]) }
             }
             photos.append(photo)
@@ -128,6 +132,7 @@ public struct Project: Codable, Equatable, Sendable, Identifiable {
         recipe.lut = look.lut; recipe.strength = look.strength; recipe.bypass = look.bypass
         recipe.geometry = photo.geometry; recipe.degrees = photo.degrees; recipe.locals = photo.locals
         recipe.clip = photo.clip; recipe.hdrEffect = photo.hdrEffect; recipe.hdrPreview = photo.hdrPreview
+        recipe.hdrAmount = photo.hdrAmount
         return recipe
     }
 
@@ -157,6 +162,7 @@ public struct Project: Codable, Equatable, Sendable, Identifiable {
         if recipe.bypass != previous.bypass { look.bypass = recipe.bypass }
         photos[index].geometry = recipe.geometry; photos[index].degrees = recipe.degrees; photos[index].locals = recipe.locals
         photos[index].clip = recipe.clip; photos[index].hdrEffect = recipe.hdrEffect; photos[index].hdrPreview = recipe.hdrPreview
+        photos[index].hdrAmount = recipe.hdrAmount
         return look != before
     }
 }

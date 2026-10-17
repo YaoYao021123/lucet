@@ -88,6 +88,8 @@ final class EditorModel {
     var strength = 1.0 { didSet { if strength != oldValue { editsChanged() } } }
     var hdrPreview = true { didSet { if hdrPreview != oldValue { editsChanged() } } }
     var hdrEffect = false { didSet { if hdrEffect != oldValue { editsChanged() } } }
+    /// AI HDR for ordinary photos, 0 (off)…1.
+    var hdrAmount = 0.0 { didSet { if hdrAmount != oldValue { editsChanged() } } }
 
     // MARK: Clip and sound
     private(set) var clipStart = 0.0
@@ -198,9 +200,11 @@ final class EditorModel {
     // MARK: Derived values (model code only)
 
     var edits: MediaEdits {
-        MediaEdits(degrees: degrees, lut: selectedLUT, strength: strength, hdrEffect: isVideo && hdrEffect,
-                   adjustments: adjustments, geometry: geometry, wheels: wheels, curves: curves, hsl: hsl, bypass: bypass,
-                   locals: locals)
+        var edits = MediaEdits(degrees: degrees, lut: selectedLUT, strength: strength, hdrEffect: isVideo && hdrEffect,
+                               adjustments: adjustments, geometry: geometry, wheels: wheels, curves: curves, hsl: hsl, bypass: bypass,
+                               locals: locals)
+        edits.hdrAmount = isVideo ? 0 : hdrAmount
+        return edits
     }
     /// `edits` plus the red mask tint, for drawing only (never saved, never an undo step).
     private var overlayEdits: MediaEdits {
@@ -219,6 +223,9 @@ final class EditorModel {
         if compareMode == .original { return L("原片") }
         // Plain words: most people only need to know when a photo is HDR and what that means here.
         if isVideo, hdrEffect { return L("HDR 高光扩展") }
+        if !isVideo, !sourceIsHDR, hdrAmount > 0 {
+            return hdrPreview && screenHeadroom > 1 ? L("AI HDR 光感") : L("AI HDR 光感 · 这块屏幕按普通亮度显示")
+        }
         if !sourceIsHDR { return "" }
         if isVideo { return previewNeedsSDR ? L("HDR 视频 · 调色时按普通亮度预览") : L("HDR 视频") }
         if edits.hasGrade { return L("HDR 照片 · 调色时按普通亮度预览") }
@@ -257,7 +264,7 @@ final class EditorModel {
         teardownPlayer()
         suspended += 1
         adjustments = .init(); wheels = .init(); curves = .init(); hsl = .init(); bypass = []; locals = []; selectedLocalID = nil; showMask = false
-        geometry = .init(); degrees = 0; selectedLUT = nil; strength = 1; hdrEffect = false; hdrPreview = true
+        geometry = .init(); degrees = 0; selectedLUT = nil; strength = 1; hdrEffect = false; hdrPreview = true; hdrAmount = 0
         clipStart = 0; clipEnd = 0; cover = 0; playbackSpeed = 1
         originalVolume = 1; musicURL = nil; musicVolume = 0.5
         suspended -= 1
@@ -389,6 +396,7 @@ final class EditorModel {
         adjustments = recipe.adjustments; wheels = recipe.wheels; curves = recipe.curves; hsl = recipe.hsl
         bypass = recipe.bypass; geometry = recipe.geometry; degrees = recipe.degrees; locals = recipe.locals
         selectedLUT = lut; strength = recipe.strength; hdrEffect = recipe.hdrEffect; hdrPreview = recipe.hdrPreview
+        hdrAmount = isVideo ? 0 : recipe.hdrAmount
         guard isVideo, var range = recipe.clip else { return nil }
         guard (try? range.validate(duration: duration)) != nil else { return L("保存的片段超出当前素材长度，已使用完整范围。") }
         var notice: String?
@@ -475,7 +483,7 @@ final class EditorModel {
         let e = value.edits
         adjustments = e.adjustments; wheels = e.wheels; curves = e.curves; hsl = e.hsl; bypass = e.bypass; locals = e.locals
         geometry = e.geometry; degrees = e.degrees; selectedLUT = e.lut; strength = e.strength
-        hdrEffect = e.hdrEffect; hdrPreview = value.hdrPreview
+        hdrEffect = e.hdrEffect; hdrPreview = value.hdrPreview; hdrAmount = e.hdrAmount
         if let clip = value.clip {
             clipStart = clip.start; clipEnd = clip.end; cover = clip.cover; playbackSpeed = clip.speed
             originalVolume = clip.originalVolume; musicURL = clip.musicURL; musicVolume = clip.musicVolume
@@ -650,6 +658,7 @@ final class EditorModel {
         recipe.bypass = bypass; recipe.geometry = geometry; recipe.degrees = degrees; recipe.strength = strength
         recipe.locals = locals
         recipe.hdrEffect = hdrEffect; recipe.hdrPreview = hdrPreview; recipe.clip = isVideo ? clip : nil
+        recipe.hdrAmount = isVideo ? 0 : hdrAmount
         if let lut = selectedLUT { recipe.lut = try drafts.storeLUT(lut) }
         return recipe
     }
@@ -1145,6 +1154,7 @@ extension EditorModel {
         if geometry.aspectRatio != 0 || geometry.cropScale != 1 || geometry.horizontal != 0 || geometry.vertical != 0 { shape.append(L("裁剪")) }
         if !shape.isEmpty { add(L("几何"), shape.joined(separator: L("，"))) }
         if hdrEffect { add("HDR", L("高光扩展")) }
+        if !isVideo, hdrAmount > 0 { add("HDR", L("AI 光感 \(Int((hdrAmount * 100).rounded()))%")) }
         if isVideo, duration > 0 {
             var video: [String] = []
             if clipStart > 0.01 || clipEnd < duration - 0.01 { video.append(L("裁切 \(timeLabel(clipStart))–\(timeLabel(clipEnd))")) }

@@ -131,6 +131,9 @@
 "已标记为已了解：「%@」会讲得更简短。" = "Marked as known: “%@” will be explained more briefly.";
 "不再提示「%@」。可在「学习」页底部恢复。" = "“%@” won't be suggested again. You can restore it at the bottom of the Learn tab.";
 
+/* AutoHDR.swift */
+"AI HDR 模型文件已损坏。" = "The AI HDR model file is damaged.";
+
 /* BasicAdjustments.swift */
 "影调" = "Tone";
 "曝光" = "Exposure";
@@ -263,6 +266,8 @@
 /* EditorModel.swift */
 "原片" = "Original";
 "HDR 高光扩展" = "HDR highlight expansion";
+"AI HDR 光感" = "AI HDR";
+"AI HDR 光感 · 这块屏幕按普通亮度显示" = "AI HDR · this display shows it at standard brightness";
 "HDR 视频" = "HDR video";
 "HDR 视频 · 调色时按普通亮度预览" = "HDR video · previewed at standard brightness while adjusting";
 "HDR 照片 · 调色时按普通亮度预览" = "HDR photo · previewed in SDR while editing";
@@ -320,6 +325,7 @@
 "裁剪" = "Crop";
 "几何" = "Geometry";
 "高光扩展" = "Highlight expansion";
+"AI 光感 %lld%%" = "AI HDR %lld%%";
 "裁切 %@–%@" = "Trimmed %@–%@";
 "%g× 速度" = "%g× speed";
 "原声 %lld%%" = "Original audio %lld%%";
@@ -498,6 +504,7 @@
 "以 HDR 显示原片" = "Show original in HDR";
 "HDR 高光扩展（实验）" = "HDR highlight expansion (experimental)";
 "扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。" = "Expands SDR highlights and exports 10-bit HLG video with a gain-map Live key photo. It can't recover highlights that were lost when shooting.";
+"AI 判断每处高光该有多亮：HDR 屏幕上亮处发光，普通屏幕上画面不变。导出 JPEG、HEIC 时附带增益图。" = "AI works out how bright each highlight should be: bright areas glow on HDR screens, and the photo looks unchanged on ordinary screens. JPEG and HEIC exports include a gain map.";
 "当前素材为 HDR。" = "This item is HDR.";
 "当前素材为 SDR。" = "This item is SDR.";
 "原始比例" = "Original";
@@ -1507,7 +1514,7 @@
 "只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量" = "Only written into the file, telling print software how many pixels go in an inch; the pixel count doesn't change";
 "保留 HDR" = "Keep HDR";
 "PNG 不支持 HDR，会导出普通亮度。" = "PNG doesn't support HDR, so it exports in standard brightness.";
-"HDR 照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。" = "HDR photos export with a gain map: highlights are brighter on HDR screens, and other devices show the standard version. Your edits are kept.";
+"HDR 照片和开了 AI HDR 光感的照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。" = "HDR photos, and photos with AI HDR on, export with a gain map: highlights are brighter on HDR screens, and other devices show the standard version. Your edits are kept.";
 "保留拍摄信息（时间、相机、镜头）" = "Keep capture info (time, camera, lens)";
 "移除位置信息" = "Remove location";
 "文件名" = "File Name";
@@ -1674,3 +1681,5 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
+
+/* Not used by the current code (kept until reviewed) */

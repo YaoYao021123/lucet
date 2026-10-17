@@ -449,11 +449,20 @@ struct HDRSection: View {
     var body: some View {
         InspectorSection("HDR", help: L("HDR 原片按显示器能力显示。调色后的画面以 SDR 输出。"), startsCollapsed: true) {
             VStack(alignment: .leading, spacing: 8) {
-                Toggle("以 HDR 显示原片", isOn: Binding(get: { editor.hdrPreview }, set: { editor.hdrPreview = $0 }))
-                    .disabled(!editor.sourceIsHDR)
+                if editor.sourceIsHDR {
+                    Toggle("以 HDR 显示原片", isOn: Binding(get: { editor.hdrPreview }, set: { editor.hdrPreview = $0 }))
+                }
                 if editor.isVideo {
                     Toggle("HDR 高光扩展（实验）", isOn: Binding(get: { editor.hdrEffect }, set: { editor.hdrEffect = $0 }))
                         .help("扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。")
+                } else if !editor.sourceIsHDR, AutoHDR.shared != nil {
+                    Toggle("AI HDR 光感", isOn: Binding(get: { editor.hdrAmount > 0 }, set: { editor.hdrAmount = $0 ? 1 : 0 }))
+                        .help(L("AI 判断每处高光该有多亮：HDR 屏幕上亮处发光，普通屏幕上画面不变。导出 JPEG、HEIC 时附带增益图。"))
+                    if editor.hdrAmount > 0 {
+                        ParameterRow(title: L("强度"), value: (editor.hdrAmount * 100).rounded(), range: 10...100, suffix: "%", neutral: 100,
+                                     onChange: { editor.hdrAmount = $0 / 100 }, onEditing: editor.beginEditing)
+                            .equatable()
+                    }
                 }
                 Text(editor.sourceIsHDR ? L("当前素材为 HDR。") : L("当前素材为 SDR。")).font(.caption).foregroundStyle(.secondary)
             }
