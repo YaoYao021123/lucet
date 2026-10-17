@@ -1403,22 +1403,31 @@
 
 /* PhotosImport.swift */
 "全部照片" = "All Photos";
-"最新 100 张" = "Latest 100";
-"最新 500 张" = "Latest 500";
-"最新 2000 张" = "Latest 2,000";
-"全部" = "All";
 "已从「照片」读入 %lld 项。" = "Imported %lld items from Photos.";
 "有 %lld 项没能读取（可能还在 iCloud 上，或网络中断）。" = "%lld items couldn't be read (they may still be in iCloud, or the network dropped).";
 "从「照片」导入" = "Import from Photos";
-"读取你的「照片」图库（包括 iCloud 照片），把原图复制一份到光集里编辑。「照片」里的内容不会被改动或删除。" = "Reads your Photos library (including iCloud Photos) and copies the originals into Lucet for editing. Nothing in Photos is changed or deleted.";
+"选好要编辑的照片，光集会把原图（包括 iCloud 里的）复制一份进来。「照片」里的内容不会被改动或删除。" = "Choose the photos you want to edit and Lucet copies their originals in, including ones in iCloud. Nothing in Photos is changed or deleted.";
 "光集没有读取「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集。" = "Lucet doesn't have permission to read Photos. Allow it in System Settings › Privacy & Security › Photos.";
 "打开系统设置" = "Open System Settings";
-"相簿" = "Album";
-"数量" = "Amount";
-"iCloud 里的原图会先下载到这台 Mac，数量多时需要一些时间和空间。" = "Originals stored in iCloud are downloaded to this Mac first, which takes time and space for large amounts.";
-"导入 %lld 项" = "Import %lld items";
 "正在读取 %lld / %lld…" = "Reading %lld / %lld…";
+"iCloud 里的原图要先下载到这台 Mac，数量多时需要一些时间。" = "Originals in iCloud are downloaded to this Mac first, which takes a while for many photos.";
 "停止" = "Stop";
+"相簿" = "Album";
+"排序" = "Order";
+"最新在前" = "Newest First";
+"最早在前" = "Oldest First";
+"数量" = "Amount";
+"选择前 %lld 张" = "Select the First %lld";
+"从最新的一张开始数" = "Counting from the newest";
+"从最早的一张开始数" = "Counting from the oldest";
+"取消选择" = "Deselect All";
+"已选 %lld 张" = "%lld selected";
+"点按选择或取消，按住 ⇧ 点按选一段，连按两下放大看。iCloud 里的原图会在导入时下载。" = "Click to select or deselect, ⇧-click to select a range, double-click to look closer. Originals in iCloud are downloaded when you import.";
+"这个相簿里没有照片或视频。" = "This album has no photos or videos.";
+"已经导入过" = "Already imported";
+"取消选择这张" = "Deselect This One";
+"选择这张" = "Select This One";
+"返回网格" = "Back to Grid";
 
 /* PhotosSaver.swift */
 "光集没有存入「照片」的权限。请在 系统设置 › 隐私与安全性 › 照片 中允许光集，或改为保存到文件夹。" = "Lucet doesn't have permission to save to Photos. Allow it in System Settings › Privacy & Security › Photos, or save to a folder instead.";

@@ -8,6 +8,13 @@ import SwiftUI
 /// Metal and video layers are not captured by AppKit's view cache.
 @MainActor
 enum DebugSnapshot {
+    /// Snapshot runs only: a folder that stands in for the Photos library in the import browser,
+    /// so it can be checked without asking for Photos access (GUANGJI_PHOTOS_FOLDER).
+    static var photosFolder: URL? {
+        guard directory != nil, let path = ProcessInfo.processInfo.environment["GUANGJI_PHOTOS_FOLDER"] else { return nil }
+        return URL(fileURLWithPath: path, isDirectory: true)
+    }
+
     static var directory: URL? {
         ProcessInfo.processInfo.environment["GUANGJI_SNAPSHOT_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
@@ -157,6 +164,7 @@ enum DebugSnapshot {
         case "project": app.currentProjectID = app.projects.first { $0.name == argument }?.id
         case "projectscope": app.projectPhotoOnly = argument == "photo"
         case "evenout": app.evenOutProject()
+        case "photos": app.sheet = .photosImport
         case "live":
             app.editor.selectLiveRange()
             Task { @MainActor in

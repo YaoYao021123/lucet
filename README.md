@@ -152,6 +152,7 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 
 **Organize**
 - Import folders or drag files into the window. Thumbnails show each photo as edited. Ratings 0–5, pick / reject, filters by type and rating. A HEIC or JPG with a same-name MOV becomes a Live Photo automatically.
+- **Import from Photos** (⇧⌘I): browse your Photos library as a grid, click the shots you want (⇧-click for a range, double-click to look closer) or select exactly the first N, and Lucet copies just those originals in, iCloud ones included. Photos itself is never changed.
 - **Search by content**: type "sky", "dog" or "sunset" (or 天空, 狗, 日落) and photos showing it appear, recognized on your Mac.
 - If you move or rename an original in Finder, Lucet says "Original file not found"; point it to the new location and ratings and adjustments are kept.
 

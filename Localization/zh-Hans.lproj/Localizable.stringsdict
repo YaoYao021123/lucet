@@ -128,6 +128,20 @@
 			<string>%lld</string>
 		</dict>
 	</dict>
+	<key>导入 %lld 张</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>导入 %#@n@ 张</string>
+		<key>n</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld</string>
+		</dict>
+	</dict>
 	<key>导出 %lld 项</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
