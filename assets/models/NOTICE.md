@@ -6,7 +6,8 @@ Enhancement in Real-time", IEEE TPAMI 2020.
 
 - Source: https://github.com/HuiZeng/Image-Adaptive-3DLUT, `pretrained_models/sRGB/` (trained on the
   MIT-Adobe FiveK sRGB set)
-- License: Apache License 2.0, https://www.apache.org/licenses/LICENSE-2.0
+- License: Apache License 2.0; the full text, copied from the repository's `LICENSE`, is in
+  `Image-Adaptive-3DLUT-LICENSE.txt` (the repository has no NOTICE file)
 - Original files (SHA-256):
   - `classifier.pth` bae9865395625ecae58cfe86147e521093bb1e29e7b2544e02adb238b8035021
   - `LUTs.pth` c1bb2bc4b7239c1a7e96159f5923123ba796b1fceb0b8c3132b423ea825b821a

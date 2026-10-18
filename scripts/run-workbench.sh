@@ -20,6 +20,7 @@ cp "$workbench_root/assets/brand/runtime/EmptyLibrary-dark.png" "$workbench_app/
 rm -f "$workbench_app/Contents/Resources/adaptive-lut-NOTICE.md"
 cp "$workbench_root/assets/models/adaptive-lut.bin" "$workbench_root/assets/models/gmnet-realworld.bin" "$workbench_app/Contents/Resources/"
 cp "$workbench_root/assets/models/NOTICE.md" "$workbench_app/Contents/Resources/models-NOTICE.md"
+cp "$workbench_root/assets/models/Image-Adaptive-3DLUT-LICENSE.txt" "$workbench_app/Contents/Resources/"
 # Interface languages: Simplified Chinese (source text) and English (Localization/en.lproj).
 for lproj in "$workbench_root"/Localization/*.lproj; do
     rm -rf "$workbench_app/Contents/Resources/$(basename "$lproj")"
