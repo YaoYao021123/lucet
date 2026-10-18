@@ -1,0 +1,468 @@
+{
+  "title": "Lucet — Text and Surface Contrast Audit",
+  "language": "en",
+  "date": "2026-10-18",
+  "repository_root": "/Users/yaoyao/code/project/pic_review_edit",
+  "source_branch": "improve-workbench",
+  "source_commit": "64c6336178e704c16a8a5ce9762fb96b7a458c25",
+  "runtime_app": "/Users/yaoyao/code/project/pic_review_edit/.build/MediaWorkbench.app",
+  "runtime_os": "macOS 27.0.1",
+  "runtime_language": "Simplified Chinese",
+  "version_limit": "The existing running app was not rebuilt. Binary-to-commit equivalence was not independently established; reproduce each item in a fresh build before patching.",
+  "requested_scope": "Audit and report only. No application source changes, commits, pushes, or publication were performed.",
+  "main_conclusion": "Observed problems include pale-surface white icons and overly dim gray text on dark panels. Pure black text on a dark surface was not stably reproduced in this live inspection.",
+  "evidence_method": "Current-run native application captures, visually inspected; report detail images are unmodified crops. Samples are approximate screenshot estimates, not resolved-color compliance measurements.",
+  "measurement_file": "contrast-samples.json",
+  "design_targets": {
+    "normal_text": 4.5,
+    "meaningful_icons": 3.0,
+    "caveat": "Disabled, decorative, and fully system-managed controls require applicability checks. This is not a complete accessibility certification."
+  },
+  "issues": [
+    {
+      "id": "F01",
+      "priority": "P1",
+      "status": "observed_in_live_ui",
+      "title": "White transport icons lose contrast against pale button surfaces",
+      "affected_surface": "Video / Live Photo transport: previous frame, play, next frame, range zoom, and mute.",
+      "reproduction": [
+        "Open a video or Live Photo in the editor.",
+        "Inspect the available circular transport buttons below the preview in both system appearances."
+      ],
+      "observation": "Enabled circular controls have pale gray surfaces with white symbols. Representative screenshot colors are white on #D2D2D2, approximately 1.51:1. These are available controls, not the disabled Undo / Redo buttons.",
+      "likely_cause": "IconButton explicitly sets the symbol foreground to .primary. In the dark environment this resolves to a light foreground, while glassButton(.circle) produces a pale surface. The explicit label style appears to override the intended surface-aware foreground.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          217
+        ],
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          283
+        ],
+        [
+          "Sources/MediaWorkbenchApp/MediaTimeline.swift",
+          65
+        ]
+      ],
+      "recommended_change": "First test removing the explicit foreground override for ordinary symbols so the native button style can choose its foreground. If custom styling remains necessary, define foreground and button surface as a pair. Verify active accent symbols separately. Do not apply a global white foreground.",
+      "acceptance_criteria": [
+        "Every enabled transport symbol is recognizable in normal, hover, pressed, and active states.",
+        "Target at least 3:1 for meaningful symbols against their actual button surfaces.",
+        "Check both system Light and Dark appearances and all IconButton call sites."
+      ],
+      "evidence": [
+        "12-system-dark-audio.png"
+      ],
+      "detail_images": [
+        "transport"
+      ],
+      "sample_ids": [
+        "transport"
+      ]
+    },
+    {
+      "id": "F02",
+      "priority": "P1",
+      "status": "observed_in_live_ui",
+      "title": "Essential parameter and metadata labels are too dim on dark panels",
+      "affected_surface": "Simple / Full Color, Geometry, Audio, and Info panels; parameter names, units, and metadata field names.",
+      "reproduction": [
+        "Open a photo or video and expand basic adjustments.",
+        "Compare untouched parameter names with their numeric values.",
+        "Check Geometry position / angle controls, Audio volume, and Info metadata rows."
+      ],
+      "observation": "Numeric values remain legible while the corresponding names become much darker. Approximate raster samples: parameter label 3.32:1; metadata field label 3.38:1. Meaningful units such as EV, degrees, and percent are even more subdued.",
+      "likely_cause": "ParameterRow uses .secondary whenever value == neutral. This visually conflates an unchanged, enabled parameter with an unavailable control. InfoPanel.row also uses .secondary, while the parameter suffix uses .tertiary.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          72
+        ],
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          88
+        ],
+        [
+          "Sources/MediaWorkbenchApp/InspectorView.swift",
+          674
+        ]
+      ],
+      "recommended_change": "Give essential labels a guaranteed readable foreground on the actual panel surface. Express modified / unmodified state through a marker, weight, or other treatment that preserves text contrast. Keep meaningful units readable. Avoid fixing only individual call sites when ParameterRow is the shared cause.",
+      "acceptance_criteria": [
+        "Untouched enabled labels are readable before the user changes any value.",
+        "Check neutral, modified, and disabled states independently.",
+        "Target at least 4.5:1 for normal-size enabled text, including meaningful units."
+      ],
+      "evidence": [
+        "03-basic-expanded.png",
+        "08-system-light-info.png",
+        "09-geometry.png",
+        "10-audio.png"
+      ],
+      "detail_images": [
+        "parameters",
+        "metadata",
+        "geometry"
+      ],
+      "sample_ids": [
+        "parameter",
+        "metadata"
+      ]
+    },
+    {
+      "id": "F03",
+      "priority": "P2",
+      "status": "observed_in_live_ui",
+      "title": "Available presets and unselected tabs look unavailable",
+      "affected_surface": "Preset captions, Save Preset and Match Look entry points; inspector tabs, Simple / Full selector, and scope selector.",
+      "reproduction": [
+        "Open an ordinary photo and inspect the preset grid in Simple Color.",
+        "Compare the selected Original caption with other available preset captions.",
+        "Inspect available unselected inspector and scope tabs without hovering."
+      ],
+      "observation": "The selected Original caption is clear; other available preset captions and entry points are much dimmer. The AI Look caption sample is approximately 3.34:1. Unselected segmented labels show a similar visual pattern, but each label was not individually measured.",
+      "likely_cause": "Preset captions use selected ? .primary : .secondary. GlassSegmentedControl also assigns Color.secondary to nonselected, nonhovered options. Available unselected and disabled appearances are insufficiently distinct.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/InspectorView.swift",
+          338
+        ],
+        [
+          "Sources/MediaWorkbenchApp/InspectorView.swift",
+          298
+        ],
+        [
+          "Sources/MediaWorkbenchApp/GlassSegmentedControl.swift",
+          54
+        ]
+      ],
+      "recommended_change": "Raise contrast for available unselected text. Use surface, stroke, or weight to distinguish the selected option. Reserve stronger dimming for genuinely disabled options. Keep the active, inactive-but-available, and disabled states distinct.",
+      "acceptance_criteria": [
+        "All available preset names and tabs are readable without hover.",
+        "Selected options remain identifiable.",
+        "Measure normal-size enabled text against a 4.5:1 design target."
+      ],
+      "evidence": [
+        "13-photo-color.png",
+        "14-simple.png"
+      ],
+      "detail_images": [
+        "presets"
+      ],
+      "sample_ids": [
+        "preset"
+      ]
+    },
+    {
+      "id": "F04",
+      "priority": "P2",
+      "status": "observed_in_live_ui",
+      "title": "Learning groups, durations, and instructional hints are overly faint",
+      "affected_surface": "Learn lesson list and the sample-photo hint in the first lesson step.",
+      "reproduction": [
+        "Open Learn and inspect lesson group headings and duration labels.",
+        "Open the histogram lesson first step using the currently selected Live Photo.",
+        "Inspect the hint explaining that a user photo can replace the sample."
+      ],
+      "observation": "Group headings and minute counts are difficult to read relative to lesson titles. Approximate samples: duration 2.28:1; sample-photo hint 2.33:1. The main lesson title and body are substantially clearer.",
+      "likely_cause": "Group headings, durations, and the sample-photo hint use .tertiary. InsightCard explanations also use .tertiary; that additional location was identified in source but not exhaustively expanded and reproduced in the live audit.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/LearnViews.swift",
+          397
+        ],
+        [
+          "Sources/MediaWorkbenchApp/LearnViews.swift",
+          408
+        ],
+        [
+          "Sources/MediaWorkbenchApp/LessonPlayer.swift",
+          71
+        ],
+        [
+          "Sources/MediaWorkbenchApp/LearnViews.swift",
+          188
+        ]
+      ],
+      "recommended_change": "Keep explanatory text subordinate to titles without making it nearly disappear. Establish hierarchy through weight and spacing. Audit the related source-only InsightCard location during implementation.",
+      "acceptance_criteria": [
+        "Lesson groups, durations, and instructional hints remain readable on dark surfaces.",
+        "Expand relevant learning explanations during regression testing.",
+        "Target at least 4.5:1 for normal-size informational text."
+      ],
+      "evidence": [
+        "04-learn.png",
+        "05-lesson.png"
+      ],
+      "detail_images": [
+        "lessons",
+        "lesson-help"
+      ],
+      "sample_ids": [
+        "duration",
+        "lesson-help"
+      ]
+    },
+    {
+      "id": "F05",
+      "priority": "P2",
+      "status": "observed_in_live_ui",
+      "title": "The project empty-state explanation blends into the sidebar",
+      "affected_surface": "Library sidebar, Projects section when no projects exist.",
+      "reproduction": [
+        "Use a library with no projects.",
+        "Inspect the sentence explaining the purpose of projects under the Projects heading."
+      ],
+      "observation": "The introductory explanation is a meaningful sentence but appears as very dim small text. The approximate screenshot sample is 2.36:1.",
+      "likely_cause": "ProjectSidebar applies .caption and .tertiary to the full explanation. The actual translucent, wallpaper-tinted sidebar surface is not a fixed black background.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/ProjectViews.swift",
+          26
+        ]
+      ],
+      "recommended_change": "Promote this first-use explanation to a readable secondary-body treatment. Use spacing and line height to preserve hierarchy rather than further lowering foreground opacity.",
+      "acceptance_criteria": [
+        "The project purpose is readable at normal scale.",
+        "Check active and inactive windows and representative wallpaper backgrounds.",
+        "Target at least 4.5:1 for normal-size explanatory text."
+      ],
+      "evidence": [
+        "01-browse-current.png"
+      ],
+      "detail_images": [
+        "project-help"
+      ],
+      "sample_ids": [
+        "project"
+      ]
+    },
+    {
+      "id": "F06",
+      "priority": "P2",
+      "status": "observed_readability_concern_platform_exceptions_apply",
+      "title": "White text on light accent-filled controls has limited contrast",
+      "affected_surface": "Export format / destination segments and primary actions; related lesson Next controls.",
+      "reproduction": [
+        "Open photo export with the current system accent.",
+        "Inspect the selected JPEG segment and primary action text.",
+        "Compare related accented controls in video export and the first lesson step."
+      ],
+      "observation": "Representative selected JPEG colors are white on #6A99CE, approximately 2.97:1 in the screenshot. This is a readability improvement item. Native system-drawn controls have applicability exceptions; this observation alone is not a formal WCAG failure determination.",
+      "likely_cause": "WorkbenchTheme.accent is derived from the system accent once at launch, and SheetContent applies it to native controls. The final visible surface is additionally affected by platform rendering.",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          9
+        ],
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          263
+        ],
+        [
+          "Sources/MediaWorkbenchApp/Sheets.swift",
+          10
+        ],
+        [
+          "Sources/MediaWorkbenchApp/Sheets.swift",
+          152
+        ]
+      ],
+      "recommended_change": "Verify the accent surface and the foreground chosen by each control as a pair. Define onAccent for app-controlled surfaces. If retaining white text, ensure a sufficiently dark fill. Prefer native adaptation for system-managed controls and avoid blindly overriding their foregrounds.",
+      "acceptance_criteria": [
+        "Inspect several system accents, selected segments, and primary buttons.",
+        "Target 4.5:1 for normal-size text where the app controls the color pair.",
+        "Evaluate native-control exceptions and actual platform behavior separately."
+      ],
+      "evidence": [
+        "15-photo-export.png",
+        "06-export.png",
+        "05-lesson.png"
+      ],
+      "detail_images": [
+        "export-controls"
+      ],
+      "sample_ids": [
+        "export"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "R01",
+      "status": "source_confirmed_architecture_constraint_not_a_reproduced_light_theme_bug",
+      "title": "There is no complete light application theme to validate yet",
+      "source_locations": [
+        [
+          "Sources/MediaWorkbenchApp/MediaWorkbenchApp.swift",
+          22
+        ],
+        [
+          "Sources/MediaWorkbenchApp/WorkbenchUI.swift",
+          21
+        ]
+      ],
+      "finding": "The root view forces .preferredColorScheme(.dark). Panel and canvas colors, white opacity treatments, stars, and selection tokens are largely fixed for dark surfaces. System Light appearance does not create a full light application theme.",
+      "implementation_guardrail": "Do not remove the forced dark scheme as an isolated fix. If full light-mode support is in scope later, define paired surface, text, selection, onSelection, accent, and onAccent tokens together. Removing the scheme alone could let semantic dark text appear on fixed dark surfaces."
+    },
+    {
+      "id": "R02",
+      "status": "source_comment_lead_not_reproduced_in_current_live_ui",
+      "title": "Near-black text may also occur in the snapshot capture path",
+      "source_locations": [
+        [
+          "scripts/make-site-screenshots.sh",
+          84
+        ]
+      ],
+      "finding": "The existing screenshot script documents that some window captures render secondary text on the translucent inspector as near-black. Its workaround renders the inspector separately and replaces the captured column. This comment is an investigation lead, not proof that the user-reported live issue is only a screenshot artifact.",
+      "implementation_guardrail": "Compare the same state in a native window capture and DebugSnapshot output under system Light / Dark, active / inactive windows, and main / standalone panels. Do not treat replacing website screenshots as a fix for application contrast."
+    }
+  ],
+  "do_not_change_blindly": [
+    "LearnViews.swift:125–126 explicitly pairs black selected-topic text with an 85%-white capsule. Source inspected; that settings section was not expanded in the live capture.",
+    "LessonScenes.swift:49 chooses black text on brighter grayscale cells. Not every frame or course state was inspected.",
+    "Native live captures show readable dark text on pale Auto, rotation, and local-tool buttons. Preserve valid light-surface pairs."
+  ],
+  "coverage": [
+    {
+      "step": "01",
+      "surface": "Library and project empty state",
+      "health": "Needs adjustment",
+      "observation": "Project explanation too dim; filenames and thumbnail badges are clear.",
+      "screenshots": [
+        "01-browse-current.png"
+      ]
+    },
+    {
+      "step": "02",
+      "surface": "Full Color and basic parameters",
+      "health": "Priority adjustment",
+      "observation": "Parameter labels too dim; numeric values generally clear.",
+      "screenshots": [
+        "03-basic-expanded.png"
+      ]
+    },
+    {
+      "step": "03",
+      "surface": "Video / Live Photo transport",
+      "health": "Priority adjustment",
+      "observation": "Pale surfaces and white symbols reduce enabled control legibility.",
+      "screenshots": [
+        "12-system-dark-audio.png"
+      ]
+    },
+    {
+      "step": "04",
+      "surface": "Photo Simple Color, presets, local-tool entry points",
+      "health": "Needs adjustment",
+      "observation": "Preset and parameter labels dim; light local-tool buttons with dark text are clear.",
+      "screenshots": [
+        "14-simple.png"
+      ]
+    },
+    {
+      "step": "05",
+      "surface": "Geometry",
+      "health": "Needs adjustment",
+      "observation": "Angle, retained area, and position labels dim; rotation buttons clear.",
+      "screenshots": [
+        "09-geometry.png"
+      ]
+    },
+    {
+      "step": "06",
+      "surface": "Audio",
+      "health": "Needs adjustment",
+      "observation": "Volume label and units dim; Add Music button clear.",
+      "screenshots": [
+        "10-audio.png"
+      ]
+    },
+    {
+      "step": "07",
+      "surface": "Info",
+      "health": "Needs adjustment",
+      "observation": "Metadata labels dim; values clear. Location area omitted from report images.",
+      "screenshots": [
+        "08-system-light-info.png"
+      ]
+    },
+    {
+      "step": "08",
+      "surface": "Learn and first lesson step",
+      "health": "Needs adjustment",
+      "observation": "Groups, durations, and hint dim; main title and body clearer.",
+      "screenshots": [
+        "04-learn.png",
+        "05-lesson.png"
+      ]
+    },
+    {
+      "step": "09",
+      "surface": "Video and photo export",
+      "health": "Partial adjustment",
+      "observation": "Main text generally readable; accent-selected text needs review.",
+      "screenshots": [
+        "06-export.png",
+        "15-photo-export.png"
+      ]
+    },
+    {
+      "step": "10",
+      "surface": "History popover",
+      "health": "Sampled state generally clear",
+      "observation": "Title and current row readable; only the Original step existed, so multistep / redo rows were not tested.",
+      "screenshots": [
+        "17-history.png"
+      ]
+    },
+    {
+      "step": "11",
+      "surface": "System Light and Dark appearance",
+      "health": "Application remains dark",
+      "observation": "Light: sampled Learn, Info, export. Dark: sampled Audio and Color. Original Auto appearance restored.",
+      "screenshots": [
+        "07-system-light-learn.png",
+        "11-system-light-export.png",
+        "12-system-dark-audio.png"
+      ]
+    },
+    {
+      "step": "12",
+      "surface": "Photos importer",
+      "health": "Coverage blocked",
+      "observation": "Two observations remained on a loading indicator. Excluded as completed-screen evidence; no conclusion on grid or preview contrast.",
+      "screenshots": [
+        "16-photos-import.png"
+      ]
+    }
+  ],
+  "not_covered": [
+    "macOS 15 / 26 runtime behavior",
+    "English application UI",
+    "Other system accent colors",
+    "Increase Contrast / Reduce Transparency",
+    "Every modal, error, empty, hover, pressed, and disabled state",
+    "All lesson steps",
+    "Side-by-side culling and collage",
+    "Loaded Photos import grid and preview",
+    "Local adjustment layer editing",
+    "All expanded learning insights"
+  ],
+  "suggested_fix_order": [
+    "F01: shared IconButton foreground / surface pairing",
+    "F02 and F03: enabled label and tab contrast",
+    "F04 and F05: informational text hierarchy",
+    "F06 and R02: accent control review and capture-path comparison"
+  ],
+  "handoff_instructions": [
+    "Read the referenced source and reproduce the current UI before changing behavior.",
+    "Keep this pass scoped to contrast and state clarity; preserve layout, copy, image processing, and data.",
+    "Prefer shared fixes and paired color roles over scattered literal white / black replacements.",
+    "Do not infer full light-theme support from system appearance switching.",
+    "Validate with fresh live captures and resolved colors; do not hide real UI issues with composited marketing screenshots.",
+    "Report confirmed fixes separately from source-only risks and remaining coverage gaps."
+  ]
+}
