@@ -75,6 +75,14 @@ enum ExportDestination: String, Codable, CaseIterable {
     var title: String { self == .photos ? L("「照片」") : L("文件夹") }
 }
 
+/// What a Live Photo that is open in the editor is exported as.
+enum LiveOutput: String, Codable, CaseIterable {
+    case live, still, video
+    var title: String {
+        switch self { case .live: "Live Photo"; case .still: L("仅照片"); case .video: L("视频") }
+    }
+}
+
 struct ExportSettings: Codable, Equatable {
     var image = ImageExportOptions()
     var codec = VideoCodecChoice.h264
@@ -83,6 +91,8 @@ struct ExportSettings: Codable, Equatable {
     var destination = ExportDestination.photos
     /// File-name pattern, see ExportNaming.
     var naming = ExportNaming.defaultPattern
+    /// For a Live Photo open in the editor: keep it a Live Photo (default), or save only the photo or the video.
+    var liveOutput = LiveOutput.live
 
     init() {}
     init(from decoder: Decoder) throws {
@@ -92,6 +102,7 @@ struct ExportSettings: Codable, Equatable {
         liveOnly = try values.decodeIfPresent(Bool.self, forKey: .liveOnly) ?? false
         destination = try values.decodeIfPresent(ExportDestination.self, forKey: .destination) ?? .photos
         naming = try values.decodeIfPresent(String.self, forKey: .naming) ?? ExportNaming.defaultPattern
+        liveOutput = try values.decodeIfPresent(LiveOutput.self, forKey: .liveOutput) ?? .live
     }
 }
 
@@ -661,14 +672,28 @@ final class AppModel {
     /// Renders the current item into a private folder, then adds it to Photos — or, when sharing,
     /// hands the file to the system share sheet.
     private func exportCurrentStaged(share: Bool = false) {
-        guard let source = editor.url, let input = editor.mediaURL, editor.isLoaded else { return }
+        guard let source = editor.url, let movie = editor.mediaURL, editor.isLoaded else { return }
         let settings = exportSettings
-        let edits = editor.edits, clip = editor.clip, video = editor.isVideo
+        let clip = editor.clip
+        // A Live Photo opens as its movie; it must leave as what it was unless the user chose otherwise.
+        let liveMode = currentLiveMode
+        if liveMode == .live, !ensureLiveRangeIsValid() { return }
+        let (input, edits) = Self.liveExportInput(liveMode, still: source, movie: movie, edits: editor.edits)
+        let video = editor.isVideo && liveMode != .still
         let size = videoOutputSize
-        let title = source.deletingPathExtension().lastPathComponent + "." + (video ? "mov" : settings.image.format.fileExtension)
+        let title = source.deletingPathExtension().lastPathComponent + "." + (liveMode == .live ? "livephoto" : video ? "mov" : settings.image.format.fileExtension)
         let id = exports.enqueue(share ? L("共享 \(title)") : L("存到「照片」· \(title)")) { report in
             let folder = try PhotosSaver.stagingFolder()
             var output = folder
+            if liveMode == .live {
+                let name = Self.exportName(source, settings: settings, index: 0, total: 1, size: size)
+                let live = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits) { report($0, nil) }
+                if share { return ExportQueue.Result(outputs: [live.imageURL, live.videoURL], live: nil, summary: L("已准备好共享")) }
+                defer { try? FileManager.default.removeItem(at: folder) }
+                report(nil, L("正在存入「照片」…"))
+                try await PhotosSaver.save([.live(image: live.imageURL, video: live.videoURL)])
+                return ExportQueue.Result(outputs: [], live: nil, summary: L("已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone"), inPhotos: true)
+            }
             if video {
                 output = folder.appendingPathComponent(Self.exportName(source, settings: settings, index: 0, total: 1, size: size) + ".mov")
                 try await VideoPipeline.export(input, to: output, clip: clip, edits: edits, codec: settings.codec) { report($0, nil) }
@@ -720,7 +745,18 @@ final class AppModel {
     private func exportCurrentNow() {
         guard let source = editor.url, editor.isLoaded else { return }
         let settings = exportSettings
-        let video = editor.isVideo
+        let liveMode = currentLiveMode
+        if liveMode == .live {
+            guard ensureLiveRangeIsValid() else { return }
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = source.deletingPathExtension().lastPathComponent + "-Live"
+            panel.message = L("新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。")
+            present(panel) { [weak self] urls in
+                if let output = urls.first { self?.enqueueLive(to: output) }
+            }
+            return
+        }
+        let video = editor.isVideo && liveMode != .still
         let panel = NSSavePanel()
         // Next to the original, the plain name gets "-编辑" so it can't be mistaken for it.
         let stem = settings.naming == ExportNaming.defaultPattern
@@ -762,9 +798,13 @@ final class AppModel {
 
     /// Queues an export of the open document with its current edits, captured now.
     func enqueueCurrentExport(to output: URL) {
-        guard let input = editor.mediaURL, editor.isLoaded else { return }
+        guard let movie = editor.mediaURL, editor.isLoaded else { return }
         let settings = exportSettings
-        let edits = editor.edits, clip = editor.clip, video = editor.isVideo
+        let clip = editor.clip
+        let liveMode = currentLiveMode
+        if liveMode == .live { enqueueLive(to: output); return }
+        let (input, edits) = Self.liveExportInput(liveMode, still: editor.url ?? movie, movie: movie, edits: editor.edits)
+        let video = editor.isVideo && liveMode != .still
         exports.enqueue(L("导出 \(output.lastPathComponent)")) { report in
             if video {
                 try await Self.exportVideo(input, to: output, clip: clip, edits: edits, codec: settings.codec, report: report)
@@ -796,26 +836,41 @@ final class AppModel {
         picker.show(relativeTo: anchor, of: view, preferredEdge: view.isFlipped ? .maxY : .minY)
     }
 
+    /// What gets rendered: the movie for Live Photo and video output, the still for "仅照片" (graded at
+    /// full size, without the video-only HDR effect).
+    private nonisolated static func liveExportInput(_ mode: LiveOutput?, still: URL, movie: URL, edits: MediaEdits) -> (URL, MediaEdits) {
+        guard mode == .still else { return (movie, edits) }
+        var photoEdits = edits
+        photoEdits.hdrEffect = false
+        return (still, photoEdits)
+    }
+
+    /// How the open item leaves when it is a Live Photo (nil for ordinary photos and videos).
+    private var currentLiveMode: LiveOutput? { editor.isLiveInput ? exportSettings.liveOutput : nil }
+
+    /// A Live Photo is 0.5–3 s. When the selection isn't, offer the fix instead of only explaining the rule.
+    /// Returns true when the range is fine; after a fix the user starts the export again.
+    private func ensureLiveRangeIsValid() -> Bool {
+        guard !editor.liveIsValid else { return true }
+        let seconds = editor.clip.outputDuration
+        let alert = NSAlert()
+        alert.messageText = L("Live Photo 最长 3 秒")
+        alert.informativeText = String(format: L("现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。"), seconds)
+        alert.addButton(withTitle: L("选取播放头附近 3 秒"))
+        alert.addButton(withTitle: L("整段加速到 3 秒"))
+        alert.addButton(withTitle: L("取消"))
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: editor.selectLiveRange()
+        case .alertSecondButtonReturn: editor.fitLiveSpeed()
+        default: return false
+        }
+        if editor.liveIsValid { show(L("已调整为 \(String(format: "%.1f", editor.clip.outputDuration)) 秒，请再导出一次。"), seconds: 4) }
+        return false
+    }
+
     func makeLive() {
         guard let source = editor.url, editor.isVideo else { return }
-        guard editor.liveIsValid else {
-            // Offer the fix instead of only explaining the rule.
-            let seconds = editor.clip.outputDuration
-            let alert = NSAlert()
-            alert.messageText = L("Live Photo 最长 3 秒")
-            alert.informativeText = String(format: L("现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。"), seconds)
-            alert.addButton(withTitle: L("选取播放头附近 3 秒"))
-            alert.addButton(withTitle: L("整段加速到 3 秒"))
-            alert.addButton(withTitle: L("取消"))
-            switch alert.runModal() {
-            case .alertFirstButtonReturn: editor.selectLiveRange()
-            case .alertSecondButtonReturn: editor.fitLiveSpeed()
-            default: return
-            }
-            guard editor.liveIsValid else { return }
-            show(L("已调整为 \(String(format: "%.1f", editor.clip.outputDuration)) 秒，再点一次「制作 Live」即可。"), seconds: 4)
-            return
-        }
+        guard ensureLiveRangeIsValid() else { return }
         if exportSettings.destination == .photos {
             guard let input = editor.mediaURL else { return }
             let edits = editor.edits, clip = editor.clip

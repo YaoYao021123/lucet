@@ -86,6 +86,7 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "liveoutput": app.exportSettings.liveOutput = LiveOutput(rawValue: argument) ?? .live
         case "match": app.matchLook(to: URL(fileURLWithPath: argument).standardizedFileURL.path)
         case "groups": app.mode = .browse; app.showGroups = argument != "off"
         case "local": if let shape = LocalAdjustment.Shape(rawValue: argument) { app.editor.addLocal(shape) }

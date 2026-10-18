@@ -53,8 +53,16 @@ struct ExportOptionsSheet: View {
     @AppStorage("export.watermarkText") private var watermarkText = ""
 
     private var entries: [LibraryEntry] { target == .current ? app.currentEntry.map { [$0] } ?? [] : app.library.actionTargets }
-    private var hasImages: Bool { target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo } }
-    private var hasVideos: Bool { target == .current ? app.editor.isVideo : entries.contains { $0.isVideo || $0.hasLiveCompanion } }
+    /// A Live Photo open in the editor: its output is a choice, not "a video".
+    private var isLiveCurrent: Bool { target == .current && app.editor.isLiveInput }
+    private var hasImages: Bool {
+        if isLiveCurrent { return settings.liveOutput == .still }
+        return target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo }
+    }
+    private var hasVideos: Bool {
+        if isLiveCurrent { return settings.liveOutput == .video }
+        return target == .current ? app.editor.isVideo : entries.contains { $0.isVideo || $0.hasLiveCompanion }
+    }
     private var presets: [ExportPreset] { ExportPreset.builtIns + app.exportPresets }
 
     var body: some View {
@@ -77,6 +85,7 @@ struct ExportOptionsSheet: View {
                          : "存为文件，可以选择位置。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if isLiveCurrent { liveSection }
                 if hasImages { photoSection }
                 if hasVideos {
                     Section("视频") {
@@ -117,6 +126,20 @@ struct ExportOptionsSheet: View {
             Button("存储") { savePreset() }.disabled(presetName.trimmingCharacters(in: .whitespaces).isEmpty)
         } message: {
             Text("保存照片格式、尺寸、分辨率、文件名规则和水印。")
+        }
+    }
+
+    private var liveSection: some View {
+        Section {
+            Picker("导出为", selection: $settings.liveOutput) {
+                ForEach(LiveOutput.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .accentSegments()
+        } footer: {
+            Text(settings.liveOutput == .live ? "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。"
+                 : settings.liveOutput == .still ? "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。"
+                 : "只保存调色后的动态部分，是一段普通视频。")
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
