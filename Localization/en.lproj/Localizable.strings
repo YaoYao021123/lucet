@@ -38,6 +38,8 @@
 "简单" = "Simple";
 "「照片」" = "Photos";
 "文件夹" = "Folder";
+"仅照片" = "Photo only";
+"视频" = "Video";
 "选择包含照片或视频的文件夹" = "Choose a folder with photos or videos";
 "选择照片、视频或文件夹" = "Choose photos, videos or folders";
 "没有找到支持的照片或视频。" = "No supported photos or videos were found.";
@@ -84,12 +86,14 @@
 "撤回" = "Undo";
 "共享 %@" = "Share %@";
 "存到「照片」· %@" = "Save to Photos · %@";
-"正在渲染…" = "Rendering…";
 "已准备好共享" = "Ready to share";
 "正在存入「照片」…" = "Saving to Photos…";
+"已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone" = "Saved to Photos as a Live Photo; it will sync to your iPhone with iCloud";
+"正在渲染…" = "Rendering…";
 "已存到「照片」" = "Saved to Photos";
 "（见导出记录）" = " (see export history)";
 "，已存到「照片」" = ", saved to Photos";
+"新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。" = "Creates a Live folder: JPEG key photo + paired MOV + settings record.";
 "-编辑" = "-edited";
 "另存编辑副本；原片不会被修改。" = "Saves an edited copy; the original won't be changed.";
 "导出 %@" = "Export %@";
@@ -98,11 +102,9 @@
 "现在选中的片段是 %.1f 秒。可以只取播放头附近的 3 秒，或者把整段加速到 3 秒。" = "The selected clip is %.1f seconds. Keep just the 3 seconds around the playhead, or speed the whole clip up to fit 3 seconds.";
 "选取播放头附近 3 秒" = "Keep 3 Seconds Around Playhead";
 "整段加速到 3 秒" = "Speed Up to 3 Seconds";
-"已调整为 %@ 秒，再点一次「制作 Live」即可。" = "Set to %@ seconds. Click “Make Live” again.";
+"已调整为 %@ 秒，请再导出一次。" = "Set to %@ s. Export again.";
 "制作 Live · 存到「照片」" = "Make Live · Save to Photos";
-"已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone" = "Saved to Photos as a Live Photo; it will sync to your iPhone with iCloud";
 "新建 Live 文件夹：HEIC 增益图封面 + 10-bit HLG 视频 + 参数记录。" = "Creates a Live folder: HEIC key photo with gain map + 10-bit HLG video + settings record.";
-"新建 Live 文件夹：封面 JPEG + 配对 MOV + 参数记录。" = "Creates a Live folder: JPEG key photo + paired MOV + settings record.";
 "制作 Live · %@" = "Make Live · %@";
 "系统配对检查通过" = "Passed the system pairing check";
 "光集导出-" = "Lucet Export-";
@@ -330,7 +332,6 @@
 "%g× 速度" = "%g× speed";
 "原声 %lld%%" = "Original audio %lld%%";
 "音乐 %@" = "Music %@";
-"视频" = "Video";
 "局部调整" = "Local Adjustments";
 "已关闭" = "Turned off";
 
@@ -1501,6 +1502,10 @@
 "预设名称" = "Preset name";
 "存储" = "Save";
 "保存照片格式、尺寸、分辨率、文件名规则和水印。" = "Saves the photo format, size, resolution, file-name pattern and watermark.";
+"导出为" = "Export as";
+"这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。" = "This is a Live Photo: the same edits apply to the photo and the motion, and it stays a Live Photo.";
+"只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。" = "Saves only the edited photo (full size, capture info kept), without motion.";
+"只保存调色后的动态部分，是一段普通视频。" = "Saves only the edited motion, as an ordinary video.";
 "删除预设" = "Delete Preset";
 "一键套用常用的导出设置，或把现在的设置存成预设" = "Apply common export settings in one click, or save the current settings as a preset";
 "质量" = "Quality";
