@@ -215,7 +215,7 @@ struct AdjustmentRows: View {
         let changed = section.parameters.contains { values[$0] != 0 }
         VStack(spacing: 1) {
             HStack(spacing: 4) {
-                Text(section.title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                Text(section.title).font(.caption.weight(.semibold)).foregroundStyle(WorkbenchTheme.textSecondary)
                     .help(section.summary)
                 Spacer()
                 if changed {
@@ -293,9 +293,9 @@ struct PresetStrip: View {
                     Button { app.sheet = .savePreset } label: {
                         VStack(spacing: 4) {
                             RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3]))
-                                .overlay(Image(systemName: "plus").foregroundStyle(.secondary))
+                                .overlay(Image(systemName: "plus").foregroundStyle(WorkbenchTheme.textSecondary))
                                 .aspectRatio(4 / 3, contentMode: .fit)
-                            Text("存为预设").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                            Text("存为预设").font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
                         }
                     }
                     .buttonStyle(.plain).help("把当前调色存为自己的预设")
@@ -303,9 +303,9 @@ struct PresetStrip: View {
                         Button { app.sheet = .matchLook } label: {
                             VStack(spacing: 4) {
                                 RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [3]))
-                                    .overlay(Image(systemName: "eyedropper.halffull").foregroundStyle(.secondary))
+                                    .overlay(Image(systemName: "eyedropper.halffull").foregroundStyle(WorkbenchTheme.textSecondary))
                                     .aspectRatio(4 / 3, contentMode: .fit)
-                                Text("匹配色调").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                Text("匹配色调").font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
                             }
                         }
                         .buttonStyle(.plain).help("让这张照片的整体色调向另一张靠拢")
@@ -335,7 +335,7 @@ struct PresetStrip: View {
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(selected ? Color.white.opacity(0.9) : .clear, lineWidth: 1.5))
-                Text(name).font(.caption2).foregroundStyle(selected ? .primary : .secondary).lineLimit(1)
+                Text(name).font(.caption2.weight(selected ? .medium : .regular)).foregroundStyle(selected ? .primary : WorkbenchTheme.textSecondary).lineLimit(1)
             }
             .contentShape(Rectangle())
         }
@@ -613,7 +613,7 @@ struct InfoPanel: View {
                             if group.kind == .location, let coordinate = details.coordinate {
                                 Button("在地图中打开") { openMap(coordinate) }
                                     .buttonStyle(.borderless).font(.callout).padding(.top, 2)
-                                Text("导出时默认移除位置信息。").font(.caption).foregroundStyle(.secondary)
+                                Text("导出时默认移除位置信息。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                             }
                         }
                     }
@@ -621,25 +621,25 @@ struct InfoPanel: View {
             } else if editor.url != nil {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
-                    Text("正在读取信息…").font(.callout).foregroundStyle(.secondary)
+                    Text("正在读取信息…").font(.callout).foregroundStyle(WorkbenchTheme.textSecondary)
                 }
                 .padding(.vertical, 8)
             }
             if let id = editor.url?.standardizedFileURL.path, let labels = app.content.labels[id], !labels.isEmpty {
                 InspectorSection(L("画面内容"), help: L("在这台 Mac 上识别，用于在素材库里按内容搜索。")) {
                     Text(labels.prefix(8).map(ContentLabels.displayName).joined(separator: L("、")))
-                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                        .font(.callout).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
                 }
             }
             InspectorSection(L("编辑记录")) {
                 VStack(alignment: .leading, spacing: 4) {
                     let summary = editor.editSummary
                     if summary.isEmpty {
-                        Text("尚未编辑。").font(.callout).foregroundStyle(.secondary)
+                        Text("尚未编辑。").font(.callout).foregroundStyle(WorkbenchTheme.textSecondary)
                     } else {
                         ForEach(summary) { row($0.title, $0.value) }
                     }
-                    Text("编辑以配方自动保存，原片从不修改。").font(.caption).foregroundStyle(.secondary).padding(.top, 2)
+                    Text("编辑以配方自动保存，原片从不修改。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).padding(.top, 2)
                     Button("快照与版本…") { app.sheet = .snapshots }.glassButton().padding(.top, 2)
                 }
             }
@@ -651,7 +651,7 @@ struct InfoPanel: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(url.lastPathComponent)
                 .font(.system(size: 13, weight: .semibold)).lineLimit(2).textSelection(.enabled)
-            Text(subtitle(url)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            Text(subtitle(url)).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
             HStack(spacing: 12) {
                 Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
                 Button("拷贝信息") { copyInfo(url) }.disabled(editor.details == nil)
@@ -671,7 +671,7 @@ struct InfoPanel: View {
 
     private func row(_ title: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.85).frame(width: .label(56), alignment: .leading)
+            Text(title).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1).minimumScaleFactor(0.85).frame(width: .label(56), alignment: .leading)
             Text(value).textSelection(.enabled).lineLimit(3).truncationMode(.middle).help(value)
             Spacer(minLength: 0)
         }

@@ -259,9 +259,9 @@ private struct LocalLayerControls: View {
                     .rotationEffect(.degrees(isOpen ? 90 : 0))
                     .foregroundStyle(.secondary)
                     .frame(width: 10)
-                Text(group.title).font(.caption.weight(.semibold)).foregroundStyle(values.isEmpty ? .secondary : .primary)
+                Text(group.title).font(.caption.weight(.semibold)).foregroundStyle(values.isEmpty ? WorkbenchTheme.textSecondary : .primary)
                 Text(values.isEmpty ? L("未调整") : values.joined(separator: " · "))
-                    .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                    .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
                 Spacer(minLength: 0)
             }
             .contentShape(Rectangle())

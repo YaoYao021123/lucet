@@ -79,10 +79,10 @@ struct LearnPanel: View {
             InspectorSection(L("这张照片"), help: L("根据这张照片当前的样子给出建议；修改后会实时更新。")) {
                 VStack(alignment: .leading, spacing: 6) {
                     if editor.scopes == nil {
-                        Text("正在分析画面…").font(.caption).foregroundStyle(.secondary)
+                        Text("正在分析画面…").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                     } else if state.insights.isEmpty {
                         Label("没有发现明显的问题。可以从下面的学习路径挑一个技巧，在这张照片上试试。", systemImage: "checkmark.seal")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                     }
                     ForEach(showAll ? state.insights : Array(state.insights.prefix(3))) { insight in
                         InsightCard(app: app, insight: insight)
@@ -107,7 +107,7 @@ struct LearnPanel: View {
             InspectorSection(L("我的学习"), help: L("选择水平和感兴趣的方向，讲解和推荐会随之调整。")) {
                 VStack(alignment: .leading, spacing: 6) {
                     if !profile.onboarded {
-                        Text("告诉我你的水平和想学什么，讲解会更适合你。").font(.caption).foregroundStyle(.secondary)
+                        Text("告诉我你的水平和想学什么，讲解会更适合你。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                     }
                     GlassSegmentedControl(options: LearningLevel.allCases,
                                           selection: Binding(get: { profile.level }, set: { app.learner.level = $0; app.learner.onboarded = true }),
@@ -138,7 +138,7 @@ struct LearnPanel: View {
                     let path = profile.path
                     ProgressView(value: Double(profile.learnedInPath), total: Double(max(1, path.count)))
                         .controlSize(.small).tint(WorkbenchTheme.control)
-                    Text("已掌握 \(profile.learnedInPath) / \(path.count)").font(.caption2).foregroundStyle(.secondary)
+                    Text("已掌握 \(profile.learnedInPath) / \(path.count)").font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary)
                         .padding(.bottom, 4)
                     ForEach(path, id: \.self) { concept in
                         ConceptRow(app: app, concept: concept, expanded: expanded == concept) {
@@ -183,9 +183,9 @@ struct InsightCard: View {
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .help("告诉我这条提示是否有用，之后的推荐会随之调整")
             }
-            Text(insight.observation).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text(insight.observation).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             if !learned || showWhy {
-                Text(insight.why).font(.caption).foregroundStyle(.tertiary).fixedSize(horizontal: false, vertical: true)
+                Text(insight.why).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
             if let suggestion = insight.suggestion, suggestion.changesEdits {
                 Label(suggestion.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
@@ -238,7 +238,7 @@ struct ConceptRow: View {
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(concept.explanation(for: app.learner.level))
-                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
                     if let demo = concept.demo {
                         Label(L("演示：") + demo.label, systemImage: "wand.and.stars").font(.caption.weight(.medium)).foregroundStyle(.primary)
                     }
@@ -275,9 +275,9 @@ struct AskSection: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("想知道这张照片的任何事，都可以直接问，比如「天空为什么发灰？」「怎么调出胶片感？」。")
-                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
                     Text("需要你自己的 Anthropic API 密钥；默认关闭，只在你提问时发送。")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary)
                     Button("设置…") { app.sheet = .tutorSettings }.glassButton().controlSize(.small)
                 }
             }
@@ -288,7 +288,7 @@ struct AskSection: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(tutor.turns) { turn in TurnView(app: app, turn: turn) }
             if tutor.isAsking {
-                HStack(spacing: 6) { ProgressView().controlSize(.small); Text("正在看这张照片…").font(.caption).foregroundStyle(.secondary) }
+                HStack(spacing: 6) { ProgressView().controlSize(.small); Text("正在看这张照片…").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary) }
             }
             if tutor.turns.isEmpty {
                 FlowLayout(spacing: 4) {
@@ -311,11 +311,11 @@ struct AskSection: View {
                         .help("提问（⏎）")
                 }
             } else {
-                Text("这段对话已经很长了，开始新对话可以更聚焦。").font(.caption).foregroundStyle(.secondary)
+                Text("这段对话已经很长了，开始新对话可以更聚焦。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
             }
             HStack(spacing: 8) {
                 Text(tutor.modelTitle + L(" · 发送") + (tutor.settings.sendPreview ? L("预览图、") : "") + L("画面统计与参数"))
-                    .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                    .font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
                 Spacer(minLength: 4)
                 if !tutor.turns.isEmpty { Button("新对话", action: tutor.reset).buttonStyle(.borderless).font(.caption2) }
                 Button("设置") { app.sheet = .tutorSettings }.buttonStyle(.borderless).font(.caption2)
@@ -391,10 +391,10 @@ struct LessonList: View {
         InspectorSection(L("互动课"), help: L("几分钟一课：用动画和你的照片讲清原理，边看边动手。")) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("已完成 \(Lesson.catalog.filter { done.contains($0.id) }.count) / \(Lesson.catalog.count) 课")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary)
                 ForEach(LessonUnit.allCases, id: \.self) { unit in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(unit.title).font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        Text(unit.title).font(.caption.weight(.semibold)).foregroundStyle(WorkbenchTheme.textSecondary)
                         ForEach(Lesson.catalog.filter { $0.unit == unit }) { lesson in
                             Button { app.openLesson(lesson.id) } label: {
                                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -402,10 +402,10 @@ struct LessonList: View {
                                         .foregroundStyle(done.contains(lesson.id) ? Color.secondary : Color.primary)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(lesson.title).font(.callout)
-                                        Text(lesson.hook).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                        Text(lesson.hook).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).lineLimit(1)
                                     }
                                     Spacer(minLength: 4)
-                                    Text("\(lesson.minutes) 分钟").font(.caption2).foregroundStyle(.tertiary)
+                                    Text("\(lesson.minutes) 分钟").font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary)
                                 }
                                 .padding(.vertical, 3)
                                 .contentShape(Rectangle())

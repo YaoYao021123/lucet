@@ -193,7 +193,7 @@ struct ColorWheelControl: View, @MainActor Equatable {
         VStack(spacing: 3) {
             HStack(spacing: 3) {
                 Text(wheel.title).font(.caption.weight(.semibold))
-                Text(wheel.subtitle).font(.caption2).foregroundStyle(.tertiary)
+                Text(wheel.subtitle).font(.caption2).foregroundStyle(WorkbenchTheme.textSecondary)
             }
             .onTapGesture(count: 2) { commit(WheelValue()) }
             .onHover { inside in if influence != nil { onHover(inside ? influence : nil) } }
@@ -300,7 +300,7 @@ struct CurveEditor: View {
             }
             .aspectRatio(1.45, contentMode: .fit)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.3)))
-            Text("点按曲线添加控制点，拖出框外删除。").font(.caption).foregroundStyle(.tertiary)
+            Text("点按曲线添加控制点，拖出框外删除。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
         }
     }
 

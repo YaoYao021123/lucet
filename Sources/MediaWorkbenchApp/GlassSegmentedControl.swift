@@ -48,10 +48,12 @@ struct GlassSegmentedControl<Option: Hashable>: View {
                 HStack(spacing: 0) {
                     ForEach(options, id: \.self) { option in
                         Button { choose(option) } label: {
+                            // An available option stays readable; the lens and a brighter label mark the chosen one.
+                            // Only the whole control going disabled (below) dims the labels.
                             Text(title(option))
                                 .font(font)
                                 .lineLimit(1)
-                                .foregroundStyle(option == selection ? Color.primary : hovered == option ? Color.primary.opacity(0.85) : Color.secondary)
+                                .foregroundStyle(option == selection ? Color.primary : hovered == option ? Color.primary.opacity(0.85) : WorkbenchTheme.textSecondary)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .contentShape(Rectangle())
                         }

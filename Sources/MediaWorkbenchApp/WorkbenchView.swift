@@ -98,8 +98,8 @@ struct OpenFailureView: View {
                 .padding(.top, 6)
             case .unreadable(let detail):
                 Text("无法打开这个文件").font(.title3.weight(.semibold))
-                Text("「\(name)」可能已损坏，或者是光集暂不支持的格式。").foregroundStyle(.secondary).multilineTextAlignment(.center)
-                Text(detail).font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center).textSelection(.enabled)
+                Text("「\(name)」可能已损坏，或者是光集暂不支持的格式。").foregroundStyle(WorkbenchTheme.textSecondary).multilineTextAlignment(.center)
+                Text(detail).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).multilineTextAlignment(.center).textSelection(.enabled)
                 HStack {
                     Button("在 Finder 中显示") { app.revealSelection() }.glassButton()
                     Button("从素材库移除") { app.removeFromLibrary(id) }.glassButton()

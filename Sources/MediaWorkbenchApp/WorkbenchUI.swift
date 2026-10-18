@@ -10,12 +10,38 @@ enum WorkbenchTheme {
     /// A calm version of the System Settings accent (half the saturation, a little darker),
     /// read once at launch. Used sparingly: the main action and "this is on" states only —
     /// colorful chrome next to a photo biases how its colors are judged.
-    static let accent: Color = {
+    /// For symbols, strokes and tinted text on dark surfaces. A fill that carries white text is `accentFill`.
+    static let accent: Color = calmAccent(brightnessScale: 0.8).color
+    /// The same accent, darkened until white text (`onAccent`) on it reaches 4.5:1: prominent buttons,
+    /// selected export segments, the tick on a chosen photo. The two always travel as a pair.
+    static let accentFill: Color = {
+        var scale = 0.8
+        while scale > 0.25, contrastWithWhite(calmAccent(brightnessScale: scale)) < 4.6 { scale -= 0.01 }
+        return calmAccent(brightnessScale: scale).color
+    }()
+    static let onAccent = Color.white
+
+    private typealias RGB = (red: Double, green: Double, blue: Double)
+
+    private static func calmAccent(brightnessScale: Double) -> (color: Color, rgb: RGB) {
         let system = NSColor.controlAccentColor.usingColorSpace(.sRGB) ?? .systemBlue
         let muted = NSColor(hue: system.hueComponent, saturation: system.saturationComponent * 0.5,
-                            brightness: system.brightnessComponent * 0.8, alpha: 1)
-        return Color(red: muted.redComponent, green: muted.greenComponent, blue: muted.blueComponent)
-    }()
+                            brightness: system.brightnessComponent * brightnessScale, alpha: 1)
+        let rgb = (red: Double(muted.redComponent), green: Double(muted.greenComponent), blue: Double(muted.blueComponent))
+        return (Color(red: rgb.red, green: rgb.green, blue: rgb.blue), rgb)
+    }
+
+    /// WCAG contrast ratio of white against the color.
+    private static func contrastWithWhite(_ accent: (color: Color, rgb: RGB)) -> Double {
+        func linear(_ v: Double) -> Double { v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+        let luminance = 0.2126 * linear(accent.rgb.red) + 0.7152 * linear(accent.rgb.green) + 0.0722 * linear(accent.rgb.blue)
+        return 1.05 / (luminance + 0.05)
+    }
+
+    /// Text on the dark panels. The system's `.secondary` / `.tertiary` fade to about 3:1 / 2.3:1 on the
+    /// tinted glass, so anything meant to be read (names, units, captions, explanations) uses this instead:
+    /// white at 70% stays above 4.5:1 on every panel tint measured. Hierarchy comes from size and weight.
+    static let textSecondary = Color.white.opacity(0.7)
     /// Neutral tints for everything that doesn't need color. `neutralTint` is the window's
     /// default tint, so text buttons, switches and checkboxes stay gray unless a view opts in.
     static let control = Color(white: 0.72)
@@ -68,8 +94,11 @@ struct ParameterRow: View, @MainActor Equatable {
 
     var body: some View {
         HStack(spacing: 8) {
+            // Both states stay readable (an untouched, enabled name is not a disabled one); a changed
+            // parameter is a notch brighter and heavier.
             Text(title)
-                .foregroundStyle(value == neutral ? .secondary : .primary)
+                .fontWeight(value == neutral ? .regular : .medium)
+                .foregroundStyle(value == neutral ? WorkbenchTheme.textSecondary : .primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
                 .frame(width: .label(labelWidth), alignment: .leading)
@@ -85,7 +114,7 @@ struct ParameterRow: View, @MainActor Equatable {
                     .multilineTextAlignment(.trailing)
                     .monospacedDigit()
                     .accessibilityLabel("\(title)数值")
-                Text(suffix).font(.caption).foregroundStyle(.tertiary).frame(width: 13, alignment: .leading)
+                Text(suffix).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).frame(width: 13, alignment: .leading)
             }
             .frame(width: 48)
         }
@@ -211,13 +240,17 @@ struct IconButton: View {
     var active = false
     let action: () -> Void
     var body: some View {
-        Button(action: action) {
+        // No foreground of our own: the glass style picks the symbol colour that suits its surface (a fixed
+        // `.primary` is white in the dark scheme, on glass that can be pale). The on state is the prominent
+        // style, whose accent fill and white symbol are one pair.
+        let button = Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(active ? WorkbenchTheme.accent : .primary)
                 .frame(width: 20, height: 20)
         }
-        .glassButton(.circle)
+        Group {
+            if active { button.primaryButton().buttonBorderShape(.circle) } else { button.glassButton(.circle) }
+        }
         .help(title)
         .accessibilityLabel(title)
     }
@@ -259,10 +292,22 @@ struct SidebarMaterial: NSViewRepresentable {
 extension View {
     @ViewBuilder func primaryButton() -> some View {
         if #available(macOS 26, *) {
-            self.buttonStyle(.glassProminent).tint(WorkbenchTheme.accent)
+            self.buttonStyle(.glassProminent).tint(WorkbenchTheme.accentFill)
         } else {
-            self.buttonStyle(.borderedProminent).tint(WorkbenchTheme.accent)
+            self.buttonStyle(.borderedProminent).tint(WorkbenchTheme.accentFill)
         }
+    }
+
+    /// A sheet's Return button: the system fills it with the tint and draws its own white label, so the
+    /// tint is the fill white text reads on (the sheet itself keeps the lighter `accent`).
+    func defaultActionButton() -> some View {
+        self.keyboardShortcut(.defaultAction).tint(WorkbenchTheme.accentFill)
+    }
+
+    /// Native segmented picker whose selected segment is filled with the accent. The fill is dark enough
+    /// for the white label the system draws on it; the rest of the sheet keeps the lighter `accent` tint.
+    func accentSegments() -> some View {
+        self.pickerStyle(.segmented).tint(WorkbenchTheme.accentFill)
     }
 
     /// Liquid Glass capsule on macOS 26 (adapts to the photo underneath);

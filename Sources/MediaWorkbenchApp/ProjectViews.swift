@@ -15,7 +15,7 @@ struct SidebarProjects: View {
                 app.currentProjectID = nil
             }
             HStack {
-                Text("项目").font(.caption).foregroundStyle(.secondary)
+                Text("项目").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                 Spacer()
                 Button { app.sheet = .newProject(Array(app.library.selection)) } label: { Image(systemName: "plus") }
                     .buttonStyle(.borderless).foregroundStyle(.secondary)
@@ -24,7 +24,8 @@ struct SidebarProjects: View {
             .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 2)
             if app.projects.isEmpty {
                 Text("为一次旅行、一篇帖子或一组客片建一个项目，里面的照片共用一套颜色。")
-                    .font(.caption).foregroundStyle(.tertiary).fixedSize(horizontal: false, vertical: true)
+                    .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 8).padding(.bottom, 4)
             } else {
                 ScrollView {
@@ -166,7 +167,7 @@ struct NewProjectSheet: View {
                     app.sheet = nil
                     app.createProject(named: name, from: ids)
                 }
-                .keyboardShortcut(.defaultAction)
+                .defaultActionButton()
             }
         }
         .padding(22).frame(width: 440)
@@ -186,7 +187,7 @@ struct RenameProjectSheet: View {
                 Spacer()
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
                 Button("重命名") { app.sheet = nil; app.renameProject(projectID, to: name) }
-                    .keyboardShortcut(.defaultAction).disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .defaultActionButton().disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .padding(22).frame(width: 380)

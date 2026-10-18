@@ -70,7 +70,7 @@ struct ExportOptionsSheet: View {
                     Picker("保存到", selection: $settings.destination) {
                         ForEach(ExportDestination.allCases, id: \.self) { Text($0.title).tag($0) }
                     }
-                    .pickerStyle(.segmented)
+                    .accentSegments()
                 } footer: {
                     Text(settings.destination == .photos
                          ? "直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。Live 片段会存为真正的 Live Photo。"
@@ -101,7 +101,7 @@ struct ExportOptionsSheet: View {
                     app.exportSettings = settings
                     app.confirmExport(target)
                 }
-                .keyboardShortcut(.defaultAction)
+                .defaultActionButton()
                 .disabled(entries.isEmpty || ExportNaming.problem(settings.naming) != nil)
             }
         }
@@ -148,7 +148,7 @@ struct ExportOptionsSheet: View {
             Picker("格式", selection: $settings.image.format) {
                 ForEach(ImageExportOptions.Format.allCases, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .accentSegments()
             if settings.image.format.isLossy {
                 LabeledContent("质量") {
                     HStack {
@@ -240,7 +240,7 @@ struct ExportOptionsSheet: View {
                 Picker("颜色", selection: watermark.ink) {
                     ForEach(Watermark.Ink.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                .pickerStyle(.segmented)
+                .accentSegments()
                 LabeledContent("大小") {
                     HStack {
                         Slider(value: watermark.size, in: 1...8)
@@ -313,7 +313,7 @@ struct SyncSheet: View {
                     app.sheet = nil
                     app.synchronize(sections: sections, includeLUT: includeLUT, stages: stages)
                 }
-                .keyboardShortcut(.defaultAction)
+                .defaultActionButton()
                 .disabled(count == 0 || (sections.isEmpty && stages.isEmpty && !includeLUT))
             }
         }
@@ -347,7 +347,7 @@ struct SnapshotSheet: View {
             }
             .frame(height: 220)
             .overlay { if snapshots.isEmpty { Text("尚未保存快照").foregroundStyle(.secondary) } }
-            HStack { Spacer(); Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button("完成") { app.sheet = nil }.defaultActionButton() }
         }
         .padding(22).frame(width: 480)
         .onAppear { snapshots = app.editor.snapshots() }
@@ -366,7 +366,7 @@ struct SavePresetSheet: View {
             HStack {
                 Spacer()
                 Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
-                Button("保存") { app.savePreset(named: name); app.sheet = nil }.keyboardShortcut(.defaultAction)
+                Button("保存") { app.savePreset(named: name); app.sheet = nil }.defaultActionButton()
             }
         }
         .padding(22).frame(width: 400)
@@ -409,7 +409,7 @@ struct ShortcutsSheet: View {
                     }
                 }
             }
-            HStack { Spacer(); Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button("完成") { app.sheet = nil }.defaultActionButton() }
         }
         .padding(24)
     }
@@ -427,7 +427,7 @@ struct LivePreviewSheet: View {
                 Text("Live Photo").font(.headline)
                 Spacer()
                 Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([resources.imageURL]) }
-                Button("完成") { app.sheet = nil }.keyboardShortcut(.defaultAction)
+                Button("完成") { app.sheet = nil }.defaultActionButton()
             }
             ZStack {
                 Color.black
@@ -493,7 +493,7 @@ struct TutorSettingsSheet: View {
             }
             .formStyle(.grouped)
             .scrollDisabled(true)
-            HStack { Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button("完成") { dismiss() }.defaultActionButton() }
         }
         .padding(22)
         .frame(width: 520)

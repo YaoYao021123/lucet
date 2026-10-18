@@ -400,7 +400,7 @@ struct PhotosImportSheet: View {
                     Text("最新在前").tag(true)
                     Text("最早在前").tag(false)
                 }
-                .pickerStyle(.segmented).labelsHidden().fixedSize()
+                .accentSegments().labelsHidden().fixedSize()
                 Spacer()
                 Image(systemName: "square.grid.3x3").foregroundStyle(.secondary)
                 Slider(value: $cellSize, in: 80...220).frame(width: 110)
@@ -474,7 +474,7 @@ private struct PhotosCell: View {
             .overlay(alignment: .topTrailing) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 17)).symbolRenderingMode(.palette)
-                    .foregroundStyle(Color.white, selected ? WorkbenchTheme.accent : Color.black.opacity(0.25))
+                    .foregroundStyle(WorkbenchTheme.onAccent, selected ? WorkbenchTheme.accentFill : Color.black.opacity(0.25))
                     .padding(5).opacity(selected ? 1 : 0.7)
             }
             .overlay { if selected { Rectangle().strokeBorder(WorkbenchTheme.accent, lineWidth: 3) } }

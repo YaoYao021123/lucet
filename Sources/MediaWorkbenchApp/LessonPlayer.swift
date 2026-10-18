@@ -43,7 +43,7 @@ struct LessonPlayer: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(lesson.unit.title).font(.caption).foregroundStyle(.secondary)
+                Text(lesson.unit.title).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
                 Text(lesson.title).font(.headline)
             }
             Spacer()
@@ -62,13 +62,13 @@ struct LessonPlayer: View {
 
     private var side: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("第 \(index + 1) 步，共 \(lesson.steps.count) 步").font(.caption).foregroundStyle(.secondary)
+            Text("第 \(index + 1) 步，共 \(lesson.steps.count) 步").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
             Text(step.title).font(.title3.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
-            Text(step.text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text(step.text).font(.callout).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(3)
             if let photo, !photo.isUsersPhoto, index == 0 {
                 Label("打开一张自己的照片再上课，演示就会用你的照片。", systemImage: "photo")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
             }
             if let question = step.question, let photo { questionView(question, photo) }
             Spacer()
@@ -90,7 +90,7 @@ struct LessonPlayer: View {
     private func questionView(_ question: LessonQuestion, _ photo: LessonPhoto) -> some View {
         let correct = question.correctIndex(zoneShares: ToneZone.shares(photo.histogram))
         return VStack(alignment: .leading, spacing: 6) {
-            Text("想一想").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.top, 6)
+            Text("想一想").font(.caption.weight(.semibold)).foregroundStyle(WorkbenchTheme.textSecondary).padding(.top, 6)
             Text(question.prompt).font(.callout.weight(.medium)).fixedSize(horizontal: false, vertical: true)
             ForEach(question.options.indices, id: \.self) { i in
                 Button { withAnimation(.snappy) { chosen = i } } label: {
@@ -108,7 +108,7 @@ struct LessonPlayer: View {
             }
             if let chosen {
                 Text((chosen == correct ? L("答对了。") : L("再看看画面。")) + question.explanation)
-                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .font(.caption).foregroundStyle(WorkbenchTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -170,7 +170,7 @@ struct LessonImage: View {
         VStack(spacing: 6) {
             Image(decorative: image, scale: 1).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-            if let caption { Text(caption).font(.caption).foregroundStyle(.secondary) }
+            if let caption { Text(caption).font(.caption).foregroundStyle(WorkbenchTheme.textSecondary) }
         }
     }
 }
