@@ -123,6 +123,10 @@ struct EditorStage: View {
                 WorkbenchTheme.canvas
                 if let player = editor.player {
                     VideoCanvas(player: player)
+                    if app.inspectorTab == .color, editor.compareMode == .off, let layer = editor.selectedLocal,
+                       let source = editor.sourcePixelSize, let mapping = try? GeometryMapping(source: source, edits: editor.edits) {
+                        LocalMaskOverlay(editor: editor, layer: layer, mapping: mapping, videoFrame: source)
+                    }
                 } else if let frame = editor.frame {
                     ImageCanvas(editor: editor, frame: frame, documentID: editor.documentID, compare: editor.compareMode,
                                 split: editor.splitPosition, clipping: editor.showClipping, grid: editor.showGrid,

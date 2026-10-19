@@ -34,8 +34,8 @@ extension AppModel {
     /// a preset (from the original, at 75 %, one undo step). `ready` is the tile's LUT when it has
     /// one already.
     func aiLook(_ ready: CreativeLUT? = nil) {
-        guard editor.isLoaded, !editor.isVideo, let frame = editor.frame, let model = AdaptiveLUT.shared else { return }
-        let source = frame.original, headroom = frame.sourceHeadroom, drafts = self.drafts
+        guard editor.isLoaded, let (source, headroom) = lookSource, let model = AdaptiveLUT.shared else { return }
+        let drafts = self.drafts
         Task {
             do {
                 let (lut, reference) = try await Task.detached(priority: .userInitiated) { () throws -> (CreativeLUT, LUTReference) in
@@ -57,6 +57,12 @@ extension AppModel {
         }
     }
 
+    /// The picture a look is worked out from: the photo, or a video's or Live Photo's stand-in still.
+    var lookSource: (CIImage, Float)? {
+        if let frame = editor.frame { return (frame.original, frame.sourceHeadroom) }
+        return editor.lookStill.map { ($0.image, $0.headroom) }
+    }
+
     /// Library photos that can serve as a color reference for the current one.
     var matchCandidates: [LibraryEntry] {
         library.entries.filter { !$0.isVideo && $0.id != library.currentID }
@@ -65,10 +71,10 @@ extension AppModel {
     /// Moves this photo's overall colors toward another photo's (as edited), as a LUT that
     /// the Strength slider can dial back. One undo step.
     func matchLook(to referenceID: String) {
-        guard editor.isLoaded, !editor.isVideo, let frame = editor.frame, let entry = library.entry(referenceID) else { return }
+        guard editor.isLoaded, let (original, headroom) = lookSource, let entry = library.entry(referenceID) else { return }
         var withoutLUT = editor.edits
         withoutLUT.lut = nil
-        let edits = withoutLUT, original = frame.original
+        let edits = withoutLUT
         let name = L("匹配：\(entry.url.deletingPathExtension().lastPathComponent)")
         let drafts = self.drafts
         sheet = nil
@@ -79,7 +85,8 @@ extension AppModel {
             let reference = ThumbnailBox(loaded)
             do {
                 let lut = try await Task.detached(priority: .userInitiated) { () throws -> CreativeLUT in
-                    let source = try ColorPipeline.sdrBitmap(try ColorPipeline.grade(original, edits: edits))
+                    let source = try ColorPipeline.sdrBitmap(try ColorPipeline.grade(original, edits: edits, sourceHeadroom: headroom),
+                                                             headroom: edits.hasGrade ? 1 : headroom)
                     guard let from = LookMatch.statistics(source), let to = LookMatch.statistics(reference.image) else {
                         throw VideoWorkError.failed(L("无法分析画面颜色。"))
                     }

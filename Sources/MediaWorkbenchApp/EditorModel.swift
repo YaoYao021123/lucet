@@ -112,6 +112,9 @@ final class EditorModel {
     var screenHeadroom: CGFloat = 1
     var zoomPercent: Int?
     private(set) var frame: GradeFrame?
+    /// One picture standing in for a video or Live Photo where a look is worked out from a still (AI Look,
+    /// Match Look, preset previews): a Live Photo's own photo, a video's cover frame. Photos use `frame`.
+    private(set) var lookStill: LookStill?
     private(set) var scopes: ScopeData?
     /// Analysis of the untouched photo, to show which issues the edits have fixed.
     private(set) var originalAnalysis: PhotoAnalysis?
@@ -276,7 +279,7 @@ final class EditorModel {
         originalAnalysis = nil; horizonTilt = nil; hoverInfluence = nil; pinnedInfluence = nil
         faces = nil; faceAnalysis = nil
         horizonTask?.cancel(); horizonTask = nil
-        url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; details = nil; frame = nil; scopes = nil
+        url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; details = nil; frame = nil; lookStill = nil; scopes = nil
         detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false; liveStillIsHDR = false; openFailure = nil
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
@@ -330,6 +333,13 @@ final class EditorModel {
                     originalLiveCover = isLiveInput ? cover : nil
                     sourceIsHDR = meta.transferFunction == AVVideoTransferFunction_ITU_R_2100_HLG
                         || meta.transferFunction == AVVideoTransferFunction_SMPTE_ST_2084_PQ
+                    let still: URL? = isLiveInput ? selected : nil, coverTime = cover
+                    Task {
+                        let made = await Task.detached(priority: .utility) {
+                            LookStill.make(still: still, movie: movieInput, at: coverTime)
+                        }.value
+                        if token == session { lookStill = made }
+                    }
                 }
                 var restoreNotice: String?
                 if let recipe = loaded.0 { restoreNotice = apply(recipe, lut: loaded.1) }
@@ -382,7 +392,7 @@ final class EditorModel {
         cancelWork()
         teardownPlayer()
         session = UUID()
-        url = nil; mediaURL = nil; metadata = nil; frame = nil; scopes = nil; captureInfo = nil; details = nil; openFailure = nil
+        url = nil; mediaURL = nil; metadata = nil; frame = nil; lookStill = nil; scopes = nil; captureInfo = nil; details = nil; openFailure = nil
         detailsTask?.cancel(); detailsTask = nil
         isLoaded = false; isLoading = false; status = ""; filmstrip = []
         history = nil; updateUndoState()
@@ -1200,5 +1210,29 @@ extension EditorModel {
     var liveKeyPhotoURL: URL? {
         guard isLiveInput, let original = originalLiveCover, abs(cover - original) < 0.02 else { return nil }
         return url
+    }
+}
+
+/// A still picture of a video or Live Photo, about 1,000 pixels on the long side.
+struct LookStill: @unchecked Sendable {
+    let image: CIImage
+    let headroom: Float
+
+    /// A Live Photo's photo (HDR kept), or else the movie's frame at `time` (SDR).
+    static func make(still: URL?, movie: URL, at time: Double) -> LookStill? {
+        let longest: CGFloat = 1024
+        if let still, let decoded = try? ImageGradeSession.decode(still) {
+            let scale = min(1, longest / max(decoded.extent.width, decoded.extent.height))
+            let small = decoded.transformed(by: .init(scaleX: scale, y: scale))
+            if let bitmap = ColorPipeline.shared.createCGImage(small, from: small.extent.integral, format: .RGBAh, colorSpace: ColorPipeline.linearSpace) {
+                return LookStill(image: CIImage(cgImage: bitmap), headroom: max(1, decoded.contentHeadroom))
+            }
+        }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: movie))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: longest, height: longest)
+        generator.dynamicRangePolicy = .forceSDR
+        guard let frame = try? generator.copyCGImage(at: CMTime(seconds: time, preferredTimescale: 600), actualTime: nil) else { return nil }
+        return LookStill(image: CIImage(cgImage: frame), headroom: 1)
     }
 }
