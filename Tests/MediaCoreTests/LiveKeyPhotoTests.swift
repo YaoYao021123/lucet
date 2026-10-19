@@ -98,3 +98,53 @@ struct LiveKeyPhotoTests {
         #expect(p[kCGImagePropertyGPSDictionary] == nil)
     }
 }
+
+struct CoverPickerTests {
+    /// 30 frames of flat grey, except frames 12–17, which carry crisp detail.
+    private func makeMovie(_ url: URL) async throws {
+        let width = 160, height = 120
+        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height])
+        let adapter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input,
+            sourcePixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+        writer.add(input)
+        try #require(writer.startWriting())
+        writer.startSession(atSourceTime: .zero)
+        for index in 0..<30 {
+            var buffer: CVPixelBuffer?
+            _ = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, nil, &buffer)
+            let pixels = try #require(buffer)
+            CVPixelBufferLockBaseAddress(pixels, [])
+            let base = CVPixelBufferGetBaseAddress(pixels)!.assumingMemoryBound(to: UInt8.self)
+            let row = CVPixelBufferGetBytesPerRow(pixels)
+            for y in 0..<height {
+                for x in 0..<width {
+                    let crisp = (12...17).contains(index) && ((x / 4 + y / 4) % 2 == 0)
+                    let value: UInt8 = (12...17).contains(index) ? (crisp ? 235 : 20) : 120
+                    for c in 0..<3 { base[y * row + x * 4 + c] = value }
+                    base[y * row + x * 4 + 3] = 255
+                }
+            }
+            CVPixelBufferUnlockBaseAddress(pixels, [])
+            var attempts = 0
+            while !input.isReadyForMoreMediaData && attempts < 500 { try await Task.sleep(for: .milliseconds(10)); attempts += 1 }
+            try #require(adapter.append(pixels, withPresentationTime: CMTime(value: Int64(index), timescale: 30)))
+        }
+        input.markAsFinished()
+        await writer.finishWriting()
+        try #require(writer.status == .completed)
+    }
+
+    @Test func suggestsTheCrispestFrameAndNeverScoresFacesOnEmptyScenes() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try await makeMovie(url)
+        let (frames, best) = try await CoverPicker.candidates(in: url, range: 0...1, count: 9)
+        #expect(frames.count == 9)
+        #expect(frames.map(\.time) == frames.map(\.time).sorted())
+        #expect((0.38...0.62).contains(frames[best].time), "best frame at \(frames[best].time)")
+        #expect(frames[best].sharpness > 0.99 && frames[0].sharpness < 0.2)
+        #expect(frames.allSatisfy { $0.faceQuality == nil })
+    }
+}

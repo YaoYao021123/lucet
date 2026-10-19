@@ -46,6 +46,11 @@ enum DebugSnapshot {
                     try? await Task.sleep(for: .seconds(1.5))
                     if let window = panelWindow, let view = window.contentView { write(view, named: parts[0]) }
                     panelWindow?.close(); panelWindow = nil
+                case "coverpicker":
+                    perform("covers", "")
+                    try? await Task.sleep(for: .seconds(Double(argument) ?? 4))
+                    if let window = panelWindow, let view = window.contentView { write(view, named: "cover-picker") }
+                    panelWindow?.close(); panelWindow = nil
                 case "dump":
                     // Prints the window's view tree (class, frame) to find views a capture misses.
                     func dump(_ view: NSView, _ depth: Int) {
@@ -86,6 +91,16 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "covers":
+            // Renders the cover picker in an offscreen window: "covers" (shot name "covers").
+            let window = NSWindow(contentRect: NSRect(x: -6000, y: 0, width: 520, height: 520), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.appearance = workbenchWindow?.effectiveAppearance
+            window.backgroundColor = .windowBackgroundColor
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: CoverPickerView(editor: app.editor, isPresented: .constant(true))
+                .frame(width: 520, height: 520, alignment: .top).background(Color(nsColor: .underPageBackgroundColor)))
+            window.orderFront(nil)
+            panelWindow = window
         case "liveoutput": app.exportSettings.liveOutput = LiveOutput(rawValue: argument) ?? .live
         case "match": app.matchLook(to: URL(fileURLWithPath: argument).standardizedFileURL.path)
         case "groups": app.mode = .browse; app.showGroups = argument != "off"

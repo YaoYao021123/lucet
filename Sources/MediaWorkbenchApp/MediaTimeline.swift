@@ -41,6 +41,7 @@ struct MediaTimeline: View {
 }
 
 private struct TransportBar: View {
+    @UIState private var showCovers = false
     let app: AppModel
     @Binding var zoomSelection: Bool
     var editor: EditorModel { app.editor }
@@ -87,6 +88,9 @@ private struct TransportBar: View {
             .fixedSize()
             .help("变速后视频与原声同步变化，背景音乐保持原节奏")
             Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help(L("以播放头为中心选取 3 秒输出"))
+            Button("挑封面") { showCovers.toggle() }.glassButton()
+                .help(L("从片段里取几帧，推荐最清晰、人像最好的一张"))
+                .popover(isPresented: $showCovers, arrowEdge: .top) { CoverPickerView(editor: editor, isPresented: $showCovers) }
             Button("设为封面", action: editor.setCoverAtPlayhead).glassButton().help(L("把播放头位置设为 Live 封面（C）"))
             Button(action: app.makeLive) {
                 Label("制作 Live", systemImage: "livephoto")
