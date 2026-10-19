@@ -86,6 +86,42 @@ struct LiveKeyPhotoTests {
         #expect(q[kCGImagePropertyGPSDictionary] == nil && q[kCGImagePropertyExifDictionary] != nil)
     }
 
+    /// An iPhone-style HDR still: a gain map lifts the bottom half to four times SDR white.
+    private func makeHDRStill(_ url: URL, width: Int, height: Int) throws {
+        let linear = ColorPipeline.linearSpace
+        let dim = CIImage(color: CIColor(red: 0.18, green: 0.2, blue: 0.22, colorSpace: linear)!).cropped(to: CGRect(x: 0, y: 0, width: width, height: height))
+        let bright = CIImage(color: CIColor(red: 4, green: 3.8, blue: 3.5, colorSpace: linear)!).cropped(to: CGRect(x: 0, y: 0, width: width, height: height / 2))
+        let hdr = bright.composited(over: dim)
+        let data = try #require(HDRGain.encode(base: ColorPipeline.toneMap(hdr, sourceHeadroom: 4), hdr: hdr, format: .jpeg, quality: 0.95))
+        try data.write(to: url)
+    }
+
+    private func gainMaps(_ url: URL) -> Int {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return 0 }
+        return [kCGImageAuxiliaryDataTypeHDRGainMap, kCGImageAuxiliaryDataTypeISOGainMap]
+            .filter { CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, $0) != nil }.count
+    }
+
+    @Test func anHDRKeyPhotoKeepsItsGainMap() async throws {
+        let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
+        let movie = dir.appendingPathComponent("m.mov"), still = dir.appendingPathComponent("s.jpg")
+        try await makeMovie(movie, width: 96, height: 128)
+        try makeHDRStill(still, width: 300, height: 400)
+        #expect(try ImageGradeSession.decode(still).contentHeadroom > 2, "test still should decode as HDR")
+        let clip = ClipSettings(start: 0, end: 1, cover: 0.5)
+
+        let kept = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("hdr"), clip: clip, edits: MediaEdits(),
+                                                      keyPhoto: still, removeLocation: false)
+        #expect(gainMaps(kept.imageURL) > 0)
+        #expect(try ImageGradeSession.decode(kept.imageURL).contentHeadroom > 2)
+        let maker = try #require(try properties(kept.imageURL)[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+        #expect(maker["17"] as? String == kept.identifier, "the HDR still is still paired with its motion")
+
+        let plain = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("sdr"), clip: clip, edits: MediaEdits(),
+                                                       keyPhoto: still, removeLocation: false, keepHDR: false)
+        #expect(gainMaps(plain.imageURL) == 0)
+    }
+
     @Test func aStillOfAnotherShapeFallsBackToAVideoFrame() async throws {
         let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
         let movie = dir.appendingPathComponent("m.mov"), still = dir.appendingPathComponent("s.jpg")

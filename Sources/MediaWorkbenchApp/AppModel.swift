@@ -689,7 +689,8 @@ final class AppModel {
             if liveMode == .live {
                 let name = Self.exportName(source, settings: settings, index: 0, total: 1, size: size)
                 let live = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits,
-                                                              keyPhoto: keyPhoto, removeLocation: share ? settings.image.removeLocation : false) { report($0, nil) }
+                                                              keyPhoto: keyPhoto, removeLocation: share ? settings.image.removeLocation : false,
+                                                              keepHDR: settings.image.keepHDR) { report($0, nil) }
                 if share { return ExportQueue.Result(outputs: [live.imageURL, live.videoURL], live: nil, summary: L("已准备好共享")) }
                 defer { try? FileManager.default.removeItem(at: folder) }
                 report(nil, L("正在存入「照片」…"))
@@ -899,10 +900,10 @@ final class AppModel {
     func enqueueLive(to output: URL) {
         guard let input = editor.mediaURL, editor.isVideo, editor.liveIsValid else { return }
         let edits = editor.edits, clip = editor.clip
-        let keyPhoto = editor.liveKeyPhotoURL, removeLocation = exportSettings.image.removeLocation
+        let keyPhoto = editor.liveKeyPhotoURL, removeLocation = exportSettings.image.removeLocation, keepHDR = exportSettings.image.keepHDR
         exports.enqueue(L("制作 Live · \(output.lastPathComponent)")) { report in
-            let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits,
-                                                               keyPhoto: keyPhoto, removeLocation: removeLocation) { report($0, nil) }
+            let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits, keyPhoto: keyPhoto,
+                                                               removeLocation: removeLocation, keepHDR: keepHDR) { report($0, nil) }
             _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
             return ExportQueue.Result(outputs: [output], live: resources, summary: L("系统配对检查通过"))
         }
@@ -968,11 +969,18 @@ final class AppModel {
                 var name = stem
                 if info.kind == .video {
                     let duration = info.durationSeconds ?? 0
-                    let range = recipe.clip ?? ClipSettings(start: 0, end: duration, cover: min(duration / 2, max(0, duration - 0.05)))
+                    // A Live Photo's own key photo time is its default cover; while the cover stays there, its
+                    // original photo (full size, with its date and HDR) is the key photo again.
+                    let originalCover = liveInput ? try await LivePhotoPipeline.coverTime(in: input) : nil
+                    var range = recipe.clip ?? ClipSettings(start: 0, end: duration, cover: min(duration / 2, max(0, duration - 0.05)))
+                    if recipe.clip == nil, let originalCover { range.cover = min(max(0, originalCover), max(0, duration - 0.05)) }
                     try range.validate(duration: duration, live: settings.liveOnly || liveInput)
                     if settings.liveOnly || liveInput {
                         name = unique(stem + "-Live", in: destination)
-                        _ = try await LivePhotoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits)
+                        let keyPhoto = originalCover.map { abs(range.cover - $0) < 0.02 } == true ? entry.url : nil
+                        _ = try await LivePhotoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits,
+                                                               keyPhoto: keyPhoto, removeLocation: settings.image.removeLocation,
+                                                               keepHDR: settings.image.keepHDR)
                     } else {
                         name = unique(stem, ext: "mov", in: destination)
                         try await VideoPipeline.export(input, to: destination.appendingPathComponent(name), clip: range, edits: edits, codec: settings.codec)

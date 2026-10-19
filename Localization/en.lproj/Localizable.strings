@@ -1515,6 +1515,8 @@
 "存储" = "Save";
 "保存照片格式、尺寸、分辨率、文件名规则和水印。" = "Saves the photo format, size, resolution, file-name pattern and watermark.";
 "导出为" = "Export as";
+"保留 HDR" = "Keep HDR";
+"封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。" = "While the cover is unchanged, the photo keeps its gain map, so highlights are brighter on HDR screens. The motion stays at standard brightness, as the iPhone records it.";
 "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。" = "This is a Live Photo: the same edits apply to the photo and the motion, and it stays a Live Photo.";
 "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。" = "Saves only the edited photo (full size, capture info kept), without motion.";
 "只保存调色后的动态部分，是一段普通视频。" = "Saves only the edited motion, as an ordinary video.";
@@ -1529,7 +1531,6 @@
 "72 dpi（屏幕）" = "72 dpi (screen)";
 "300 dpi（打印）" = "300 dpi (print)";
 "只写入文件信息，告诉打印软件每英寸放多少像素；不改变像素数量" = "Only written into the file, telling print software how many pixels go in an inch; the pixel count doesn't change";
-"保留 HDR" = "Keep HDR";
 "PNG 不支持 HDR，会导出普通亮度。" = "PNG doesn't support HDR, so it exports in standard brightness.";
 "HDR 照片和开了 AI HDR 光感的照片带增益图导出：在 HDR 屏幕上高光更亮，其他设备显示普通版本。调色也会保留。" = "HDR photos, and photos with AI HDR on, export with a gain map: highlights are brighter on HDR screens, and other devices show the standard version. Your edits are kept.";
 "保留拍摄信息（时间、相机、镜头）" = "Keep capture info (time, camera, lens)";

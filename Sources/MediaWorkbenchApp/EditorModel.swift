@@ -63,6 +63,8 @@ final class EditorModel {
     /// Where the opened Live Photo's own key photo was taken (seconds in its movie).
     private(set) var originalLiveCover: Double?
     private(set) var sourceIsHDR = false
+    /// A Live Photo whose photo is HDR (an iPhone gain map); its motion is SDR either way.
+    private(set) var liveStillIsHDR = false
     private(set) var documentID = UUID()
     private(set) var draftStatus = ""
     var status = ""
@@ -276,7 +278,7 @@ final class EditorModel {
         horizonTask?.cancel(); horizonTask = nil
         url = selected; mediaURL = nil; metadata = nil; captureInfo = nil; details = nil; frame = nil; scopes = nil
         detailsTask?.cancel(); detailsTask = nil
-        isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false; openFailure = nil
+        isLoaded = false; isLoading = true; isLiveInput = false; sourceIsHDR = false; liveStillIsHDR = false; openFailure = nil
         filmstrip = []; position = 0; playing = false; zoomPercent = nil
         history = nil; updateUndoState()
         sourceStamp = nil; companionStamp = nil; analysisCache = nil
@@ -311,10 +313,13 @@ final class EditorModel {
                 }.value
                 let stamp = try SourceStamp(selected)
                 let companion = movieInput == selected ? nil : try SourceStamp(movieInput)
+                let stillHeadroom = movieInput == selected ? 1
+                    : await Task.detached { (try? ImageGradeSession.decode(selected).contentHeadroom) ?? 1 }.value
                 guard token == session, !Task.isCancelled else { return }
 
                 mediaURL = input; metadata = meta; captureInfo = loaded.3
                 isLiveInput = input != selected
+                liveStillIsHDR = isLiveInput && stillHeadroom > 1.05
                 loadDetails(selected, motion: isLiveInput ? input : nil, token: token)
                 sourceStamp = stamp; companionStamp = companion
                 suspended += 1
