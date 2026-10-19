@@ -8,7 +8,10 @@ extension EditorModel {
     var selectedLocal: LocalAdjustment? { locals.first { $0.id == selectedLocalID } }
 
     /// The picture's size before rotation and crop (any scale), for mapping mask handles.
-    var sourcePixelSize: CGSize? { frame?.original.extent.size }
+    /// The picture's size before rotation and crop: the photo's, or a video's upright frame.
+    var sourcePixelSize: CGSize? {
+        frame?.original.extent.size ?? metadata.map { CGSize(width: $0.displayWidth, height: $0.displayHeight) }
+    }
 
     func addLocal(_ shape: LocalAdjustment.Shape) {
         guard locals.count < LocalAdjustment.maximumLayers else {
@@ -92,7 +95,8 @@ struct LocalAdjustmentSection: View {
         }
     }
 
-    /// Subject and Remove work on photos only.
+    /// Subject and Remove work on photos only; gradients, ellipses and brushes stay put on a video's frames
+    /// (fine for a Live Photo's few seconds or a steady shot).
     private var shapes: [LocalAdjustment.Shape] {
         LocalAdjustment.Shape.allCases.filter { !editor.isVideo || ($0 != .subject && $0 != .remove) }
     }
@@ -298,6 +302,9 @@ struct LocalMaskOverlay: View {
     let editor: EditorModel
     let layer: LocalAdjustment
     let mapping: GeometryMapping
+    /// A video's frame size: the player fits it to the canvas edge to edge and letterboxes the cropped picture
+    /// inside it. Nil for photos, which the canvas fits with a margin.
+    var videoFrame: CGSize?
 
     @UIState private var dragBase: LocalAdjustment?
     @UIState private var painting: [CGPoint] = []
@@ -324,10 +331,14 @@ struct LocalMaskOverlay: View {
 
     /// Where the canvas draws the picture when fitted (it keeps a 12 pt margin on each side).
     private func displayRect(in size: CGSize) -> CGRect {
-        let pixels = mapping.outputSize
-        let scale = max(0.001, min((size.width - 24) / max(1, pixels.width), (size.height - 24) / max(1, pixels.height)))
-        let shown = CGSize(width: pixels.width * scale, height: pixels.height * scale)
-        return CGRect(x: (size.width - shown.width) / 2, y: (size.height - shown.height) / 2, width: shown.width, height: shown.height)
+        func fit(_ pixels: CGSize, in box: CGRect, margin: CGFloat) -> CGRect {
+            let scale = max(0.001, min((box.width - 2 * margin) / max(1, pixels.width), (box.height - 2 * margin) / max(1, pixels.height)))
+            let shown = CGSize(width: pixels.width * scale, height: pixels.height * scale)
+            return CGRect(x: box.midX - shown.width / 2, y: box.midY - shown.height / 2, width: shown.width, height: shown.height)
+        }
+        let canvas = CGRect(origin: .zero, size: size)
+        guard let videoFrame else { return fit(mapping.outputSize, in: canvas, margin: 12) }
+        return fit(mapping.outputSize, in: fit(videoFrame, in: canvas, margin: 0), margin: 0)
     }
 
     private func view(_ p: CGPoint, _ shown: CGRect) -> CGPoint {
