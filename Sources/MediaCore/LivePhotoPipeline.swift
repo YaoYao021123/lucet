@@ -118,18 +118,27 @@ public enum LivePhotoPipeline {
         } else {
             videoProgress = nil
         }
-        try await VideoPipeline.export(url, to: encoded, clip: clip, edits: edits, progress: videoProgress)
-        let asset = AVURLAsset(url: encoded)
+        let identifier = UUID().uuidString
+        let imageName = edits.hdrEffect ? "LivePhoto.heic" : "LivePhoto.jpg"
+        let imageURL = staging.appendingPathComponent(imageName)
+        let videoURL = staging.appendingPathComponent("LivePhoto.mov")
+        // Only trimmed (the cover, colour and shape untouched): the camera's movie is cut without re-encoding,
+        // so everything it wrote stays, frames and sound as well as the timed tracks the system reads (how
+        // the photo lines up with the motion, orientation, per-frame Live Photo info).
+        var trimmedCover: CMTime?
+        if keyPhoto != nil, isOnlyTrimmed(edits: edits, clip: clip) {
+            trimmedCover = try? await trimWithoutReencoding(url, clip: clip, identifier: identifier, removeLocation: removeLocation, to: videoURL)
+            if trimmedCover == nil { try? FileManager.default.removeItem(at: videoURL) } else { progress?(0.8) }
+        }
+        if trimmedCover == nil { try await VideoPipeline.export(url, to: encoded, clip: clip, edits: edits, progress: videoProgress) }
+        let asset = AVURLAsset(url: trimmedCover == nil ? encoded : videoURL)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.dynamicRangePolicy = edits.hdrEffect ? .matchSource : .forceSDR
         generator.requestedTimeToleranceBefore = .zero
         generator.requestedTimeToleranceAfter = .zero
-        let (photo, actualTime) = try await generator.image(at: CMTime(seconds: clip.outputCover, preferredTimescale: 60000))
-        let identifier = UUID().uuidString
-        let imageName = edits.hdrEffect ? "LivePhoto.heic" : "LivePhoto.jpg"
-        let imageURL = staging.appendingPathComponent(imageName)
-        let videoURL = staging.appendingPathComponent("LivePhoto.mov")
+        let (photo, generatedTime) = try await generator.image(at: trimmedCover ?? CMTime(seconds: clip.outputCover, preferredTimescale: 60000))
+        let actualTime = trimmedCover ?? generatedTime
         // When and where: a cover cut from a clip is dated at its own moment in the clip, so a Live Photo
         // made from a drone or camera clip sorts by when it was shot, not when it was made.
         let capture = await CaptureMetadata.read(url)
@@ -153,8 +162,11 @@ public enum LivePhotoPipeline {
             CGImageDestinationAddImage(destination, photo, properties as CFDictionary)
             guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
         }
-        try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration,
-                            metadata: capture.movieMetadata(at: stillDate, removeLocation: removeLocation))
+        if trimmedCover == nil {
+            // Re-encoded: the camera's clip-wide Live Photo tags still apply; its per-frame tracks would not.
+            try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration,
+                                metadata: capture.movieMetadata(at: stillDate, removeLocation: removeLocation) + appleLiveTags(of: url))
+        }
         progress?(0.9)
         // Decode through Photos before publishing, so an invalid pair is not
         // presented as a successful Live export. No photo-library access occurs.
@@ -170,16 +182,65 @@ public enum LivePhotoPipeline {
             "lutEncoding": edits.lut?.encoding.rawValue ?? "none",
             "originalVolume": clip.originalVolume, "music": clip.musicURL?.lastPathComponent ?? "none",
             "musicVolume": clip.musicVolume, "hdrEffect": edits.hdrEffect,
-            "output": edits.hdrEffect ? "SDR-derived HDR effect: HEIC gain map + HEVC Main10 Rec.2020 HLG MOV" : "SDR sRGB JPEG + Rec.709 MOV",
+            "output": edits.hdrEffect ? "SDR-derived HDR effect: HEIC gain map + HEVC Main10 Rec.2020 HLG MOV"
+                : trimmedCover != nil ? "original movie trimmed without re-encoding" : "SDR sRGB JPEG + Rec.709 MOV",
             "identifier": identifier]
         try JSONSerialization.data(withJSONObject: recipe, options: [.prettyPrinted, .sortedKeys])
             .write(to: staging.appendingPathComponent("recipe.json"), options: .withoutOverwriting)
-        try FileManager.default.removeItem(at: encoded)
+        try? FileManager.default.removeItem(at: encoded)
         try Task.checkCancellation()
         try FileManager.default.moveItem(at: staging, to: directory)
         progress?(1)
         return LivePhotoResources(imageURL: directory.appendingPathComponent(imageName),
             videoURL: directory.appendingPathComponent("LivePhoto.mov"), identifier: identifier, coverSeconds: actualTime.seconds)
+    }
+
+    /// Nothing but the range (and the cover, which the caller checks) differs from the camera's movie.
+    static func isOnlyTrimmed(edits: MediaEdits, clip: ClipSettings) -> Bool {
+        !edits.hasGrade && !edits.hasGeometry && !edits.hdrEffect && clip.speed == 1 && clip.musicURL == nil && clip.originalVolume == 1
+    }
+
+    /// Cuts a Live Photo's movie to the clip as it is (passthrough), with a new content identifier and, for
+    /// sharing, without its place. Returns the photo's time in the cut movie, or nil when the cut isn't a usable
+    /// Live movie (not a Live movie, or the photo's moment fell outside the range); the caller renders one then.
+    private static func trimWithoutReencoding(_ url: URL, clip: ClipSettings, identifier: String, removeLocation: Bool,
+                                              to output: URL) async throws -> CMTime? {
+        let asset = AVURLAsset(url: url)
+        guard try await coverTime(in: url) != nil,
+              let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough) else { return nil }
+        session.timeRange = CMTimeRange(start: CMTime(seconds: clip.start, preferredTimescale: 60000),
+                                        end: CMTime(seconds: clip.end, preferredTimescale: 60000))
+        var metadata: [AVMetadataItem] = []
+        for item in try await asset.load(.metadata) {
+            guard let key = item.identifier, key != .quickTimeMetadataContentIdentifier else { continue }
+            if removeLocation, key == .quickTimeMetadataLocationISO6709 || key == .quickTimeUserDataLocationISO6709
+                || key.rawValue.hasPrefix("mdta/com.apple.quicktime.location") { continue }
+            metadata.append(item)
+        }
+        let contentID = AVMutableMetadataItem()
+        contentID.identifier = .quickTimeMetadataContentIdentifier
+        contentID.value = identifier as NSString
+        contentID.dataType = kCMMetadataBaseDataType_UTF8 as String
+        session.metadata = metadata + [contentID]
+        try await session.export(to: output, as: .mov)
+        guard let cover = try await coverTime(in: output), abs(cover - clip.outputCover) < 0.05 else { return nil }
+        return CMTime(seconds: cover, preferredTimescale: 60000)
+    }
+
+    /// The camera's clip-wide Live Photo tags (the motion "vitality" score, the auto flag, the playback intent):
+    /// true of the moment whatever the grade. Nothing that names the content, date, place or camera.
+    static func appleLiveTags(of url: URL) async -> [AVMetadataItem] {
+        guard let items = try? await AVURLAsset(url: url).load(.metadata) else { return [] }
+        var tags: [AVMetadataItem] = []
+        for item in items {
+            guard let key = item.identifier?.rawValue,
+                  key.hasPrefix("mdta/com.apple.quicktime.live-photo.") || key == "mdta/com.apple.quicktime.full-frame-rate-playback-intent",
+                  let value = try? await item.load(.value) else { continue }
+            let copy = AVMutableMetadataItem()
+            copy.identifier = item.identifier; copy.value = value; copy.dataType = item.dataType
+            tags.append(copy)
+        }
+        return tags
     }
 
     /// Grades the original still with the same edits as the movie and writes it as the Live Photo's key photo.

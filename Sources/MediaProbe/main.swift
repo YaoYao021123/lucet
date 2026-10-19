@@ -14,10 +14,11 @@ struct MediaProbe {
                 || (["render", "match"].contains(command) && (4...5).contains(arguments.count))
                 || (["ailook", "aihdr"].contains(command) && (3...4).contains(arguments.count))
                 || (command == "live" && (3...4).contains(arguments.count))
+                || (command == "livetrim" && arguments.count == 5)
                 || (command == "details" && arguments.count == 3)
                 || (command == "rotate" && arguments.count == 4)
                 || (command == "straighten" && arguments.count == 3)) else {
-            print("用法：media-probe inspect <素材> | similar <文件夹> | labels <图片> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | ailook <图片> <输出.jpg> [长边] | aihdr <图片> <输出.heic> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
+            print("用法：media-probe inspect <素材> | similar <文件夹> | labels <图片> | render <图片> <配方.json|-> <输出.jpg> [长边] | match <图片> <参考图> <输出.jpg> [长边] | ailook <图片> <输出.jpg> [长边] | aihdr <图片> <输出.heic> [长边] | live <≤3 秒的视频> <新文件夹> [封面秒数] | livetrim <Live 照片> <新文件夹> <起点秒> <终点秒> | details <素材> [Live 动态 .mov] | lut <.cube> | straighten <图片> [新.png] | rotate <图片> <校正角度> <新.png>")
             exit(arguments.isEmpty ? 0 : 2)
         }
         do {
@@ -135,6 +136,16 @@ struct MediaProbe {
                         }
                     }
                 }
+            } else if command == "livetrim" {
+                // livetrim <Live photo> <new folder> <start> <end>: re-exports an iPhone Live Photo, only trimmed, with its
+                // original photo and cover; prints whether the movie was cut without re-encoding.
+                guard let movie = try await LivePhotoPipeline.pairedMovie(for: url), let cover = try await LivePhotoPipeline.coverTime(in: movie),
+                      let start = Double(arguments[3]), let end = Double(arguments[4]) else { print("不是 Live Photo 或时间无效"); exit(4) }
+                let live = try await LivePhotoPipeline.export(movie, to: URL(fileURLWithPath: arguments[2]),
+                                                              clip: ClipSettings(start: start, end: end, cover: cover),
+                                                              edits: MediaEdits(), keyPhoto: url, removeLocation: true)
+                let recipe = try String(contentsOf: live.imageURL.deletingLastPathComponent().appendingPathComponent("recipe.json"), encoding: .utf8)
+                print(recipe.contains("without re-encoding") ? "未重新编码" : "已重新编码", "封面", live.coverSeconds, live.videoURL.path)
             } else if command == "live" {
                 // Turns a short video into a Live Photo pair (cover JPEG + paired MOV) in a new folder; the system's
                 // pairing check runs inside. The cover defaults to just before the end of the clip.

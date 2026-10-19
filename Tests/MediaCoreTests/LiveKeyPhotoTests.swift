@@ -165,6 +165,105 @@ struct LiveKeyPhotoTests {
         #expect(sharedMotion.location == nil && sharedMotion.date != nil)
     }
 
+    /// A two-second iPhone-style Live movie: the photo's moment at 1 s, a clip-wide orientation track
+    /// and the camera's clip-wide tags.
+    private func makeLiveMovie(_ url: URL, width: Int, height: Int, identifier: String) async throws {
+        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+        writer.metadata = [item(.quickTimeMetadataContentIdentifier, identifier),
+                           item(AVMetadataIdentifier(rawValue: "mdta/com.apple.quicktime.live-photo.vitality-score"), "0.93")]
+        let video = AVAssetWriterInput(mediaType: .video, outputSettings: [
+            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height])
+        let adapter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: video,
+            sourcePixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+        func metadataInput(_ identifier: String, _ type: CFString) throws -> AVAssetWriterInputMetadataAdaptor {
+            var format: CMMetadataFormatDescription?
+            let spec: [String: Any] = [kCMMetadataFormatDescriptionMetadataSpecificationKey_Identifier as String: identifier,
+                                       kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType as String: type]
+            _ = CMMetadataFormatDescriptionCreateWithMetadataSpecifications(allocator: kCFAllocatorDefault, metadataType: kCMMetadataFormatType_Boxed,
+                                                                           metadataSpecifications: [spec] as CFArray, formatDescriptionOut: &format)
+            let input = AVAssetWriterInput(mediaType: .metadata, outputSettings: nil, sourceFormatHint: try #require(format))
+            writer.add(input)
+            return AVAssetWriterInputMetadataAdaptor(assetWriterInput: input)
+        }
+        let still = try metadataInput("mdta/com.apple.quicktime.still-image-time", kCMMetadataBaseDataType_SInt8)
+        let orientation = try metadataInput("mdta/com.apple.quicktime.video-orientation", kCMMetadataBaseDataType_SInt16)
+        writer.add(video)
+        try #require(writer.startWriting())
+        writer.startSession(atSourceTime: .zero)
+        func group(_ key: String, _ type: CFString, _ value: NSNumber, _ range: CMTimeRange) -> AVTimedMetadataGroup {
+            let item = AVMutableMetadataItem()
+            item.keySpace = .quickTimeMetadata; item.key = key as NSString; item.value = value; item.dataType = type as String
+            return AVTimedMetadataGroup(items: [item], timeRange: range)
+        }
+        try #require(still.append(group("com.apple.quicktime.still-image-time", kCMMetadataBaseDataType_SInt8, -1,
+                                        CMTimeRange(start: CMTime(value: 30, timescale: 30), duration: CMTime(value: 1, timescale: 600)))))
+        try #require(orientation.append(group("com.apple.quicktime.video-orientation", kCMMetadataBaseDataType_SInt16, 1,
+                                              CMTimeRange(start: .zero, duration: CMTime(value: 60, timescale: 30)))))
+        still.assetWriterInput.markAsFinished(); orientation.assetWriterInput.markAsFinished()
+        for index in 0..<60 {
+            var buffer: CVPixelBuffer?
+            _ = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, nil, &buffer)
+            let pixels = try #require(buffer)
+            CVPixelBufferLockBaseAddress(pixels, [])
+            memset(CVPixelBufferGetBaseAddress(pixels)!, Int32(60 + index * 2), CVPixelBufferGetDataSize(pixels))
+            CVPixelBufferUnlockBaseAddress(pixels, [])
+            var attempts = 0
+            while !video.isReadyForMoreMediaData && attempts < 500 { try await Task.sleep(for: .milliseconds(10)); attempts += 1 }
+            try #require(adapter.append(pixels, withPresentationTime: CMTime(value: Int64(index), timescale: 30)))
+        }
+        video.markAsFinished()
+        await writer.finishWriting()
+        try #require(writer.status == .completed)
+    }
+
+    private func metadataTracks(_ url: URL) async throws -> [String] {
+        var identifiers: [String] = []
+        for track in try await AVURLAsset(url: url).loadTracks(withMediaType: .metadata) {
+            for format in try await track.load(.formatDescriptions) {
+                identifiers += CMMetadataFormatDescriptionGetIdentifiers(format) as? [String] ?? []
+            }
+        }
+        return identifiers
+    }
+
+    private func tag(_ url: URL, _ key: String) async throws -> String? {
+        for item in try await AVURLAsset(url: url).load(.metadata) where item.identifier?.rawValue == key {
+            if let text = try await item.load(.stringValue) { return text }
+            return try await item.load(.value).map { "\($0)" }
+        }
+        return nil
+    }
+
+    @Test func anOnlyTrimmedLivePhotoKeepsTheCamerasMovieAndTracks() async throws {
+        let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
+        let movie = dir.appendingPathComponent("IMG.mov"), still = dir.appendingPathComponent("IMG.jpg")
+        let original = UUID().uuidString
+        try await makeLiveMovie(movie, width: 96, height: 128, identifier: original)
+        try makeStill(still, width: 300, height: 400)
+        #expect(try await LivePhotoPipeline.coverTime(in: movie).map { abs($0 - 1) < 0.01 } == true)
+        let clip = ClipSettings(start: 0.4, end: 1.9, cover: 1)
+
+        let trimmed = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("trimmed"), clip: clip, edits: MediaEdits(),
+                                                         keyPhoto: still, removeLocation: false)
+        let recipe = try String(contentsOf: dir.appendingPathComponent("trimmed/recipe.json"), encoding: .utf8)
+        #expect(recipe.contains("without re-encoding"))
+        #expect(abs(trimmed.coverSeconds - 0.6) < 0.02, "the photo's moment moves with the cut: \(trimmed.coverSeconds)")
+        #expect(abs(try await AVURLAsset(url: trimmed.videoURL).load(.duration).seconds - 1.5) < 0.05)
+        #expect(try await metadataTracks(trimmed.videoURL).contains("mdta/com.apple.quicktime.video-orientation"))
+        #expect(try await tag(trimmed.videoURL, "mdta/com.apple.quicktime.live-photo.vitality-score") == "0.93")
+        let id = try await tag(trimmed.videoURL, "mdta/com.apple.quicktime.content.identifier")
+        #expect(id == trimmed.identifier && id != original)
+        let maker = try #require(try properties(trimmed.imageURL)[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+        #expect(maker["17"] as? String == trimmed.identifier)
+
+        // Graded: re-encoded, so the per-frame tracks go, while the clip-wide tags stay.
+        var edits = MediaEdits(); edits.adjustments.exposure = 0.3
+        let graded = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("graded"), clip: clip, edits: edits,
+                                                        keyPhoto: still, removeLocation: false)
+        #expect(try await !metadataTracks(graded.videoURL).contains("mdta/com.apple.quicktime.video-orientation"))
+        #expect(try await tag(graded.videoURL, "mdta/com.apple.quicktime.live-photo.vitality-score") == "0.93")
+    }
+
     @Test func aStillOfAnotherShapeFallsBackToAVideoFrame() async throws {
         let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
         let movie = dir.appendingPathComponent("m.mov"), still = dir.appendingPathComponent("s.jpg")
