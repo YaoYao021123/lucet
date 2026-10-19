@@ -8,8 +8,9 @@ import UniformTypeIdentifiers
 
 struct LiveKeyPhotoTests {
     /// A one-second movie of the given shape (a grey ramp, so grading has something to act on).
-    private func makeMovie(_ url: URL, width: Int, height: Int) async throws {
+    private func makeMovie(_ url: URL, width: Int, height: Int, metadata: [AVMetadataItem] = []) async throws {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+        writer.metadata = metadata
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height])
         let adapter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input,
@@ -120,6 +121,48 @@ struct LiveKeyPhotoTests {
         let plain = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("sdr"), clip: clip, edits: MediaEdits(),
                                                        keyPhoto: still, removeLocation: false, keepHDR: false)
         #expect(gainMaps(plain.imageURL) == 0)
+    }
+
+    private func item(_ identifier: AVMetadataIdentifier, _ value: String) -> AVMetadataItem {
+        let item = AVMutableMetadataItem()
+        item.identifier = identifier; item.value = value as NSString; item.dataType = kCMMetadataBaseDataType_UTF8 as String
+        return item
+    }
+
+    @Test func aLiveCutFromAClipCarriesWhenAndWhereItWasShot() async throws {
+        let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
+        let movie = dir.appendingPathComponent("clip.mov")
+        try await makeMovie(movie, width: 128, height: 96, metadata: [
+            item(.quickTimeMetadataCreationDate, "2026-10-07T09:15:00+0800"),
+            item(.quickTimeMetadataLocationISO6709, "+22.48617+113.91070+012.000/"),
+            item(.quickTimeMetadataMake, "DJI"), item(.quickTimeMetadataModel, "Mini 4 Pro")])
+        let capture = await CaptureMetadata.read(movie)
+        let shot = try #require(capture.date)
+        #expect(capture.location == "+22.48617+113.91070+012.000/" && capture.model == "Mini 4 Pro")
+
+        let clip = ClipSettings(start: 0, end: 1, cover: 0.5)
+        let live = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("kept"), clip: clip, edits: MediaEdits(),
+                                                      removeLocation: false)
+        let p = try properties(live.imageURL)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        let exif = try #require(p[kCGImagePropertyExifDictionary] as? [CFString: Any])
+        // Dated at the cover's moment in the clip.
+        #expect(exif[kCGImagePropertyExifDateTimeOriginal] as? String == formatter.string(from: shot.addingTimeInterval(live.coverSeconds)))
+        #expect((p[kCGImagePropertyTIFFDictionary] as? [CFString: Any])?[kCGImagePropertyTIFFModel] as? String == "Mini 4 Pro")
+        let gps = try #require(p[kCGImagePropertyGPSDictionary] as? [CFString: Any])
+        #expect(abs((gps[kCGImagePropertyGPSLatitude] as? Double ?? 0) - 22.48617) < 1e-4 && gps[kCGImagePropertyGPSLongitudeRef] as? String == "E")
+        let motion = await CaptureMetadata.read(live.videoURL)
+        #expect(motion.date.map { abs($0.timeIntervalSince(shot) - live.coverSeconds) < 1.01 } == true)
+        #expect(motion.location != nil && motion.model == "Mini 4 Pro")
+
+        // Remove location: the date and camera stay, the place goes from both halves.
+        let shared = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("shared"), clip: clip, edits: MediaEdits(),
+                                                        removeLocation: true)
+        let q = try properties(shared.imageURL)
+        #expect(q[kCGImagePropertyGPSDictionary] == nil && q[kCGImagePropertyExifDictionary] != nil)
+        let sharedMotion = await CaptureMetadata.read(shared.videoURL)
+        #expect(sharedMotion.location == nil && sharedMotion.date != nil)
     }
 
     @Test func aStillOfAnotherShapeFallsBackToAVideoFrame() async throws {

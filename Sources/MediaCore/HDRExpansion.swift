@@ -25,7 +25,7 @@ public enum HDRExpansion {
         return result
     }
     /// HEIC with an SDR base and generated gain map, plus Apple's Live pairing ID.
-    public static func writeCover(_ hdr: CIImage, identifier: String, to url: URL) throws {
+    public static func writeCover(_ hdr: CIImage, identifier: String, to url: URL, properties: [CFString: Any] = [:]) throws {
         let headroom = max(1, hdr.contentHeadroom)
         let base = ColorPipeline.toneMap(hdr, sourceHeadroom: headroom)
         let context = ColorPipeline.context()
@@ -35,10 +35,10 @@ public enum HDRExpansion {
               let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.heic.identifier as CFString, 1, nil) else {
             throw StraighteningError.renderFailed
         }
-        CGImageDestinationAddImageFromSource(destination, source, 0, [
-            kCGImagePropertyMakerAppleDictionary: ["17": identifier],
-            kCGImagePropertyOrientation: 1
-        ] as CFDictionary)
+        var properties = properties
+        properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
+        properties[kCGImagePropertyOrientation] = 1
+        CGImageDestinationAddImageFromSource(destination, source, 0, properties as CFDictionary)
         var copied = false
         for type in [kCGImageAuxiliaryDataTypeHDRGainMap, kCGImageAuxiliaryDataTypeISOGainMap] {
             if let auxiliary = CGImageSourceCopyAuxiliaryDataInfoAtIndex(source, 0, type) {

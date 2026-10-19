@@ -12,6 +12,89 @@ public struct LivePhotoResources: Sendable {
     public let coverSeconds: Double
 }
 
+/// When, where and with what a movie was shot, as its metadata says.
+public struct CaptureMetadata: Sendable, Equatable {
+    public var date: Date?
+    /// ISO 6709, e.g. "+22.48617+113.91070+012.000/".
+    public var location: String?
+    public var make: String?
+    public var model: String?
+    public init(date: Date? = nil, location: String? = nil, make: String? = nil, model: String? = nil) {
+        self.date = date; self.location = location; self.make = make; self.model = model
+    }
+
+    public static func read(_ url: URL) async -> CaptureMetadata {
+        let asset = AVURLAsset(url: url)
+        var result = CaptureMetadata()
+        if let created = try? await asset.load(.creationDate) { result.date = try? await created.load(.dateValue) }
+        guard let items = try? await asset.load(.commonMetadata) else { return result }
+        func string(_ key: AVMetadataKey) async -> String? {
+            guard let item = AVMetadataItem.metadataItems(from: items, withKey: key, keySpace: .common).first,
+                  let value = try? await item.load(.stringValue)?.trimmingCharacters(in: .whitespaces), !value.isEmpty else { return nil }
+            return value
+        }
+        if result.date == nil, let text = await string(.commonKeyCreationDate) {
+            result.date = ISO8601DateFormatter().date(from: text) ?? Self.appleDate.date(from: text)
+        }
+        result.make = await string(.commonKeyMake); result.model = await string(.commonKeyModel)
+        // DJI cameras name themselves only in the encoder tag ("DJI Lito X1").
+        if result.model == nil, let software = await string(.commonKeySoftware), software.hasPrefix("DJI") { result.make = "DJI"; result.model = software }
+        if let location = await string(.commonKeyLocation), MediaDetails.parseISO6709(location) != nil { result.location = location }
+        return result
+    }
+
+    /// QuickTime's own date style ("2026-10-17T22:56:46+0800").
+    static let appleDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter
+    }()
+
+    /// EXIF, TIFF and (unless `removeLocation`) GPS for a still taken at `date`, in this Mac's time zone.
+    func imageProperties(at date: Date?, removeLocation: Bool) -> [CFString: Any] {
+        var properties: [CFString: Any] = [:]
+        var tiff: [CFString: Any] = [:]
+        if let date {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+            let offset = DateFormatter()
+            offset.locale = formatter.locale; offset.dateFormat = "xxx"
+            properties[kCGImagePropertyExifDictionary] = [
+                kCGImagePropertyExifDateTimeOriginal: formatter.string(from: date), kCGImagePropertyExifDateTimeDigitized: formatter.string(from: date),
+                kCGImagePropertyExifOffsetTimeOriginal: offset.string(from: date), kCGImagePropertyExifOffsetTimeDigitized: offset.string(from: date)
+            ]
+            tiff[kCGImagePropertyTIFFDateTime] = formatter.string(from: date)
+        }
+        if let make { tiff[kCGImagePropertyTIFFMake] = make }
+        if let model { tiff[kCGImagePropertyTIFFModel] = model }
+        if !tiff.isEmpty { properties[kCGImagePropertyTIFFDictionary] = tiff }
+        if !removeLocation, let location, let (latitude, longitude, altitude) = MediaDetails.parseISO6709(location) {
+            var gps: [CFString: Any] = [
+                kCGImagePropertyGPSLatitude: abs(latitude), kCGImagePropertyGPSLatitudeRef: latitude >= 0 ? "N" : "S",
+                kCGImagePropertyGPSLongitude: abs(longitude), kCGImagePropertyGPSLongitudeRef: longitude >= 0 ? "E" : "W"
+            ]
+            if let altitude { gps[kCGImagePropertyGPSAltitude] = abs(altitude); gps[kCGImagePropertyGPSAltitudeRef] = altitude < 0 ? 1 : 0 }
+            properties[kCGImagePropertyGPSDictionary] = gps
+        }
+        return properties
+    }
+
+    /// QuickTime metadata for a movie taken at `date`.
+    func movieMetadata(at date: Date?, removeLocation: Bool) -> [AVMetadataItem] {
+        func item(_ identifier: AVMetadataIdentifier, _ value: String) -> AVMetadataItem {
+            let item = AVMutableMetadataItem()
+            item.identifier = identifier; item.value = value as NSString; item.dataType = kCMMetadataBaseDataType_UTF8 as String
+            return item
+        }
+        var items: [AVMetadataItem] = []
+        if let date { items.append(item(.quickTimeMetadataCreationDate, Self.appleDate.string(from: date))) }
+        if !removeLocation, let location { items.append(item(.quickTimeMetadataLocationISO6709, location)) }
+        if let make { items.append(item(.quickTimeMetadataMake, make)) }
+        if let model { items.append(item(.quickTimeMetadataModel, model)) }
+        return items
+    }
+}
+
 public enum LivePhotoPipeline {
     /// Creates an atomic new folder. Original media is never modified.
     /// - Parameter keyPhoto: the original still of a Live Photo being edited. When it is given and still matches
@@ -47,22 +130,31 @@ public enum LivePhotoPipeline {
         let imageName = edits.hdrEffect ? "LivePhoto.heic" : "LivePhoto.jpg"
         let imageURL = staging.appendingPathComponent(imageName)
         let videoURL = staging.appendingPathComponent("LivePhoto.mov")
+        // When and where: a cover cut from a clip is dated at its own moment in the clip, so a Live Photo
+        // made from a drone or camera clip sorts by when it was shot, not when it was made.
+        let capture = await CaptureMetadata.read(url)
+        let coverMoment = capture.date?.addingTimeInterval(clip.start + actualTime.seconds * clip.speed)
+        var stillDate = coverMoment
         if edits.hdrEffect {
-            try HDRExpansion.writeCover(CIImage(cgImage: photo), identifier: identifier, to: imageURL)
+            try HDRExpansion.writeCover(CIImage(cgImage: photo), identifier: identifier, to: imageURL,
+                                        properties: capture.imageProperties(at: coverMoment, removeLocation: removeLocation))
         } else if let keyPhoto, writeOriginalKeyPhoto(keyPhoto, edits: edits, frame: photo, identifier: identifier,
                                                        removeLocation: removeLocation, keepHDR: keepHDR, to: imageURL) {
-            // The original photo, graded, is the key photo.
+            // The original photo, graded, is the key photo, with its own date; the movie keeps the source's.
+            stillDate = capture.date
         } else {
             guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
                 throw StraighteningError.renderFailed
             }
-            CGImageDestinationAddImage(destination, photo, [
-                kCGImagePropertyMakerAppleDictionary: ["17": identifier],
-                kCGImagePropertyOrientation: 1, kCGImageDestinationLossyCompressionQuality: 0.95
-            ] as CFDictionary)
+            var properties = capture.imageProperties(at: coverMoment, removeLocation: removeLocation)
+            properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
+            properties[kCGImagePropertyOrientation] = 1
+            properties[kCGImageDestinationLossyCompressionQuality] = 0.95
+            CGImageDestinationAddImage(destination, photo, properties as CFDictionary)
             guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
         }
-        try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration)
+        try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration,
+                            metadata: capture.movieMetadata(at: stillDate, removeLocation: removeLocation))
         progress?(0.9)
         // Decode through Photos before publishing, so an invalid pair is not
         // presented as a successful Live export. No photo-library access occurs.
@@ -161,14 +253,15 @@ public enum LivePhotoPipeline {
         return nil
     }
 
-    private static func pairMovie(_ asset: AVAsset, to output: URL, identifier: String, coverTime: CMTime, duration: Double) async throws {
+    private static func pairMovie(_ asset: AVAsset, to output: URL, identifier: String, coverTime: CMTime, duration: Double,
+                                  metadata: [AVMetadataItem] = []) async throws {
         let reader = try AVAssetReader(asset: asset)
         let writer = try AVAssetWriter(outputURL: output, fileType: .mov)
         let contentID = AVMutableMetadataItem()
         contentID.identifier = .quickTimeMetadataContentIdentifier
         contentID.value = identifier as NSString
         contentID.dataType = kCMMetadataBaseDataType_UTF8 as String
-        writer.metadata = [contentID]
+        writer.metadata = [contentID] + metadata
         var channels: [(AVAssetReaderTrackOutput, AVAssetWriterInput)] = []
         for type in [AVMediaType.video, .audio] {
             for track in try await asset.loadTracks(withMediaType: type) {
