@@ -172,6 +172,8 @@ public enum ColorPipeline {
     }
 
     public static func geometry(_ image: CIImage, degrees: Double) throws -> CIImage {
+        // A frame the system couldn't decode has no size; fail the frame instead of the app.
+        guard !image.extent.isInfinite, !image.extent.isEmpty else { throw StraighteningError.renderFailed }
         let input = image.transformed(by: .init(translationX: -image.extent.minX, y: -image.extent.minY))
         let plan = try StraighteningPlan(width: Int(input.extent.width.rounded()), height: Int(input.extent.height.rounded()),
                                         rotationRadians: degrees * .pi / 180)

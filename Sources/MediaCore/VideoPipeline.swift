@@ -82,8 +82,12 @@ public enum VideoPipeline {
         guard let video = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
             throw VideoWorkError.missingTrack
         }
-        let range = CMTimeRange(start: CMTime(seconds: clip.start, preferredTimescale: 600),
-                                duration: CMTime(seconds: clip.end - clip.start, preferredTimescale: 600))
+        // Some encoders open a file with a few milliseconds of nothing (an empty edit); a frame there has no
+        // picture, so the range starts at the first real frame.
+        let firstFrame = try await sourceVideo.load(.segments).first { !$0.isEmpty }?.timeMapping.target.start ?? .zero
+        let end = CMTime(seconds: clip.end, preferredTimescale: 60000)
+        let start = min(max(CMTime(seconds: clip.start, preferredTimescale: 60000), firstFrame), end - CMTime(seconds: 0.05, preferredTimescale: 60000))
+        let range = CMTimeRange(start: start, end: end)
         try video.insertTimeRange(range, of: sourceVideo, at: .zero)
         video.preferredTransform = try await sourceVideo.load(.preferredTransform)
         var mixInputs: [AVMutableAudioMixInputParameters] = []
@@ -144,8 +148,10 @@ public enum VideoPipeline {
                     // An HLG composition gives SDR frames an HDR container's
                     // headroom metadata. It does not make those source pixels
                     // HDR; tone mapping that metadata would darken white twice.
-                    let source = settings.hdrEffect && !sourceIsHDR && !showOriginal ? request.sourceImage
-                        : ColorPipeline.toneMap(request.sourceImage, sourceHeadroom: max(1, request.sourceImage.contentHeadroom))
+                    // A moment with no frame (a gap in the file) arrives as an endless empty picture; give it the clip's size.
+                    let picture = request.sourceImage.extent.isInfinite ? request.sourceImage.cropped(to: CGRect(origin: .zero, size: size)) : request.sourceImage
+                    let source = settings.hdrEffect && !sourceIsHDR && !showOriginal ? picture
+                        : ColorPipeline.toneMap(picture, sourceHeadroom: max(1, picture.contentHeadroom))
                     // Scale before grading: 4K source decoding is retained, but
                     // interactive LUT/HDR/geometry work uses a bounded canvas.
                     let small = preview == nil ? source : source.transformed(by: .init(scaleX: previewScale, y: previewScale))
