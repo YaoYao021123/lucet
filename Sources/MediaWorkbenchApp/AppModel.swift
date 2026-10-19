@@ -678,6 +678,7 @@ final class AppModel {
         // A Live Photo opens as its movie; it must leave as what it was unless the user chose otherwise.
         let liveMode = currentLiveMode
         if liveMode == .live, !ensureLiveRangeIsValid() { return }
+        let keyPhoto = editor.liveKeyPhotoURL
         let (input, edits) = Self.liveExportInput(liveMode, still: source, movie: movie, edits: editor.edits)
         let video = editor.isVideo && liveMode != .still
         let size = videoOutputSize
@@ -687,7 +688,8 @@ final class AppModel {
             var output = folder
             if liveMode == .live {
                 let name = Self.exportName(source, settings: settings, index: 0, total: 1, size: size)
-                let live = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits) { report($0, nil) }
+                let live = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits,
+                                                              keyPhoto: keyPhoto, removeLocation: share ? settings.image.removeLocation : false) { report($0, nil) }
                 if share { return ExportQueue.Result(outputs: [live.imageURL, live.videoURL], live: nil, summary: L("已准备好共享")) }
                 defer { try? FileManager.default.removeItem(at: folder) }
                 report(nil, L("正在存入「照片」…"))
@@ -897,8 +899,10 @@ final class AppModel {
     func enqueueLive(to output: URL) {
         guard let input = editor.mediaURL, editor.isVideo, editor.liveIsValid else { return }
         let edits = editor.edits, clip = editor.clip
+        let keyPhoto = editor.liveKeyPhotoURL, removeLocation = exportSettings.image.removeLocation
         exports.enqueue(L("制作 Live · \(output.lastPathComponent)")) { report in
-            let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits) { report($0, nil) }
+            let resources = try await LivePhotoPipeline.export(input, to: output, clip: clip, edits: edits,
+                                                               keyPhoto: keyPhoto, removeLocation: removeLocation) { report($0, nil) }
             _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
             return ExportQueue.Result(outputs: [output], live: resources, summary: L("系统配对检查通过"))
         }
