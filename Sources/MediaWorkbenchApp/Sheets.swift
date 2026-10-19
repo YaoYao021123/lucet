@@ -135,6 +135,12 @@ struct ExportOptionsSheet: View {
                 ForEach(LiveOutput.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .accentSegments()
+            if settings.liveOutput == .live, app.editor.liveStillIsHDR {
+                Toggle(isOn: $settings.image.keepHDR) {
+                    Text("保留 HDR")
+                    Text("封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。")
+                }
+            }
         } footer: {
             Text(settings.liveOutput == .live ? "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。"
                  : settings.liveOutput == .still ? "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。"
