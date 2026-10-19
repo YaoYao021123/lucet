@@ -1085,6 +1085,13 @@ final class EditorModel {
         scrubSeek(value - clipStart, exact: exact)
     }
 
+    /// Picks this moment (seconds in the movie) as the cover and moves the playhead there.
+    func setCover(at seconds: Double) {
+        clipChanged { cover = min(clipEnd - 0.05, max(clipStart, seconds)) }
+        seek(cover - clipStart)
+        status = L("封面设为 \(timeLabel(cover))")
+    }
+
     func setCoverAtPlayhead() {
         clipChanged { cover = min(clipEnd - 0.05, max(clipStart, clipStart + position)) }
         status = L("封面设为 \(timeLabel(cover))")

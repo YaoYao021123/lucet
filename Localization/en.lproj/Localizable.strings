@@ -209,6 +209,16 @@
 "暖调" = "Warm";
 "柔和" = "Soft";
 
+/* CoverPickerView.swift */
+"挑一张封面" = "Pick a cover";
+"封面是照片库里看到的那一张。已经帮你找了最清晰的一帧；点哪一张就用哪一张。" = "The cover is the picture you see in your photo library. We've marked the sharpest frame; click any one to use it.";
+"没能读取这段视频的画面。" = "Couldn't read this video's frames.";
+"正在挑选…" = "Choosing…";
+"推荐" = "Best";
+"当前" = "Current";
+"清晰度 %.0f%% · 人像质量 %.0f%%" = "Sharpness %.0f%% · Face quality %.0f%%";
+"清晰度 %.0f%%" = "Sharpness %.0f%%";
+
 /* CubeLUT.swift */
 "LUT 第 %lld 行：%@" = "LUT line %lld: %@";
 "色表前缺少 LUT_3D_SIZE" = "LUT_3D_SIZE is missing before the table";
@@ -1171,6 +1181,8 @@
 "变速后视频与原声同步变化，背景音乐保持原节奏" = "Speed changes the video and its audio together; background music keeps its tempo";
 "以播放头为中心选取 3 秒输出" = "Select 3 seconds centered on the playhead";
 "选取 3 秒" = "Select 3 s";
+"挑封面" = "Pick cover";
+"从片段里取几帧，推荐最清晰、人像最好的一张" = "Takes a few frames from the clip and recommends the sharpest one, with the best faces";
 "把播放头位置设为 Live 封面（C）" = "Use the playhead as the Live key photo (C)";
 "设为封面" = "Set Key Photo";
 "制作 Live" = "Make Live";
@@ -1686,5 +1698,3 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
-
-/* Not used by the current code (kept until reviewed) */
