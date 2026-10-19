@@ -60,6 +60,8 @@ final class EditorModel {
     private(set) var isLoaded = false
     private(set) var isLoading = false
     private(set) var isLiveInput = false
+    /// Where the opened Live Photo's own key photo was taken (seconds in its movie).
+    private(set) var originalLiveCover: Double?
     private(set) var sourceIsHDR = false
     private(set) var documentID = UUID()
     private(set) var draftStatus = ""
@@ -320,6 +322,7 @@ final class EditorModel {
                     guard let seconds = meta.durationSeconds, seconds >= 0.1 else { throw VideoWorkError.invalidRange }
                     clipStart = 0; clipEnd = seconds
                     cover = min(max(0, liveCover ?? seconds / 2), max(0, seconds - 0.05))
+                    originalLiveCover = isLiveInput ? cover : nil
                     sourceIsHDR = meta.transferFunction == AVVideoTransferFunction_ITU_R_2100_HLG
                         || meta.transferFunction == AVVideoTransferFunction_SMPTE_ST_2084_PQ
                 }
@@ -1177,4 +1180,13 @@ extension EditorModel {
 func timeLabel(_ seconds: Double) -> String {
     let centiseconds = Int(max(0, seconds.isFinite ? seconds : 0) * 100)
     return String(format: "%02d:%02d.%02d", centiseconds / 6000, (centiseconds / 100) % 60, centiseconds % 100)
+}
+
+extension EditorModel {
+    /// The original photo of a Live Photo, usable as the exported key photo while the cover is still the frame
+    /// it was taken at; nil once the cover moves (the key photo must then be that frame) or for videos.
+    var liveKeyPhotoURL: URL? {
+        guard isLiveInput, let original = originalLiveCover, abs(cover - original) < 0.02 else { return nil }
+        return url
+    }
 }

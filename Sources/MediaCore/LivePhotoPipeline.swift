@@ -14,7 +14,11 @@ public struct LivePhotoResources: Sendable {
 
 public enum LivePhotoPipeline {
     /// Creates an atomic new folder. Original media is never modified.
+    /// - Parameter keyPhoto: the original still of a Live Photo being edited. When it is given and still matches
+    ///   the cover frame, the key photo is that picture graded at full size with its capture date, camera and
+    ///   (unless `removeLocation`) place, instead of a frame cut from the video.
     public static func export(_ url: URL, to directory: URL, clip: ClipSettings, edits: MediaEdits,
+                              keyPhoto: URL? = nil, removeLocation: Bool = true,
                               progress: (@Sendable (Double) -> Void)? = nil) async throws -> LivePhotoResources {
         guard directory.isFileURL, !FileManager.default.fileExists(atPath: directory.path) else { throw VideoWorkError.outputExists }
         let duration = try await AVURLAsset(url: url).load(.duration).seconds
@@ -43,6 +47,9 @@ public enum LivePhotoPipeline {
         let videoURL = staging.appendingPathComponent("LivePhoto.mov")
         if edits.hdrEffect {
             try HDRExpansion.writeCover(CIImage(cgImage: photo), identifier: identifier, to: imageURL)
+        } else if let keyPhoto, writeOriginalKeyPhoto(keyPhoto, edits: edits, frame: photo, identifier: identifier,
+                                                       removeLocation: removeLocation, to: imageURL) {
+            // The original photo, graded, is the key photo.
         } else {
             guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
                 throw StraighteningError.renderFailed
@@ -79,6 +86,25 @@ public enum LivePhotoPipeline {
         progress?(1)
         return LivePhotoResources(imageURL: directory.appendingPathComponent(imageName),
             videoURL: directory.appendingPathComponent("LivePhoto.mov"), identifier: identifier, coverSeconds: actualTime.seconds)
+    }
+
+    /// Grades the original still with the same edits as the movie and writes it as the Live Photo's key photo.
+    /// Returns false (so the caller falls back to a video frame) when it can't be used: it must have the
+    /// same shape as the movie, or the pair would show a jump between the still and the motion.
+    private static func writeOriginalKeyPhoto(_ original: URL, edits: MediaEdits, frame: CGImage, identifier: String,
+                                              removeLocation: Bool, to imageURL: URL) -> Bool {
+        var photoEdits = edits
+        photoEdits.hdrEffect = false
+        var options = ImageExportOptions()
+        options.format = .jpeg; options.quality = 0.95; options.keepMetadata = true
+        options.removeLocation = removeLocation; options.keepHDR = false
+        guard let rendered = try? ImageExporter.render(original, edits: photoEdits, options: options) else { return false }
+        let stillShape = Double(rendered.width) / Double(rendered.height), movieShape = Double(frame.width) / Double(frame.height)
+        guard abs(stillShape - movieShape) / movieShape < 0.02 else { return false }
+        var properties = rendered.properties
+        properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
+        let paired = ImageExporter.Rendered(bitmap: rendered.bitmap, properties: properties, format: rendered.format, hdrData: rendered.hdrData)
+        return (try? ImageExporter.write(paired, to: imageURL, source: original)) != nil
     }
 
     public static func load(imageURL: URL, videoURL: URL) async throws -> PHLivePhoto {
