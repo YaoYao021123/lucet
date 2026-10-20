@@ -152,9 +152,19 @@ struct MediaProbe {
                 let duration = try await AVURLAsset(url: url).load(.duration).seconds
                 let cover = arguments.count == 4 ? (Double(arguments[3]) ?? duration - 0.2) : duration - 0.2
                 let clip = ClipSettings(start: 0, end: min(duration, 3.0), cover: min(cover, min(duration, 3.0) - 0.05))
+                // AIHDR=cover (AI HDR cover) or AIHDR=motion (cover and motion, HDR video), at full strength.
+                var edits = MediaEdits()
+                switch ProcessInfo.processInfo.environment["AIHDR"] {
+                case "cover": edits.hdrAmount = 1
+                case "motion": edits.hdrAmount = 1; edits.hdrEffect = true
+                case "expand": edits.hdrEffect = true
+                default: break
+                }
+                let start = Date()
                 let result = try await LivePhotoPipeline.export(url, to: URL(fileURLWithPath: arguments[2]).standardizedFileURL,
-                                                                 clip: clip, edits: MediaEdits())
+                                                                 clip: clip, edits: edits)
                 print(result.imageURL.path); print(result.videoURL.path)
+                print(String(format: "%.1f s", Date().timeIntervalSince(start)))
             } else if command == "auto" {
                 // Developer check for 自动: the values, the statistics after, and an optional before|after JPEG.
                 let session = try ImageGradeSession(url: url, maximumDimension: 1024)

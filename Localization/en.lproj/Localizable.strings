@@ -515,8 +515,10 @@
 "以 HDR 显示原片" = "Show original in HDR";
 "HDR 高光扩展（实验）" = "HDR highlight expansion (experimental)";
 "扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。" = "Expands SDR highlights and exports 10-bit HLG video with a gain-map Live key photo. It can't recover highlights that were lost when shooting.";
+"AI HDR 光感（封面与动态）" = "AI HDR (cover and motion)";
 "AI HDR 光感（封面）" = "AI HDR (cover)";
-"导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。" = "When exported as a Live Photo, the cover photo gets an AI gain map, so bright areas glow on HDR screens. The motion stays at standard brightness.";
+"导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。同时开启「HDR 高光扩展」时，动态部分也由 AI 逐帧提亮。" = "When exported as a Live Photo, the cover photo gets an AI gain map, so bright areas glow on HDR screens; the motion stays at standard brightness. With “HDR highlight expansion” on as well, AI brightens the motion frame by frame too.";
+"动态部分由 AI 逐帧判断亮处，导出为 HDR 视频（实验，导出较慢）。" = "AI decides what's bright in each frame of the motion, which is exported as HDR video (experimental, slower to export).";
 "AI 判断每处高光该有多亮：HDR 屏幕上亮处发光，普通屏幕上画面不变。导出 JPEG、HEIC 时附带增益图。" = "AI works out how bright each highlight should be: bright areas glow on HDR screens, and the photo looks unchanged on ordinary screens. JPEG and HEIC exports include a gain map.";
 "当前素材为 HDR。" = "This item is HDR.";
 "当前素材为 SDR。" = "This item is SDR.";
@@ -1702,3 +1704,5 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
+
+/* Not used by the current code (kept until reviewed) */

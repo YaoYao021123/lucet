@@ -172,6 +172,7 @@ enum DebugSnapshot {
                 app.editor.setAdjustment(parameter, value)
             }
         case "aihdr": app.editor.hdrAmount = min(1, max(0, Double(argument) ?? 1))
+        case "hdreffect": app.editor.hdrEffect = argument != "off"
         case "export": app.enqueueCurrentExport(to: URL(fileURLWithPath: argument))
         case "watermark": app.exportSettings.image.watermark = argument == "off" ? nil : Watermark(text: argument.replacingOccurrences(of: "\\n", with: "\n"))
         case "naming": app.exportSettings.naming = argument

@@ -315,11 +315,45 @@ public final class AutoHDR: Sendable {
         let scale = min(1, Double(Self.workingSize) / Double(max(image.width, image.height)))
         // Even sizes, so the 2× down-and-up path lands on the same size.
         let width = max(2, Int(Double(image.width) * scale) / 2 * 2), height = max(2, Int(Double(image.height) * scale) / 2 * 2)
+        return gainValues(for: image, width: width, height: height).map(Self.image)
+    }
+
+    private func gainValues(for image: CGImage, width: Int, height: Int) -> Map? {
         guard let local = Self.planar(image, width: width, height: height), let global = Self.planar(image, width: 256, height: 256) else { return nil }
-        let gain = gainMap(global: global, local: local)
+        return gainMap(global: global, local: local)
+    }
+
+    private static func image(_ gain: Map) -> CIImage {
         let bytes = gain.data.withUnsafeBytes { Data($0) }
         return CIImage(bitmapData: bytes, bytesPerRow: gain.width * 4, size: CGSize(width: gain.width, height: gain.height),
                        format: .Rf, colorSpace: nil)
+    }
+
+    /// Gain maps for a run of frames (all one size), worked out at most `size` pixels on the long side and
+    /// smoothed over time, so the glow doesn't flicker from frame to frame: each map is mixed 1:2:1 with its
+    /// neighbours, twice. Empty if a frame can't be read.
+    public func gains(for frames: [CGImage], size: Int) -> [CIImage] {
+        guard let first = frames.first else { return [] }
+        let scale = min(1, Double(size) / Double(max(first.width, first.height)))
+        let width = max(2, Int(Double(first.width) * scale) / 2 * 2), height = max(2, Int(Double(first.height) * scale) / 2 * 2)
+        var maps: [[Float]] = []
+        for frame in frames {
+            guard let map = gainValues(for: frame, width: width, height: height) else { return [] }
+            maps.append(map.data)
+        }
+        for _ in 0..<2 { maps = Self.smoothed(maps) }
+        return maps.map { Self.image(Map(channels: 1, height: height, width: width, data: $0)) }
+    }
+
+    /// One 1:2:1 pass over time; the ends lean on themselves.
+    static func smoothed(_ maps: [[Float]]) -> [[Float]] {
+        guard maps.count > 2 else { return maps }
+        return maps.indices.map { i in
+            let before = maps[max(0, i - 1)], here = maps[i], after = maps[min(maps.count - 1, i + 1)]
+            var mixed = [Float](repeating: 0, count: here.count)
+            for j in mixed.indices { mixed[j] = 0.25 * before[j] + 0.5 * here[j] + 0.25 * after[j] }
+            return mixed
+        }
     }
 
     /// sRGB planes 0…1 at a size (stretched, as the model was fed).

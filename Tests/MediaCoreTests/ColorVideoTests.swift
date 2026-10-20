@@ -299,6 +299,36 @@ struct VideoLiveTests {
         let rms = try await audioRMS(resources.videoURL)
         #expect(rms > 0.035 && rms < 0.05)
     }
+    @Test func aiHDRMotionGlowsFrameByFrameAndPairsWithItsCover() async throws {
+        try #require(AutoHDR.shared != nil)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await fixtureVideo(source, highlights: true)
+        // The network is slow in debug builds; a small map keeps the test quick (the app works at 384).
+        MotionGain.size = 96
+        defer { MotionGain.size = 384 }
+        // A map every 0.1 s over the range, blended in between.
+        let gain = try #require(await MotionGain.make(source, from: 0.5, to: 0.7, step: 0.1))
+        #expect(gain.maps.count == 3)
+        let between = try #require(gain.at(0.65))
+        #expect(between.extent == gain.maps[0].extent)
+
+        var edits = MediaEdits(hdrEffect: true); edits.hdrAmount = 1
+        let clip = ClipSettings(start: 0.5, end: 1, cover: 0.75)
+        let live = try await LivePhotoPipeline.export(source, to: folder.appendingPathComponent("AI-HDR-Live"), clip: clip, edits: edits)
+        let meta = try await MediaInspector.inspect(live.videoURL)
+        #expect(meta.transferFunction == AVVideoTransferFunction_ITU_R_2100_HLG)
+        let cover = try ImageGradeSession.decode(live.imageURL)
+        #expect(cover.contentHeadroom > 1)
+        let maximum = cover.applyingFilter("CIAreaMaximum", parameters: [kCIInputExtentKey: CIVector(cgRect: cover.extent)])
+        var pixels = [Float](repeating: 0, count: 4)
+        pixels.withUnsafeMutableBytes { ColorPipeline.context().render(maximum, toBitmap: $0.baseAddress!, rowBytes: 16,
+            bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBAf, colorSpace: ColorPipeline.linearSpace) }
+        #expect(pixels[0] > 1.05, "the highlights glow past SDR white: \(pixels[0])")
+    }
+
     @Test func acceleratedLiveKeepsMusicDurationAndMapsCoverToOutputTime() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
