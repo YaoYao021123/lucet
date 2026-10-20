@@ -1,11 +1,13 @@
 # Lucet 光集 · 长版口播稿（中文 + English）
 
 适合：B 站 / 视频号 / 小红书长视频 / YouTube，真人出镜 + 录屏穿插。
-时长：中文约 5 分钟（按每秒 4–5 个字），英文约 6 分钟（每分钟约 140 词）。`【…】` 里你自己的话不计在内。想剪短，先删第 2 段的滑块列举和第 5 段的功能细节，故事线不受影响。
+时长：中文约 6.5 分钟（按每秒 5 个字，含标点），英文约 8 分钟（每分钟约 140 词）。`【…】` 里你自己的话不计在内。想剪短，先删第 2 段的滑块列举、第 5 段的功能细节和第 5b 段，故事线不受影响。
+
+> 2026-10-20 更新：界面已经有中文和 English，所以去掉了「只有中文」的说法；新增第 5b 段（后来长出来的功能）；第 6 段提到 3D 课；第 8 段补上 RAW 的说明。这些改动让台词比上一版长约一分半钟（中文原来约 5 分钟，英文约 6 分钟）。
 
 怎么用：
 
-- **提词器**：`docs/marketing/xiaohongshu/teleprompter.html?v=long-zh`（中文）或 `?v=long-en`（英文），用 Chrome 打开。空格开始，↑↓ 调速度，M 镜像。不加参数还是原来的 55 秒短版。
+- **提词器**：`docs/marketing/xiaohongshu/teleprompter.html?v=long-zh`（中文）或 `?v=long-en`（英文），用 Chrome 打开。空格开始，↑↓ 调速度，M 镜像。不加参数是约 1 分钟的短版。提词器里的文字是从这个文件生成的：改了这里，运行 `python3 scripts/sync-teleprompter.py` 就同步过去。
 - **`【…】` 是留给你的**：只有你能说的话（你当时的感受、你拍的地方）。这几句最能让人相信你，请一定换成你自己的话；不想说就整句删掉，前后照样接得上。
 - **画面建议**写在每段后面的方括号里，录完在剪映里按段落插录屏。
 - 稿子里的事实都来自项目记录（提交历史、实测数字、我们的对话）。**别加没发生的事**，也别说价格、「免费」「收费」，别暗示和 DJI 有合作。
@@ -91,7 +93,20 @@ DJI Pocket 3 官方的 LUT，原来根本导不进来，因为文件里的标题
 
 〔画面：全程真实录屏。自动前后对比按 `\` 来回切；点预设缩略图；拖裁剪框；最后拿出 iPhone，相册里出现刚调好的照片。〕
 
-### 6. 边调边学（约 55 秒）
+### 5b. 后来又长出来的（约 50 秒）
+
+这几周，它又长出了不少东西。
+
+想只改照片的一部分？拉一道渐变，天空就暗下来，地面一点没动；也可以用椭圆、用画笔，还能让它自动找到画面里的主体。
+电线、路人、地上的垃圾，用「去除」涂一笔，它会照着周围的样子把那块补上。都在你的 Mac 上算，不用联网。
+喜欢另一张照片的颜色？用「匹配色调」，这张照片的颜色就会朝它靠过去，靠多少，你自己拖。
+一次旅行、一组作品的照片，可以放进同一个「项目」：改其中任何一张的颜色，整个项目跟着变，曝光和裁剪还是每张各管各的。
+还有两个用小型 AI 模型做的：「AI 调色」，为这一张照片单独生成一个调色；「AI HDR」，让普通照片在 HDR 屏幕上也有真正的高光。模型就装在 App 里，在你的 Mac 上运行，照片不会上传。
+Live Photo 也能直接编辑：照片和动态一起调，导出来还是 Live Photo，拍摄时间也还在。
+
+〔画面：真实录屏。拉渐变压暗天空（拖前后对比）；涂一笔去掉路牌；选一张参考照片；项目侧栏里改一张、整组跟着变；Live Photo 导出后在「照片」里按住会动。〕
+
+### 6. 边调边学（约 65 秒）
 
 但我最想做好的，其实是另一件事。
 
@@ -106,6 +121,7 @@ DJI Pocket 3 官方的 LUT，原来根本导不进来，因为文件里的标题
 拖一下「亮部」，直方图上会亮出它到底改了哪一段。
 
 现在一共有十三课，从直方图、曝光、曲线，到白平衡、光圈、焦距，还有视频的帧率和 Log。
+很多课里的画面是 3D 的，可以用手拖着转：照片的亮度变成一座山，照片的颜色变成立方体里的一团点。
 文字和动画，都是我们自己写、自己画的，而且还在一课一课地往上加。
 
 〔画面：互动课录屏：像素飞成直方图的动画；光圈滑块和虚化；五个亮度区随滑块亮起。〕
@@ -123,9 +139,9 @@ Lucet 是拉丁语，意思是「它在发光」。
 
 最后说几句实在的。
 
-它现在还是早期版本：只能在 Apple 芯片的 Mac 上用，需要 macOS 15 以上，界面目前只有中文。还没有经过苹果的公证，第一次打开，要在系统设置里手动放行一次。
+它现在还是早期版本：只能在 Apple 芯片的 Mac 上用，需要 macOS 15 以上。还没有经过苹果的公证，第一次打开，要在系统设置里手动放行一次。常见的 RAW 文件能打开，但只当普通图片处理，不会按 RAW 来冲洗。
 
-它不会改动你的原片，没有账号，也不会上传你的任何照片。
+它不会改动你的原片，没有账号，也不会上传你的任何照片。界面有中文，也有 English。
 
 如果你也有一堆舍不得删、又不知道怎么调的照片，欢迎来试试。
 哪里不顺手，哪里看不懂，都告诉我。
@@ -139,7 +155,7 @@ Lucet 是拉丁语，意思是「它在发光」。
 
 ## English version
 
-*Written for an English-speaking audience, not a line-by-line translation. Note: the app's interface is Chinese only for now — the script says so, so nobody downloads it and feels misled.*
+*Written for an English-speaking audience, not a line-by-line translation. The app's interface is in English and Chinese (it follows the Mac's language), so this version can say so plainly.*
 
 ### 1. Cold open (~15 s)
 
@@ -216,7 +232,20 @@ And video clips under three seconds can become real Live Photos.
 
 [All real screen recording: Auto with before/after; tapping preset thumbnails; dragging the crop frame; then an iPhone showing the photo in its library.]
 
-### 6. Learning while you edit (~65 s)
+### 5b. What it has grown into (~55 s)
+
+Over the last few weeks it has grown quite a bit.
+
+Only want to change part of a photo? Drag a gradient and the sky gets darker while the ground doesn't move at all. Or use an ellipse, or a brush, and it can even find the main subject for you.
+A wire, a passer-by, litter on the ground: paint over it with Remove, and it fills the spot in from its surroundings. It all runs on your Mac, no internet needed.
+Like another photo's colors? Use Match Colors, and this photo moves toward it, as far as you drag the slider.
+Photos from one trip, one post or one client shoot can live in a single project: change the color on any one of them and the whole project follows, while exposure and crop stay with each photo.
+And two features built on small AI models: AI Look makes a grade just for this photo, and AI HDR gives an ordinary photo real highlights on an HDR screen. The models ship inside the app and run on your Mac, so nothing is uploaded.
+Live Photos are editable too: the photo and the motion are graded together, it exports as a Live Photo again, and the time it was taken is still there.
+
+[Real screen recording: dragging a gradient over the sky (before/after); one brush stroke removing a sign; picking a reference photo; changing one photo in a project and the whole set following; a Live Photo exported, then pressed and held in Photos.]
+
+### 6. Learning while you edit (~75 s)
 
 But the thing I care about most is something else.
 
@@ -231,6 +260,7 @@ Drag the aperture and watch the background soften.
 Drag "highlights", and the histogram lights up exactly the part it's changing.
 
 There are thirteen lessons now — histograms, exposure, curves, white balance, aperture, focal length, even frame rate and Log footage for video.
+Many of them are in 3D, and you can drag to turn them: your photo's brightness becomes a little mountain range, and its colors become a cloud of points inside a cube.
 Every word and every animation is our own, and we're still adding lessons one at a time.
 
 [Lesson recordings: pixels flying into a histogram; the aperture slider and background blur; the five brightness zones lighting up.]
@@ -248,9 +278,9 @@ Because a photo is just that: light you decided to keep.
 
 A few honest things before you go.
 
-It's an early version. It runs on Apple-silicon Macs with macOS 15 or later, and right now the interface is in Chinese only. It isn't notarized by Apple yet, so the first time you open it, you'll need to allow it once in System Settings.
+It's an early version. It runs on Apple-silicon Macs with macOS 15 or later. It isn't notarized by Apple yet, so the first time you open it, you'll need to allow it once in System Settings. Common RAW files open, but they're treated as ordinary images, not developed as RAW.
 
-It never changes your originals. There's no account, and none of your photos are uploaded anywhere.
+It never changes your originals. There's no account, and none of your photos are uploaded anywhere. The interface comes in English and Chinese.
 
 If you've got a folder of photos you can't bring yourself to delete, but don't know how to fix — come and try it.
 Tell me where it's confusing, or where it gets in your way.
