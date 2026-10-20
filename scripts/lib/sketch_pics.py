@@ -1,6 +1,7 @@
 """Finds the pictures that go into the whiteboard sketches (docs/marketing/xiaohongshu/pics/<slot>.png|jpg).
 
-A slot is a place in a sketch where a real picture (usually an app screenshot) can sit: auto, presets, crop, save.
+A slot is a place in a sketch where a real picture (an app screenshot or a before/after result) can sit:
+auto, presets, crop, save, sky, remove, match, project.
 Put your own file with that name in the folder to replace it; remove it to get the hand-drawn icon back.
 """
 import json
@@ -9,7 +10,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 PICS = Path(__file__).resolve().parents[2] / "docs/marketing/xiaohongshu/pics"
-SLOTS = ("auto", "presets", "crop", "save")
+SLOTS = ("auto", "presets", "crop", "save", "sky", "remove", "match", "project")
 
 
 def find_pics():
@@ -45,10 +46,13 @@ BOARDS = [
     ("auto", [("auto", r"自动"), ("read", r"读这张|先读"), ("restraint", r"克制|白底"), ("undo", r"撤销"), ("six", r"六个滑块|六个")]),
     ("presets", [("presets", r"预设"), ("thumbs", r"小图|这张照片做成"), ("crop", r"裁剪"), ("drag", r"在照片上拖|直接在照片")]),
     ("save", [("save", r"存进|直接存进"), ("icloud", r"iCloud|icloud"), ("iphone", r"iPhone|手机上"), ("live", r"实况|三秒")]),
+    ("grow", [("local", r"只改照片的一部分|渐变|局部"), ("remove", r"去除|涂一笔|电线|路人|去掉"), ("match", r"匹配色调|另一张照片的颜色"),
+              ("project", r"项目"), ("ai", r"AI 调色|小型 AI|AI HDR|AI 模型")]),
     ("inspire", [("filter", r"一键滤镜"), ("xiaoyang", r"张小样|摄影博主|小样"), ("few", r"几条视频|讲不完"), ("inapp", r"放进了? ?App|放进")]),
     ("learn", [("pixels", r"像素|用你自己的照片"), ("hist", r"直方图|小山"), ("aperture", r"光圈"), ("highlight", r"亮部"), ("thirteen", r"十三课|13 ?课")]),
     ("name", [("name", r"Lucet|路塞|露塞"), ("lat", r"拉丁|发光"), ("gather", r"收集"), ("photo", r"留住的光|被留住")]),
-    ("honest", [("early", r"早期版本"), ("apple", r"Apple 芯片|苹果芯片"), ("zh", r"只有中文"), ("notar", r"公证"), ("safe", r"不会改动|原片"), ("none", r"没有账号|账号"), ("upload", r"上传")]),
+    ("honest", [("early", r"早期版本"), ("apple", r"Apple 芯片|苹果芯片"), ("notar", r"公证"), ("raw", r"RAW|冲洗"), ("safe", r"不会改动|原片"),
+                ("none", r"没有账号|账号"), ("upload", r"上传"), ("lang", r"English|中文，也有")]),
     ("invite", [("try", r"欢迎来试试|来试试|试试"), ("tell", r"都告诉我|告诉我"), ("ai", r"用 ?AI|AI 做"), ("tag", r"自有光彩|每一个瞬间")]),
 ]
-MAX_SPAN = 30.0           # seconds: an element you only say much later than the board's first word is not drawn then
+MAX_SPAN = 50.0           # seconds: an element you only say much later than the board's first word is not drawn then

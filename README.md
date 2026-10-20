@@ -210,7 +210,7 @@ Lucet is an early version. Honestly:
 - Not notarized by Apple yet; the first launch needs to be allowed by hand (see Install).
 - HDR photos are previewed at standard brightness while you edit them (the export keeps HDR).
 - Remove works best on smaller things; very large areas can show soft patches, so remove them in a few goes.
-- Video trimming still uses sliders; no multi-track editing, transitions or titles. Local adjustments are for photos only for now.
+- Video trimming still uses sliders; no multi-track editing, transitions or titles. Gradient, ellipse and brush masks also work on videos and Live Photos; Subject and Remove are for photos only.
 - Common camera RAW files open, but they're treated as regular images, not developed as RAW; this is lightly tested.
 - Log footage such as D-Log needs its conversion LUT imported by hand; automatic detection is planned.
 - Imported folders aren't watched for new files.

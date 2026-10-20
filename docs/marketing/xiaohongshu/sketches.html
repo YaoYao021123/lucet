@@ -256,6 +256,20 @@ const BOARDS = {
     circle(160, 990, 20, "live", 0, { strokeWidth: 3 }); circle(160, 990, 8, "live", 0.2, { fill: ORANGE, fillStyle: "solid", stroke: ORANGE });
     text("视频，也能做成实况照片", 600, 1005, "live", 0.5, { size: 50, color: ORANGE });
   },
+  /* 10b · what it has grown into */
+  grow() {                           // anchors: local, remove, match, project, ai
+    text("后来又长出来的", 540, 105, "local", 0, { size: 58, color: ORANGE });
+    const cell = (slot, cx, top, at, cap) => {
+      if (!pic(slot, cx, top, 440, 250, at, 0.2)) rect(cx - 220, top, 440, 250, at, 0.2, { strokeWidth: 3 });
+      text(cap, cx, top + 305, at, 0.6, { size: 40 });
+    };
+    cell("sky", 300, 150, "local", "渐变压暗天空");
+    cell("remove", 780, 150, "remove", "一笔去掉路牌");
+    cell("match", 300, 540, "match", "借另一张的色调");
+    cell("project", 780, 540, "project", "一组照片，一套颜色");
+    text("还有两个小型 AI 模型：AI 调色 · AI HDR", 540, 985, "ai", 0, { size: 46, color: ORANGE });
+    text("都在你的 Mac 上运行，照片不会上传", 540, 1048, "ai", 0.7, { size: 40, color: GREY });
+  },
   /* 11a · where the teaching idea comes from */
   inspire() {                        // anchors: filter, xiaoyang, few, inapp
     text("一键滤镜：照片好看了", 540, 140, "filter", 0, { size: 62 });
@@ -302,17 +316,17 @@ const BOARDS = {
     text("让每一个瞬间，自有光彩。", 540, 1050, "photo", 1.2, { size: 46, color: ORANGE });
   },
   /* 13 · honest limits */
-  honest() {                         // anchors: early, apple, zh, notar, safe, none, upload
+  honest() {                         // anchors: early, apple, notar, raw, safe, none, upload, lang
     text("说实话，现在：", 80, 110, "early", 0, { size: 60, color: ORANGE, anchor: "start" });
-    [["early", "还是早期版本"], ["apple", "只能在 Apple 芯片的 Mac 上用（macOS 15+）"], ["zh", "界面目前只有中文"], ["notar", "还没有苹果公证，第一次要手动放行"]].forEach(([at, s], i) => {
-      circle(100, 230 + i * 100, 14, at, 0, { fill: GREY, fillStyle: "solid", stroke: GREY });
-      text(s, 140, 245 + i * 100, at, 0.3, { size: 44, anchor: "start" });
+    [["early", "还是早期版本"], ["apple", "只能在 Apple 芯片的 Mac 上用（macOS 15+）"], ["notar", "还没有苹果公证，第一次要手动放行"], ["raw", "RAW 文件只当普通图片打开"]].forEach(([at, s], i) => {
+      circle(100, 215 + i * 90, 14, at, 0, { fill: GREY, fillStyle: "solid", stroke: GREY });
+      text(s, 140, 230 + i * 90, at, 0.3, { size: 44, anchor: "start" });
     });
-    line(70, 650, 1010, 645, "safe", 0, { strokeWidth: 3, stroke: GREY });
-    text("但是它：", 80, 740, "safe", 0.2, { size: 60, color: GREEN, anchor: "start" });
-    [["safe", "不改动你的原片"], ["none", "没有账号"], ["upload", "不上传任何照片"]].forEach(([at, s], i) => {
-      check(110, 830 + i * 90, 24, at, 0);
-      text(s, 160, 845 + i * 90, at, 0.3, { size: 50, anchor: "start" });
+    line(70, 560, 1010, 555, "safe", 0, { strokeWidth: 3, stroke: GREY });
+    text("但是它：", 80, 650, "safe", 0.2, { size: 60, color: GREEN, anchor: "start" });
+    [["safe", "不改动你的原片"], ["none", "没有账号"], ["upload", "不上传任何照片"], ["lang", "界面有中文，也有 English"]].forEach(([at, s], i) => {
+      check(110, 740 + i * 85, 24, at, 0);
+      text(s, 160, 755 + i * 85, at, 0.3, { size: 50, anchor: "start" });
     });
   },
   /* 14 · invitation */

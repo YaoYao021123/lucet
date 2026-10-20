@@ -3,7 +3,7 @@
 
     python3 scripts/export-excalidraw.py            # -> docs/marketing/xiaohongshu/excalidraw/lucet-story.excalidraw
 
-The pages sit on one canvas in story order, five to a row, each inside a named frame ("1 phone", "2 sliders" ...).
+The pages sit on one canvas in story order, four to a row, each inside a named frame ("1 phone", "2 sliders" ...).
 
 On excalidraw.com: open the menu (top left) -> Open, or just drag the file onto the page. The shapes are the same as
 in the video (drawn by docs/marketing/xiaohongshu/sketches.html). Text is placed approximately; nudge anything that looks off.
@@ -31,7 +31,7 @@ out.mkdir(exist_ok=True)
 for old in out.glob("*.excalidraw"):
     old.unlink()                                   # pages that no longer exist
 pics = find_pics()
-COLS, PAGE, GAP = 5, 1080, 200                     # five pages to a row; every page is 1080 x 1080
+COLS, PAGE, GAP = 4, 1080, 200                     # four pages to a row; every page is 1080 x 1080
 combined = {"type": "excalidraw", "version": 2, "source": "https://excalidraw.com", "elements": [],
             "appState": {"viewBackgroundColor": "#fbf8ef", "gridSize": None}, "files": {}}
 for board, anchors in BOARDS:

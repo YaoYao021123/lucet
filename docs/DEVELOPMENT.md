@@ -55,9 +55,11 @@ swift run --configuration release media-benchmark
 
 ## 宣传视频
 
-`docs/marketing/xiaohongshu/video.html` 是一段 1080×1920、约 49 秒的竖屏视频，所有动画由同一个时钟驱动，可以实时播放、拖到任意时间，也可以逐帧渲染。`bash scripts/render-xiaohongshu-video.sh` 用无头 Chrome 渲染每一帧、再用 ffmpeg 合成 `dist/xiaohongshu.mp4`（无声，约 5 分钟，需要 Chrome 和 ffmpeg）；`... still <秒数>…` 只渲染指定时刻的静帧用于检查。口播稿、剪辑与发布文案见 `docs/marketing/xiaohongshu/script.md`。
+`docs/marketing/xiaohongshu/video.html` 是一段 1080×1920、约 64 秒的竖屏视频，所有动画由同一个时钟驱动，可以实时播放、拖到任意时间，也可以逐帧渲染。`bash scripts/render-xiaohongshu-video.sh` 用无头 Chrome 渲染每一帧、再用 ffmpeg 合成 `dist/xiaohongshu.mp4`（无声，约 5 分钟，需要 Chrome 和 ffmpeg）；`... still <秒数>…` 只渲染指定时刻的静帧用于检查。口播稿、剪辑与发布文案见 `docs/marketing/xiaohongshu/script.md`。
 
-同一套做法还生成小红书的**图文 / 实况图**：`docs/marketing/xiaohongshu/slides.html` 是 8 张 1080×1440 的卡片（图片在中间、文字在下面，每张带 3 秒动效）。`bash scripts/render-xiaohongshu-slides.sh` 输出静态图 `dist/xhs-slides/*.jpg`，以及用光集自己的实况图代码合成的 Live Photo 配对 `dist/xhs-slides/live/*.jpg + *.mov`（`media-probe live <视频> <新文件夹>` 可单独把一段 ≤3 秒的视频变成实况图）。两个渲染脚本共用 `scripts/lib/render-frame.sh`（无头 Chrome 逐帧截图）。
+同一套做法还生成小红书的**图文 / 实况图**：`docs/marketing/xiaohongshu/slides.html` 是 12 张 1080×1440 的卡片（图片在中间、文字在下面，每张带 3 秒动效）。`bash scripts/render-xiaohongshu-slides.sh` 输出静态图 `dist/xhs-slides/*.jpg`，以及用光集自己的实况图代码合成的 Live Photo 配对 `dist/xhs-slides/live/*.jpg + *.mov`（`media-probe live <视频> <新文件夹>` 可单独把一段 ≤3 秒的视频变成实况图）。两个渲染脚本共用 `scripts/lib/render-frame.sh`（无头 Chrome 逐帧截图）。
+
+**真人出镜版**：`scripts/audio/build-talking-video.py 录像.mov` 把你对着镜头的录像剪成成片：清理人声、剪掉长停顿、用 Whisper 出字幕、在你说到某个词时在上半屏一笔一笔画出 Excalidraw 风格的手绘白板（`docs/marketing/xiaohongshu/sketches.html`，16 页，用的是 rough.js）、加原创背景音乐。「词 → 白板元素」的对应表在 `scripts/lib/sketch_pics.py` 的 `BOARDS`；白板里的真实截图放在 `docs/marketing/xiaohongshu/pics/`。`python3 scripts/export-excalidraw.py` 把全部白板导出成一个 `.excalidraw` 文件（可在 excalidraw.com 打开）；`python3 scripts/sync-teleprompter.py` 把 `docs/marketing/script-long.md` 的长稿同步进提词器 `teleprompter.html`。用法见 `docs/marketing/xiaohongshu/script.md` 第 1c 节。
 
 **声音**：`bash scripts/render-xiaohongshu-audio.sh` 生成背景音乐和配音版（见 `docs/marketing/xiaohongshu/script.md` 第 1b 节）。`scripts/audio/make-voiceover.py` 把 `narration.json` 的台词转成语音（`--engine edge|melo|say|files`），用 whisper-cli 做语音识别核对，并按配音长度算出每个场景的时长（写入 `timeline.json`，视频渲染通过 `DURS` 环境变量读取）；`scripts/audio/make-music.py` 按这份时间线合成原创音乐。需要 `.venv-audio`（numpy、edge-tts、sherpa-onnx，首次运行自动创建）和 `brew install whisper-cpp` 加一个 Whisper 模型（`~/.cache/whisper-cpp/ggml-small.bin`）。
 
