@@ -135,10 +135,11 @@ struct ExportOptionsSheet: View {
                 ForEach(LiveOutput.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .accentSegments()
-            if settings.liveOutput == .live, app.editor.liveStillIsHDR {
+            if settings.liveOutput == .live, app.editor.liveStillIsHDR || app.editor.hdrAmount > 0 {
                 Toggle(isOn: $settings.image.keepHDR) {
                     Text("保留 HDR")
-                    Text("封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。")
+                    Text(app.editor.liveStillIsHDR ? L("封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。")
+                         : L("封面带 AI 增益图导出，在 HDR 屏幕上亮处发光；动态部分是普通亮度。"))
                 }
             }
         } footer: {

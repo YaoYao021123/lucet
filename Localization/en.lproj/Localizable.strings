@@ -515,6 +515,8 @@
 "以 HDR 显示原片" = "Show original in HDR";
 "HDR 高光扩展（实验）" = "HDR highlight expansion (experimental)";
 "扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。" = "Expands SDR highlights and exports 10-bit HLG video with a gain-map Live key photo. It can't recover highlights that were lost when shooting.";
+"AI HDR 光感（封面）" = "AI HDR (cover)";
+"导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。" = "When exported as a Live Photo, the cover photo gets an AI gain map, so bright areas glow on HDR screens. The motion stays at standard brightness.";
 "AI 判断每处高光该有多亮：HDR 屏幕上亮处发光，普通屏幕上画面不变。导出 JPEG、HEIC 时附带增益图。" = "AI works out how bright each highlight should be: bright areas glow on HDR screens, and the photo looks unchanged on ordinary screens. JPEG and HEIC exports include a gain map.";
 "当前素材为 HDR。" = "This item is HDR.";
 "当前素材为 SDR。" = "This item is SDR.";
@@ -1517,6 +1519,7 @@
 "导出为" = "Export as";
 "保留 HDR" = "Keep HDR";
 "封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。" = "While the cover is unchanged, the photo keeps its gain map, so highlights are brighter on HDR screens. The motion stays at standard brightness, as the iPhone records it.";
+"封面带 AI 增益图导出，在 HDR 屏幕上亮处发光；动态部分是普通亮度。" = "The cover gets an AI gain map, so bright areas glow on HDR screens. The motion stays at standard brightness.";
 "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。" = "This is a Live Photo: the same edits apply to the photo and the motion, and it stays a Live Photo.";
 "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。" = "Saves only the edited photo (full size, capture info kept), without motion.";
 "只保存调色后的动态部分，是一段普通视频。" = "Saves only the edited motion, as an ordinary video.";

@@ -210,7 +210,7 @@ final class EditorModel {
         var edits = MediaEdits(degrees: degrees, lut: selectedLUT, strength: strength, hdrEffect: isVideo && hdrEffect,
                                adjustments: adjustments, geometry: geometry, wheels: wheels, curves: curves, hsl: hsl, bypass: bypass,
                                locals: locals)
-        edits.hdrAmount = isVideo ? 0 : hdrAmount
+        edits.hdrAmount = hdrAmount
         return edits
     }
     /// `edits` plus the red mask tint, for drawing only (never saved, never an undo step).
@@ -414,7 +414,7 @@ final class EditorModel {
         adjustments = recipe.adjustments; wheels = recipe.wheels; curves = recipe.curves; hsl = recipe.hsl
         bypass = recipe.bypass; geometry = recipe.geometry; degrees = recipe.degrees; locals = recipe.locals
         selectedLUT = lut; strength = recipe.strength; hdrEffect = recipe.hdrEffect; hdrPreview = recipe.hdrPreview
-        hdrAmount = isVideo ? 0 : recipe.hdrAmount
+        hdrAmount = recipe.hdrAmount
         guard isVideo, var range = recipe.clip else { return nil }
         guard (try? range.validate(duration: duration)) != nil else { return L("保存的片段超出当前素材长度，已使用完整范围。") }
         var notice: String?
@@ -676,7 +676,7 @@ final class EditorModel {
         recipe.bypass = bypass; recipe.geometry = geometry; recipe.degrees = degrees; recipe.strength = strength
         recipe.locals = locals
         recipe.hdrEffect = hdrEffect; recipe.hdrPreview = hdrPreview; recipe.clip = isVideo ? clip : nil
-        recipe.hdrAmount = isVideo ? 0 : hdrAmount
+        recipe.hdrAmount = hdrAmount
         if let lut = selectedLUT { recipe.lut = try drafts.storeLUT(lut) }
         return recipe
     }
@@ -1179,7 +1179,7 @@ extension EditorModel {
         if geometry.aspectRatio != 0 || geometry.cropScale != 1 || geometry.horizontal != 0 || geometry.vertical != 0 { shape.append(L("裁剪")) }
         if !shape.isEmpty { add(L("几何"), shape.joined(separator: L("，"))) }
         if hdrEffect { add("HDR", L("高光扩展")) }
-        if !isVideo, hdrAmount > 0 { add("HDR", L("AI 光感 \(Int((hdrAmount * 100).rounded()))%")) }
+        if hdrAmount > 0 { add("HDR", L("AI 光感 \(Int((hdrAmount * 100).rounded()))%")) }
         if isVideo, duration > 0 {
             var video: [String] = []
             if clipStart > 0.01 || clipEnd < duration - 0.01 { video.append(L("裁切 \(timeLabel(clipStart))–\(timeLabel(clipEnd))")) }

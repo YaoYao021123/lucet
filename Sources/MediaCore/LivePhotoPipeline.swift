@@ -152,15 +152,27 @@ public enum LivePhotoPipeline {
             // The original photo, graded, is the key photo, with its own date; the movie keeps the source's.
             stillDate = capture.date
         } else {
-            guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
-                throw StraighteningError.renderFailed
-            }
             var properties = capture.imageProperties(at: coverMoment, removeLocation: removeLocation)
             properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
             properties[kCGImagePropertyOrientation] = 1
             properties[kCGImageDestinationLossyCompressionQuality] = 0.95
-            CGImageDestinationAddImage(destination, photo, properties as CFDictionary)
-            guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
+            // AI HDR on a cover cut from the motion: the frame as graded for ordinary screens, the predicted
+            // glow as a gain map for HDR ones. The motion stays SDR.
+            if keepHDR, edits.hdrAmount > 0, let model = AutoHDR.shared, let gain = model.gain(for: photo) {
+                let base = CIImage(cgImage: photo)
+                let hdr = ColorPipeline.applyHDR(base, gain: gain, amount: edits.hdrAmount)
+                if let data = HDRGain.encode(base: base, hdr: hdr, format: .jpeg, quality: 0.95) {
+                    try ImageExporter.write(ImageExporter.Rendered(bitmap: photo, properties: properties, format: .jpeg, hdrData: data),
+                                            to: imageURL, source: url)
+                }
+            }
+            if !FileManager.default.fileExists(atPath: imageURL.path) {
+                guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
+                    throw StraighteningError.renderFailed
+                }
+                CGImageDestinationAddImage(destination, photo, properties as CFDictionary)
+                guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
+            }
         }
         if trimmedCover == nil {
             // Re-encoded: the camera's clip-wide Live Photo tags still apply; its per-frame tracks would not.

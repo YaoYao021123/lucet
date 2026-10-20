@@ -83,7 +83,8 @@ public struct MediaEdits: Sendable, Equatable {
         self.init(degrees: recipe.degrees, lut: lut, strength: recipe.strength, hdrEffect: isVideo && recipe.hdrEffect,
                   adjustments: recipe.adjustments, geometry: recipe.geometry, wheels: recipe.wheels, curves: recipe.curves,
                   hsl: recipe.hsl, bypass: recipe.bypass, locals: recipe.locals)
-        hdrAmount = isVideo ? 0 : recipe.hdrAmount
+        // A video keeps it for the Live Photo cover made from it; the motion itself stays as graded.
+        hdrAmount = recipe.hdrAmount
     }
 
     public func isActive(_ stage: GradeStage) -> Bool { !bypass.contains(stage) }
