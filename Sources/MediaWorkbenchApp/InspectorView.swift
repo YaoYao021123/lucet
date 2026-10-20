@@ -453,13 +453,16 @@ struct HDRSection: View {
                         .help("扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。")
                     // A Live Photo whose photo is already HDR keeps that instead.
                     if AutoHDR.shared != nil, !editor.liveStillIsHDR {
-                        Toggle("AI HDR 光感（封面）", isOn: Binding(get: { editor.hdrAmount > 0 }, set: { editor.hdrAmount = $0 ? 1 : 0 }))
-                            .disabled(editor.hdrEffect)
-                            .help(L("导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。"))
-                        if editor.hdrAmount > 0, !editor.hdrEffect {
+                        Toggle(editor.hdrEffect ? L("AI HDR 光感（封面与动态）") : L("AI HDR 光感（封面）"),
+                               isOn: Binding(get: { editor.hdrAmount > 0 }, set: { editor.hdrAmount = $0 ? 1 : 0 }))
+                            .help(L("导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。同时开启「HDR 高光扩展」时，动态部分也由 AI 逐帧提亮。"))
+                        if editor.hdrAmount > 0 {
                             ParameterRow(title: L("强度"), value: (editor.hdrAmount * 100).rounded(), range: 10...100, suffix: "%", neutral: 100,
                                          onChange: { editor.hdrAmount = $0 / 100 }, onEditing: editor.beginEditing)
                                 .equatable()
+                            if editor.hdrEffect {
+                                Text("动态部分由 AI 逐帧判断亮处，导出为 HDR 视频（实验，导出较慢）。").font(.caption).foregroundStyle(WorkbenchTheme.textSecondary)
+                            }
                         }
                     }
                 } else if !editor.sourceIsHDR, AutoHDR.shared != nil {

@@ -244,6 +244,8 @@ final class EditorModel {
         let music: URL?
         let sdr: Bool
         let hdrEffect: Bool
+        /// AI HDR on the motion works out its glow when the player is built.
+        let aiMotion: Bool
     }
     /// SDR sources always get a filter composition, so the first edit and the
     /// before/after toggle never rebuild the player.
@@ -253,7 +255,7 @@ final class EditorModel {
     }
     private var previewKey: PreviewKey {
         PreviewKey(start: clipStart, end: clipEnd, speed: playbackSpeed, music: musicURL,
-                   sdr: previewNeedsSDR, hdrEffect: hdrEffect)
+                   sdr: previewNeedsSDR, hdrEffect: hdrEffect, aiMotion: hdrEffect && hdrAmount > 0)
     }
 
     static func proxyDimension() -> Int {

@@ -121,6 +121,18 @@ struct AutoHDRTests {
         #expect(project.recipe(for: "/b.jpg")?.hdrAmount == 0, "per photo, not shared")
     }
 
+    @Test func testMotionGlowIsSmoothedOverTime() throws {
+        // A map that flickers on and off from frame to frame settles toward its average.
+        var maps: [[Float]] = [[0], [1], [0], [1], [0], [1]]
+        func flicker(_ maps: [[Float]]) -> Float { zip(maps, maps.dropFirst()).map { abs($0[0] - $1[0]) }.max() ?? 0 }
+        let before = flicker(maps)
+        maps = AutoHDR.smoothed(maps)
+        #expect(maps[1] == [0.5] && maps[0] == [0.25])
+        #expect(flicker(AutoHDR.smoothed(maps)) < before / 3)
+        // Two maps or fewer are left as they are.
+        #expect(AutoHDR.smoothed([[0], [1]]) == [[0], [1]])
+    }
+
     @Test func testRefusesADamagedFile() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("broken-\(UUID().uuidString).bin")
         defer { try? FileManager.default.removeItem(at: url) }

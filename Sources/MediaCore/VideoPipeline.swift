@@ -70,6 +70,46 @@ public enum VideoCodecChoice: String, Codable, CaseIterable, Sendable {
     var preset: String { self == .h264 ? AVAssetExportPresetHighestQuality : AVAssetExportPresetHEVCHighestQuality }
 }
 
+/// AI HDR for the motion (experimental): gain maps worked out on frames a short step apart and blended in
+/// between, so the glow follows the picture without flickering.
+struct MotionGain: @unchecked Sendable {
+    let start: Double
+    let step: Double
+    let maps: [CIImage]
+    /// Long side the glow is worked out at; the gain map is smooth, so small is enough. Tests lower it.
+    nonisolated(unsafe) static var size = 384
+
+    /// The gain at a moment of the source movie.
+    func at(_ seconds: Double) -> CIImage? {
+        guard let first = maps.first else { return nil }
+        guard maps.count > 1, step > 0 else { return first }
+        let position = min(Double(maps.count - 1), max(0, (seconds - start) / step))
+        let index = min(maps.count - 2, Int(position)), fraction = position - Double(index)
+        return maps[index + 1].applyingFilter("CIDissolveTransition", parameters: [kCIInputTargetImageKey: maps[index], kCIInputTimeKey: 1 - fraction])
+            .cropped(to: first.extent)
+    }
+
+    /// Gain maps every `step` seconds over a range of the source (a single map when the range is a moment).
+    static func make(_ url: URL, from start: Double, to end: Double, step: Double) async -> MotionGain? {
+        guard let model = AutoHDR.shared else { return nil }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.dynamicRangePolicy = .forceSDR
+        generator.maximumSize = CGSize(width: 512, height: 512)
+        let tolerance = CMTime(value: 1, timescale: 60)
+        generator.requestedTimeToleranceBefore = tolerance; generator.requestedTimeToleranceAfter = tolerance
+        let count = end > start ? Int(((end - start) / step).rounded(.up)) + 1 : 1
+        var frames: [CGImage] = []
+        for index in 0..<count {
+            guard !Task.isCancelled,
+                  let frame = try? await generator.image(at: CMTime(seconds: min(end, start + Double(index) * step), preferredTimescale: 600)).image else { return nil }
+            frames.append(frame)
+        }
+        let maps = model.gains(for: frames, size: size)
+        return maps.isEmpty ? nil : MotionGain(start: start, step: step, maps: maps)
+    }
+}
+
 public enum VideoPipeline {
     /// Previews and exports the same selected range, geometry, LUT and audio mix.
     public static func prepare(_ url: URL, clip: ClipSettings, edits: MediaEdits,
@@ -128,6 +168,14 @@ public enum VideoPipeline {
         let transfer = extensions?[kCMFormatDescriptionExtension_TransferFunction as String] as? String
         let sourceIsHDR = transfer == AVVideoTransferFunction_ITU_R_2100_HLG || transfer == AVVideoTransferFunction_SMPTE_ST_2084_PQ
         var filtered: AVVideoComposition?
+        // AI HDR on the motion: both HDR switches on, for an ordinary source. Exports work out the glow every
+        // 0.1 s (at most 300 times); the preview uses the cover's for the whole clip.
+        var motionGain: MotionGain?
+        if edits.hdrEffect, edits.hdrAmount > 0, !sourceIsHDR {
+            motionGain = preview == nil
+                ? await MotionGain.make(url, from: clip.start, to: clip.end, step: max(0.1, (clip.end - clip.start) / 300))
+                : await MotionGain.make(url, from: clip.cover, to: clip.cover, step: 1)
+        }
         if sdr || edits.hasLUT || edits.hasAdjustments || edits.hasGeometry || edits.hdrEffect {
             let context = ColorPipeline.context()
             let natural = try await sourceVideo.load(.naturalSize)
@@ -156,7 +204,13 @@ public enum VideoPipeline {
                     // interactive LUT/HDR/geometry work uses a bounded canvas.
                     let small = preview == nil ? source : source.transformed(by: .init(scaleX: previewScale, y: previewScale))
                     let graded = try ColorPipeline.grade(small, edits: settings)
-                    let expanded = settings.hdrEffect ? try HDRExpansion.image(graded) : graded
+                    let expanded: CIImage
+                    if settings.hdrEffect, settings.hdrAmount > 0, let motionGain,
+                       let gain = motionGain.at(clip.start + request.compositionTime.seconds * clip.speed) {
+                        expanded = ColorPipeline.applyHDR(graded, gain: gain, amount: settings.hdrAmount)
+                    } else {
+                        expanded = settings.hdrEffect ? try HDRExpansion.image(graded) : graded
+                    }
                     var frame = try ColorPipeline.geometry(expanded, edits: settings)
                     if preview != nil {
                         // A stable canvas permits angle changes without replacing
