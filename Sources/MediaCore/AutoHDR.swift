@@ -307,8 +307,14 @@ public final class AutoHDR: Sendable {
                                         kCGImageSourceThumbnailMaxPixelSize: Self.workingSize]
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        return gain(for: image)
+    }
+
+    /// The gain map of a picture (not cached), e.g. a frame cut from a video for a Live Photo's cover.
+    public func gain(for image: CGImage) -> CIImage? {
+        let scale = min(1, Double(Self.workingSize) / Double(max(image.width, image.height)))
         // Even sizes, so the 2× down-and-up path lands on the same size.
-        let width = max(2, image.width / 2 * 2), height = max(2, image.height / 2 * 2)
+        let width = max(2, Int(Double(image.width) * scale) / 2 * 2), height = max(2, Int(Double(image.height) * scale) / 2 * 2)
         guard let local = Self.planar(image, width: width, height: height), let global = Self.planar(image, width: 256, height: 256) else { return nil }
         let gain = gainMap(global: global, local: local)
         let bytes = gain.data.withUnsafeBytes { Data($0) }
@@ -346,13 +352,18 @@ extension ColorPipeline {
     /// The AI HDR glow on top of a graded picture (before rotation and crop), in linear light.
     /// Unchanged when the effect is off, there's no model, or the photo file isn't known.
     public static func applyHDR(_ image: CIImage, edits: MediaEdits) -> CIImage {
-        guard edits.hdrAmount > 0, let url = edits.source, let model = AutoHDR.shared, let gain = model.gain(for: url),
-              let kernel = boostKernel, !image.extent.isInfinite, gain.extent.width > 0, gain.extent.height > 0 else { return image }
+        guard edits.hdrAmount > 0, let url = edits.source, let model = AutoHDR.shared, let gain = model.gain(for: url) else { return image }
+        return applyHDR(image, gain: gain, amount: edits.hdrAmount)
+    }
+
+    /// A picture lifted by a gain map (stops) at `amount` 0…1; the map is stretched over the picture.
+    public static func applyHDR(_ image: CIImage, gain: CIImage, amount: Double) -> CIImage {
+        guard amount > 0, let kernel = boostKernel, !image.extent.isInfinite, gain.extent.width > 0, gain.extent.height > 0 else { return image }
         let extent = image.extent
         let fitted = gain.transformed(by: CGAffineTransform(translationX: extent.minX, y: extent.minY)
             .scaledBy(x: extent.width / gain.extent.width, y: extent.height / gain.extent.height))
             .clampedToExtent()
-        return kernel.apply(extent: extent, arguments: [image, fitted, Float(edits.hdrAmount)])?.cropped(to: extent) ?? image
+        return kernel.apply(extent: extent, arguments: [image, fitted, Float(amount)])?.cropped(to: extent) ?? image
     }
 
     /// How bright the AI HDR glow can get (for display headroom).

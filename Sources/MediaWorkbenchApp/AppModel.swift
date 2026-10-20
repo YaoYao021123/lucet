@@ -876,12 +876,13 @@ final class AppModel {
         guard ensureLiveRangeIsValid() else { return }
         if exportSettings.destination == .photos {
             guard let input = editor.mediaURL else { return }
-            let edits = editor.edits, clip = editor.clip
+            let edits = editor.edits, clip = editor.clip, keepHDR = exportSettings.image.keepHDR
             let name = source.deletingPathExtension().lastPathComponent + "-Live"
             exports.enqueue(L("制作 Live · 存到「照片」")) { report in
                 let folder = try PhotosSaver.stagingFolder()
                 defer { try? FileManager.default.removeItem(at: folder) }
-                let resources = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits) { report($0, nil) }
+                let resources = try await LivePhotoPipeline.export(input, to: folder.appendingPathComponent(name), clip: clip, edits: edits,
+                                                                   keepHDR: keepHDR) { report($0, nil) }
                 _ = try await LivePhotoPipeline.load(imageURL: resources.imageURL, videoURL: resources.videoURL)
                 report(nil, L("正在存入「照片」…"))
                 try await PhotosSaver.save([.live(image: resources.imageURL, video: resources.videoURL)])

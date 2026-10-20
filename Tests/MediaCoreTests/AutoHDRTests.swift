@@ -105,7 +105,7 @@ struct AutoHDRTests {
         let decoded = try JSONDecoder().decode(EditRecipe.self, from: JSONEncoder().encode(recipe))
         #expect(decoded.hdrAmount == 0.6)
         #expect(MediaEdits(recipe: decoded, lut: nil).hdrAmount == 0.6)
-        #expect(MediaEdits(recipe: decoded, lut: nil, isVideo: true).hdrAmount == 0)
+        #expect(MediaEdits(recipe: decoded, lut: nil, isVideo: true).hdrAmount == 0.6, "kept for the Live Photo cover")
         let old = try JSONDecoder().decode(EditRecipe.self, from: Data(#"{"version":1}"#.utf8))
         #expect(old.hdrAmount == 0)
         let wild = try JSONDecoder().decode(EditRecipe.self, from: Data(#"{"version":1,"hdrAmount":7}"#.utf8))

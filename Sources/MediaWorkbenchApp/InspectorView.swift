@@ -451,6 +451,17 @@ struct HDRSection: View {
                 if editor.isVideo {
                     Toggle("HDR 高光扩展（实验）", isOn: Binding(get: { editor.hdrEffect }, set: { editor.hdrEffect = $0 }))
                         .help("扩展 SDR 高光，导出 10-bit HLG 视频与增益图 Live 封面；无法找回拍摄时已丢失的高光。")
+                    // A Live Photo whose photo is already HDR keeps that instead.
+                    if AutoHDR.shared != nil, !editor.liveStillIsHDR {
+                        Toggle("AI HDR 光感（封面）", isOn: Binding(get: { editor.hdrAmount > 0 }, set: { editor.hdrAmount = $0 ? 1 : 0 }))
+                            .disabled(editor.hdrEffect)
+                            .help(L("导出为 Live Photo 时，封面照片带 AI 增益图，在 HDR 屏幕上亮处发光；动态部分保持普通亮度。"))
+                        if editor.hdrAmount > 0, !editor.hdrEffect {
+                            ParameterRow(title: L("强度"), value: (editor.hdrAmount * 100).rounded(), range: 10...100, suffix: "%", neutral: 100,
+                                         onChange: { editor.hdrAmount = $0 / 100 }, onEditing: editor.beginEditing)
+                                .equatable()
+                        }
+                    }
                 } else if !editor.sourceIsHDR, AutoHDR.shared != nil {
                     Toggle("AI HDR 光感", isOn: Binding(get: { editor.hdrAmount > 0 }, set: { editor.hdrAmount = $0 ? 1 : 0 }))
                         .help(L("AI 判断每处高光该有多亮：HDR 屏幕上亮处发光，普通屏幕上画面不变。导出 JPEG、HEIC 时附带增益图。"))

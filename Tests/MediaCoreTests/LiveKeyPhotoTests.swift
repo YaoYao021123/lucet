@@ -264,6 +264,54 @@ struct LiveKeyPhotoTests {
         #expect(try await tag(graded.videoURL, "mdta/com.apple.quicktime.live-photo.vitality-score") == "0.93")
     }
 
+    /// One second of a bright sky over dark ground.
+    private func makeSkyMovie(_ url: URL, width: Int, height: Int) async throws {
+        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height])
+        let adapter = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input,
+            sourcePixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+        writer.add(input)
+        try #require(writer.startWriting())
+        writer.startSession(atSourceTime: .zero)
+        for index in 0..<30 {
+            var buffer: CVPixelBuffer?
+            _ = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, nil, &buffer)
+            let pixels = try #require(buffer)
+            CVPixelBufferLockBaseAddress(pixels, [])
+            let base = CVPixelBufferGetBaseAddress(pixels)!.assumingMemoryBound(to: UInt8.self)
+            let row = CVPixelBufferGetBytesPerRow(pixels)
+            for y in 0..<height {
+                let value: UInt8 = y < height * 2 / 5 ? 250 : 45
+                for x in 0..<width { for c in 0..<3 { base[y * row + x * 4 + c] = value }; base[y * row + x * 4 + 3] = 255 }
+            }
+            CVPixelBufferUnlockBaseAddress(pixels, [])
+            var attempts = 0
+            while !input.isReadyForMoreMediaData && attempts < 500 { try await Task.sleep(for: .milliseconds(10)); attempts += 1 }
+            try #require(adapter.append(pixels, withPresentationTime: CMTime(value: Int64(index), timescale: 30)))
+        }
+        input.markAsFinished()
+        await writer.finishWriting()
+        try #require(writer.status == .completed)
+    }
+
+    @Test func aCoverCutFromAClipGetsTheAIHDRGlow() async throws {
+        try #require(AutoHDR.shared != nil)
+        let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
+        let movie = dir.appendingPathComponent("clip.mov")
+        try await makeSkyMovie(movie, width: 320, height: 240)
+        var edits = MediaEdits(); edits.hdrAmount = 1
+        let clip = ClipSettings(start: 0, end: 1, cover: 0.5)
+        let live = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("hdr"), clip: clip, edits: edits)
+        #expect(gainMaps(live.imageURL) > 0)
+        #expect(try ImageGradeSession.decode(live.imageURL).contentHeadroom > 1.05)
+        let maker = try #require(try properties(live.imageURL)[kCGImagePropertyMakerAppleDictionary] as? [String: Any])
+        #expect(maker["17"] as? String == live.identifier, "still paired with its motion")
+        // Keep HDR off: an ordinary cover.
+        let plain = try await LivePhotoPipeline.export(movie, to: dir.appendingPathComponent("sdr"), clip: clip, edits: edits, keepHDR: false)
+        #expect(gainMaps(plain.imageURL) == 0)
+    }
+
     @Test func aStillOfAnotherShapeFallsBackToAVideoFrame() async throws {
         let dir = try folder(); defer { try? FileManager.default.removeItem(at: dir) }
         let movie = dir.appendingPathComponent("m.mov"), still = dir.appendingPathComponent("s.jpg")
