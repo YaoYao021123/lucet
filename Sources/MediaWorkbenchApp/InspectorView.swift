@@ -516,13 +516,14 @@ struct GeometryPanel: View {
                 }
             }
             InspectorSection(L("旋转与翻转")) {
-                HStack(spacing: 8) {
+                GlassGroup { HStack(spacing: 8) {
                     Button { editor.rotate(clockwise: false) } label: { Label("向左", systemImage: "rotate.left") }
                     Button { editor.rotate(clockwise: true) } label: { Label("向右", systemImage: "rotate.right") }
                     Button { editor.geometry.mirrored.toggle() } label: { Label("镜像", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right") }
                 }
                 .glassButton()
                 .controlSize(.small)
+                }
             }
             InspectorSection(L("裁剪"), onReset: { editor.group { editor.geometry.aspectRatio = 0; editor.geometry.cropScale = 1; editor.geometry.horizontal = 0; editor.geometry.vertical = 0 } }) {
                 VStack(alignment: .leading, spacing: 6) {

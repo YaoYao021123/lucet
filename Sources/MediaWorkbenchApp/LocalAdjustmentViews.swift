@@ -102,6 +102,10 @@ struct LocalAdjustmentSection: View {
     }
 
     private func shapeButtons<S: LabelStyle>(_ shapes: [LocalAdjustment.Shape], _ style: S) -> some View {
+        GlassGroup { shapeRow(shapes, style) }
+    }
+
+    private func shapeRow<S: LabelStyle>(_ shapes: [LocalAdjustment.Shape], _ style: S) -> some View {
         HStack(spacing: 6) {
             ForEach(shapes, id: \.self) { shape in
                 Button { editor.addLocal(shape) } label: {
