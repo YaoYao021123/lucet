@@ -293,8 +293,9 @@ struct Orbit3D: View {
     var target = V3.zero
     var motion = Motion.spin(0.16)
     var viewpoint: Viewpoint?
-    /// Idle motion is slow, so half the display rate is plenty; dragging redraws at once anyway.
-    var framesPerSecond = 30.0
+    /// 60 a second: at 30 a turning scene visibly steps from frame to frame (judder) on 120 Hz screens,
+    /// and every scene builds its frame in well under the 16 ms this leaves.
+    var framesPerSecond = 60.0
     let draw: (inout Scene3D, Double) -> Void
 
     private struct Pose {
