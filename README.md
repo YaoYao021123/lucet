@@ -122,6 +122,7 @@ A partner built a web edition of Lucet (open source, Apache-2.0). Its algorithms
 - Exports **save straight into Photos** by default; with iCloud Photos on, they sync to your iPhone. Or save files, or share with the system share sheet.
 - Open a **Live Photo** and edit it: the photo and the motion get the same adjustments, and it exports as a Live Photo again (or choose "Photo only" or "Video").
 - **Pick the cover** for a Live Photo or clip: Lucet samples frames across it and marks the sharpest one (and the best faces), so you don't have to scrub for it. A Live Photo keeps its original photo, date and place when you export it.
+- **Make more from a Live Photo:** a **long exposure** (the frames stacked into one photo, with hand shake aligned), or a **looping** or **bouncing** video. Choose it in 导出为 / "Export as" when you export.
 - Trim a video to 3 seconds or less to make a real **Live Photo**, or combine several clips into a "Collage Live".
 - JPEG / HEIC / PNG, optionally resized for social media. Capture time and camera info are kept; location is removed by default. Exports run in the background.
 - **HDR photos stay HDR**: they export with a gain map, so highlights stay bright on HDR screens, edits included.

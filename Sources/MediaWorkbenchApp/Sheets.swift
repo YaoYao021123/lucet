@@ -56,7 +56,7 @@ struct ExportOptionsSheet: View {
     /// A Live Photo open in the editor: its output is a choice, not "a video".
     private var isLiveCurrent: Bool { target == .current && app.editor.isLiveInput }
     private var hasImages: Bool {
-        if isLiveCurrent { return settings.liveOutput == .still }
+        if isLiveCurrent { return settings.liveOutput.producesPhoto }
         return target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo }
     }
     private var hasVideos: Bool {
@@ -132,9 +132,10 @@ struct ExportOptionsSheet: View {
     private var liveSection: some View {
         Section {
             Picker("导出为", selection: $settings.liveOutput) {
-                ForEach(LiveOutput.allCases, id: \.self) { Text($0.title).tag($0) }
+                ForEach([LiveOutput.live, .still, .video], id: \.self) { Text($0.title).tag($0) }
+                Divider()
+                ForEach([LiveOutput.longExposure, .loop, .bounce], id: \.self) { Text($0.title).tag($0) }
             }
-            .accentSegments()
             if settings.liveOutput == .live, app.editor.liveStillIsHDR || app.editor.hdrAmount > 0 {
                 Toggle(isOn: $settings.image.keepHDR) {
                     Text("保留 HDR")
@@ -143,10 +144,19 @@ struct ExportOptionsSheet: View {
                 }
             }
         } footer: {
-            Text(settings.liveOutput == .live ? "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。"
-                 : settings.liveOutput == .still ? "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。"
-                 : "只保存调色后的动态部分，是一段普通视频。")
+            Text(liveOutputNote)
                 .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var liveOutputNote: String {
+        switch settings.liveOutput {
+        case .live: L("这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。")
+        case .still: L("只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。")
+        case .video: L("只保存调色后的动态部分，是一段普通视频。")
+        case .longExposure: L("把整段画面叠成一张照片：流水变丝绸、人群变淡。会自动对齐手抖，但拍摄时越稳越好。")
+        case .loop: L("首尾淡入淡出，循环播放时看不出接缝。没有声音。")
+        case .bounce: L("先正放再倒放，来回循环。没有声音。")
         }
     }
 
