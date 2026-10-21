@@ -1196,15 +1196,15 @@
 "放大选取范围" = "Zoom to selection";
 "显示完整素材" = "Show whole clip";
 "静音原声" = "Mute original audio";
-"适配 3 秒 Live" = "Fit to 3 s Live";
-"速度 %.2g×" = "Speed %.2g×";
-"变速后视频与原声同步变化，背景音乐保持原节奏" = "Speed changes the video and its audio together; background music keeps its tempo";
 "以播放头为中心选取 3 秒输出" = "Select 3 seconds centered on the playhead";
 "选取 3 秒" = "Select 3 s";
 "挑封面" = "Pick cover";
 "从片段里取几帧，推荐最清晰、人像最好的一张" = "Takes a few frames from the clip and recommends the sharpest one, with the best faces";
 "把播放头位置设为 Live 封面（C）" = "Use the playhead as the Live key photo (C)";
 "设为封面" = "Set Key Photo";
+"适配 3 秒 Live" = "Fit to 3 s Live";
+"速度 %.2g×" = "Speed %.2g×";
+"变速后视频与原声同步变化，背景音乐保持原节奏" = "Speed changes the video and its audio together; background music keeps its tempo";
 "制作 Live" = "Make Live";
 "Live Photo 最长 3 秒；点按可选择如何缩短" = "Live Photos are at most 3 seconds; click to choose how to shorten";
 "生成 Live Photo（在后台进行）" = "Create a Live Photo (in the background)";
@@ -1263,6 +1263,7 @@
 "缩小" = "Zoom Out";
 "显示或隐藏素材库" = "Show or Hide Library";
 "显示或隐藏检查器" = "Show or Hide Inspector";
+"时间线按钮样式（预览）" = "Timeline button style (preview)";
 "键盘快捷键" = "Keyboard Shortcuts";
 
 /* PhotoCoach.swift */
@@ -1682,6 +1683,11 @@
 "隐藏此步骤的效果以比较（参数保留）" = "Hide this step's effect to compare (settings kept)";
 "state.off" = "off";
 "state.on" = "on";
+"现状：每个按钮一块玻璃" = "Current: one piece of glass per button";
+"A · 悬浮在画面上的玻璃条" = "A · Glass bar floating over the picture";
+"B · 一条玻璃条，按钮是平的" = "B · One glass strip, flat buttons";
+"B + D · 玻璃条，三个动作合成一组" = "B + D · Glass strip, three actions grouped";
+"C · 半透明底，按钮更大" = "C · Translucent bar, larger buttons";
 
 /* WorkbenchView.swift */
 "好" = "OK";

@@ -91,6 +91,7 @@ enum DebugSnapshot {
             panelWindow = window
         case "inspector": app.showInspector = argument != "off"
         case "auto": app.autoEnhance()
+        case "timelinestyle": UserDefaults.standard.set(argument, forKey: "timeline.style")
         case "covers":
             // Renders the cover picker in an offscreen window: "covers" (shot name "covers").
             let window = NSWindow(contentRect: NSRect(x: -6000, y: 0, width: 520, height: 520), styleMask: [.borderless], backing: .buffered, defer: false)
