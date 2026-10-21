@@ -62,6 +62,10 @@ private struct TransportBar: View {
     }
 
     private var playback: some View {
+        GlassGroup { playbackButtons }
+    }
+
+    private var playbackButtons: some View {
         HStack(spacing: 4) {
             IconButton(title: L("上一帧（←）"), icon: "backward.frame") { editor.stepFrame(-1) }
             IconButton(title: L("播放 / 暂停（空格）"), icon: editor.playing ? "pause.fill" : "play.fill", action: editor.togglePlayback)
@@ -75,6 +79,11 @@ private struct TransportBar: View {
     }
 
     private var live: some View {
+        // One glass surface for the row, so the buttons share it instead of each being a separate piece of glass.
+        GlassGroup { liveButtons }
+    }
+
+    private var liveButtons: some View {
         HStack(spacing: 8) {
             Menu {
                 ForEach(Self.speeds, id: \.self) { speed in
@@ -85,7 +94,7 @@ private struct TransportBar: View {
             } label: {
                 Text(String(format: L("速度 %.2g×"), editor.playbackSpeed)).monospacedDigit()
             }
-            .fixedSize()
+            .menuStyle(.button).glassButton().fixedSize()
             .help("变速后视频与原声同步变化，背景音乐保持原节奏")
             Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help(L("以播放头为中心选取 3 秒输出"))
             Button("挑封面") { showCovers.toggle() }.glassButton()

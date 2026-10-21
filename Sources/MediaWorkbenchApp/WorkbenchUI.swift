@@ -271,7 +271,7 @@ struct IconButton: View {
                 .frame(width: 20, height: 20)
         }
         Group {
-            if active { button.primaryButton().buttonBorderShape(.circle) } else { button.glassButton(.circle) }
+            if active { button.primaryButton(.circle) } else { button.glassButton(.circle) }
         }
         .help(title)
         .accessibilityLabel(title)
@@ -312,12 +312,14 @@ struct SidebarMaterial: NSViewRepresentable {
 }
 
 extension View {
-    @ViewBuilder func primaryButton() -> some View {
+    /// Primary actions: prominent glass, in the same capsule as every secondary button (left alone, the system
+    /// draws a rounded rectangle, which sat oddly beside the capsules).
+    @ViewBuilder func primaryButton(_ shape: ButtonBorderShape = .capsule) -> some View {
         // Snapshot captures don't draw glass (the prominent label would vanish), so they get the filled style.
         if DebugSnapshot.directory == nil, #available(macOS 26, *) {
-            self.buttonStyle(.glassProminent).tint(WorkbenchTheme.accentFill)
+            self.buttonStyle(.glassProminent).buttonBorderShape(shape).tint(WorkbenchTheme.accentFill)
         } else {
-            self.buttonStyle(.borderedProminent).tint(WorkbenchTheme.accentFill)
+            self.buttonStyle(.borderedProminent).buttonBorderShape(shape).tint(WorkbenchTheme.accentFill)
         }
     }
 
