@@ -77,10 +77,17 @@ enum ExportDestination: String, Codable, CaseIterable {
 
 /// What a Live Photo that is open in the editor is exported as.
 enum LiveOutput: String, Codable, CaseIterable {
-    case live, still, video
+    case live, still, video, longExposure, loop, bounce
     var title: String {
-        switch self { case .live: "Live Photo"; case .still: L("仅照片"); case .video: L("视频") }
+        switch self {
+        case .live: "Live Photo"; case .still: L("仅照片"); case .video: L("视频")
+        case .longExposure: L("长曝光"); case .loop: L("循环视频"); case .bounce: L("往返视频")
+        }
     }
+    /// Made from the whole clip rather than being the Live Photo, its photo or its video.
+    var isEffect: Bool { self == .longExposure || self == .loop || self == .bounce }
+    /// The result is a photograph (otherwise a video, or a Live Photo).
+    var producesPhoto: Bool { self == .still || self == .longExposure }
 }
 
 struct ExportSettings: Codable, Equatable {
@@ -689,7 +696,7 @@ final class AppModel {
         if liveMode == .live, !ensureLiveRangeIsValid() { return }
         let keyPhoto = editor.liveKeyPhotoURL
         let (input, edits) = Self.liveExportInput(liveMode, still: source, movie: movie, edits: editor.edits)
-        let video = editor.isVideo && liveMode != .still
+        let video = editor.isVideo && liveMode?.producesPhoto != true
         let size = videoOutputSize
         let title = source.deletingPathExtension().lastPathComponent + "." + (liveMode == .live ? "livephoto" : video ? "mov" : settings.image.format.fileExtension)
         let id = exports.enqueue(share ? L("共享 \(title)") : L("存到「照片」· \(title)")) { report in
@@ -706,7 +713,12 @@ final class AppModel {
                 try await PhotosSaver.save([.live(image: live.imageURL, video: live.videoURL)])
                 return ExportQueue.Result(outputs: [], live: nil, summary: L("已作为 Live Photo 存到「照片」，会随 iCloud 同步到 iPhone"), inPhotos: true)
             }
-            if video {
+            if let effect = liveMode, effect.isEffect {
+                let name = Self.exportName(source, settings: settings, index: 0, total: 1, size: size)
+                output = folder.appendingPathComponent(name + "." + (effect.producesPhoto ? settings.image.format.fileExtension : "mov"))
+                try await Self.renderEffect(effect, movie: input, still: source, clip: clip, edits: edits, settings: settings,
+                                            removeLocation: share ? settings.image.removeLocation : false, to: output, report: report)
+            } else if video {
                 output = folder.appendingPathComponent(Self.exportName(source, settings: settings, index: 0, total: 1, size: size) + ".mov")
                 try await VideoPipeline.export(input, to: output, clip: clip, edits: edits, codec: settings.codec) { report($0, nil) }
             } else {
@@ -768,7 +780,7 @@ final class AppModel {
             }
             return
         }
-        let video = editor.isVideo && liveMode != .still
+        let video = editor.isVideo && liveMode?.producesPhoto != true
         let panel = NSSavePanel()
         // Next to the original, the plain name gets "-编辑" so it can't be mistaken for it.
         let stem = settings.naming == ExportNaming.defaultPattern
@@ -816,7 +828,16 @@ final class AppModel {
         let liveMode = currentLiveMode
         if liveMode == .live { enqueueLive(to: output); return }
         let (input, edits) = Self.liveExportInput(liveMode, still: editor.url ?? movie, movie: movie, edits: editor.edits)
-        let video = editor.isVideo && liveMode != .still
+        let video = editor.isVideo && liveMode?.producesPhoto != true
+        if let effect = liveMode, effect.isEffect {
+            let still = editor.url ?? movie
+            exports.enqueue(L("导出 \(output.lastPathComponent)")) { report in
+                try await Self.renderEffect(effect, movie: input, still: still, clip: clip, edits: edits, settings: settings,
+                                            removeLocation: settings.image.removeLocation, to: output, report: report)
+                return ExportQueue.Result(outputs: [output], live: nil, summary: L("已保存"))
+            }
+            return
+        }
         exports.enqueue(L("导出 \(output.lastPathComponent)")) { report in
             if video {
                 try await Self.exportVideo(input, to: output, clip: clip, edits: edits, codec: settings.codec, report: report)
@@ -846,6 +867,26 @@ final class AppModel {
         let picker = NSSharingServicePicker(items: urls)
         let anchor = NSRect(x: view.bounds.maxX - 120, y: view.isFlipped ? 4 : view.bounds.maxY - 4, width: 1, height: 1)
         picker.show(relativeTo: anchor, of: view, preferredEdge: view.isFlipped ? .maxY : .minY)
+    }
+
+    /// Long exposure (a photo) or a loop / bounce (a silent video) made from the clip. A file the user agreed to
+    /// replace is swapped in only once the new one is complete.
+    private nonisolated static func renderEffect(_ effect: LiveOutput, movie: URL, still: URL, clip: ClipSettings, edits: MediaEdits,
+                                                 settings: ExportSettings, removeLocation: Bool, to output: URL,
+                                                 report: @escaping ExportQueue.Report) async throws {
+        let replacing = FileManager.default.fileExists(atPath: output.path)
+        let target = replacing ? output.deletingLastPathComponent().appendingPathComponent(".guangji-\(UUID().uuidString).\(output.pathExtension)") : output
+        defer { if replacing { try? FileManager.default.removeItem(at: target) } }
+        switch effect {
+        case .longExposure:
+            var options = settings.image
+            options.removeLocation = removeLocation; options.watermark = nil; options.keepHDR = false
+            try await LiveEffects.longExposure(movie: movie, clip: clip, edits: edits, metadataSource: still, options: options, to: target) { report($0, L("正在叠加画面…")) }
+        case .loop, .bounce:
+            try await LiveEffects.repeating(effect == .loop ? .loop : .bounce, movie: movie, clip: clip, edits: edits, to: target) { report($0, nil) }
+        default: return
+        }
+        if replacing { _ = try FileManager.default.replaceItemAt(output, withItemAt: target) }
     }
 
     /// What gets rendered: the movie for Live Photo and video output, the still for "仅照片" (graded at
