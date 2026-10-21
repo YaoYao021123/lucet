@@ -72,8 +72,9 @@ struct CullingSheet: View {
             }
             Spacer()
             Toggle(isOn: $zoomed) { Label("放大到 100%", systemImage: "plus.magnifyingglass") }
-                .toggleStyle(.button).help("所有照片同时放大到同一个位置，比较清晰度（Z）")
+                .toggleStyle(.button).glassButton().help("所有照片同时放大到同一个位置，比较清晰度（Z）")
             Button("只保留选中的这张") { keepOnly(entries) }
+                .glassButton()
                 .help("选用当前这张，排除这组里的其他照片")
                 .disabled(entries.isEmpty)
             Button("完成") { app.sheet = nil }.keyboardShortcut(.cancelAction).primaryButton()
