@@ -9,7 +9,7 @@ Your face and your own voice stay the main thing. The tool only does the editing
   2. cleans the voice: low rumble and steady background noise out, even volume, normal streaming loudness,
   3. trims dead air: leading/trailing silence and long pauses are shortened (jump cuts), so it keeps moving,
   4. recognises what you said (Whisper, on this Mac) and writes captions (captions.srt; fix it and run with --captions),
-  5. draws hand-made whiteboard sketches (Excalidraw style, 15 pages, docs/marketing/xiaohongshu/sketches.html) while
+  5. draws hand-made whiteboard sketches (Excalidraw style, docs/marketing/xiaohongshu/sketches.html: 15 pages for the story, 7 for the learning chapter, --chapter) while
      you tell the story: each shape appears at the moment you say its word; a page you never mention is skipped. Your face moves to the lower half while a sketch is
      up, and fills the screen at the start and the end,
   6. burns the captions in and puts a quiet original music bed under your voice (it ducks while you speak).
@@ -29,7 +29,7 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts/lib"))
-from sketch_pics import BOARDS, MAX_SPAN, find_pics, pics_param
+from sketch_pics import CHAPTERS, MAX_SPAN, find_pics, pics_param
 XHS = ROOT / "docs/marketing/xiaohongshu"
 WHISPER_MODEL = Path.home() / ".cache/whisper-cpp/ggml-small.bin"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -210,7 +210,7 @@ def write_srt(cues, path):
 
 # ---- 5: sketches --------------------------------------------------------------------------------------------------
 
-def plan_sketches(cues, total):
+def plan_sketches(cues, total, boards):
     """For each board: when it appears, when it goes, and when each of its elements is drawn (seconds on the video)."""
     text, times = "", []
     for c in cues:                                  # the time of every character, spread evenly across its cue
@@ -227,7 +227,7 @@ def plan_sketches(cues, total):
         return hits, pos
 
     found, pos, retry = [], 0, []
-    for name, anchors in BOARDS:                    # pages are matched in story order ...
+    for name, anchors in boards:                    # pages are matched in story order ...
         hits, after = search(anchors, pos)
         if hits:
             found.append((name, anchors, hits)); pos = after
@@ -317,6 +317,8 @@ def main():
     ap.add_argument("--name", help="output name (default: the recording's name)")
     ap.add_argument("--face-y", type=float, default=0.38,
                     help="where your face is in the frame, 0 = top, 1 = bottom (default 0.38); sets the crop while a sketch is up")
+    ap.add_argument("--chapter", choices=sorted(CHAPTERS), default="story",
+                    help="which set of whiteboard pages to draw: story (the main talk, default) or learn (the chapter about the lessons)")
     ap.add_argument("--no-trim", action="store_true", help="keep every pause")
     ap.add_argument("--no-music", action="store_true")
     ap.add_argument("--no-pics", action="store_true", help="hand-drawn icons only, no screenshots in the sketches")
@@ -333,7 +335,7 @@ def main():
     write_srt(cues, out / f"{name}.srt")
     (out / f"{name}-transcript.txt").write_text("\n".join(c["text"] for c in cues) + "\n")
 
-    plan = [] if args.no_sketches else plan_sketches(cues, total)
+    plan = [] if args.no_sketches else plan_sketches(cues, total, CHAPTERS[args.chapter])
     sheet = ["Sketches (your face moves to the lower half while one is up):"] + \
             [f"  {p['at']:6.1f}s - {p['at'] + p['len']:5.1f}s  {p['name']:<8} drawn at "
              + " ".join(f"{k}@{p['at'] + v:.1f}" for k, v in p["cues"].items())
