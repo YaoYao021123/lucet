@@ -78,4 +78,23 @@ struct LessonCatalogTests {
         #expect(question.correctIndex(zoneShares: [.midtones: 0.6, .shadows: 0.3]) == 2)
         #expect(question.correctIndex(zoneShares: [.brightest: 0.5, .highlights: 0.4]) == 4)
     }
+
+    @Test func slidersAndTipsLeadToTheirLessons() throws {
+        #expect(Lesson.about(AdjustmentParameter.highlights)?.id == "tone-controls")
+        #expect(Lesson.about(AdjustmentParameter.exposure)?.id == "exposure-brightness")
+        #expect(Lesson.about(AdjustmentParameter.warmth)?.id == "white-balance")
+        #expect(Lesson.about(AdjustmentParameter.grain) == nil)
+        #expect(Lesson.about(Concept.curves)?.id == "curves" && Lesson.about(Concept.clipping)?.id == "clipping")
+        // Every slider with a lesson names a lesson that exists, and that lesson is about the slider's tone or colour.
+        for parameter in AdjustmentParameter.allCases { if let lesson = Lesson.about(parameter) { #expect(Lesson.lesson(lesson.id) != nil) } }
+    }
+
+    @Test func demoLinksAreOnUnlessSwitchedOff() throws {
+        #expect(LearnerProfile().learnLinks)
+        let old = try JSONDecoder().decode(LearnerProfile.self, from: Data(#"{"level":"beginner"}"#.utf8))
+        #expect(old.learnLinks, "profiles saved before the setting existed keep the links")
+        var off = LearnerProfile(); off.learnLinks = false
+        let decoded = try JSONDecoder().decode(LearnerProfile.self, from: JSONEncoder().encode(off))
+        #expect(!decoded.learnLinks)
+    }
 }
