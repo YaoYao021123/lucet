@@ -162,7 +162,7 @@ struct NewProjectSheet: View {
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
                 Button("新建项目") {
                     app.sheet = nil
                     app.createProject(named: name, from: ids)
@@ -185,7 +185,7 @@ struct RenameProjectSheet: View {
             TextField("项目名称", text: $name).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
                 Button("重命名") { app.sheet = nil; app.renameProject(projectID, to: name) }
                     .defaultActionButton().disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }

@@ -60,7 +60,7 @@ struct LessonPlayer: View {
             }
             .animation(.snappy, value: index)
             Spacer()
-            Button("关闭") { app.backToPhoto() }.keyboardShortcut(.cancelAction)
+            Button("关闭") { app.backToPhoto() }.keyboardShortcut(.cancelAction).glassButton()
         }
         .padding(.horizontal, 18).frame(height: 54)
     }

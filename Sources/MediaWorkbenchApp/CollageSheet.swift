@@ -24,7 +24,7 @@ struct CollageSheet: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
             }
             ScrollView {
                 VStack(spacing: 18) {

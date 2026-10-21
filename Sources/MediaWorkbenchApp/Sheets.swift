@@ -104,7 +104,7 @@ struct ExportOptionsSheet: View {
             .frame(maxHeight: 560)
             HStack {
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
                 Button(settings.destination == .photos ? L("存到「照片」") : target == .current ? L("选择位置…") : L("选择文件夹…")) {
                     if let mark = settings.image.watermark, mark.cleanedText.isEmpty { settings.image.watermark = nil }
                     app.exportSettings = settings
@@ -179,7 +179,7 @@ struct ExportOptionsSheet: View {
         } label: {
             Text(presets.first { $0.matches(settings) }?.name ?? L("预设"))
         }
-        .menuStyle(.button).fixedSize()
+        .menuStyle(.button).glassButton().fixedSize()
         .help("一键套用常用的导出设置，或把现在的设置存成预设")
     }
 
@@ -234,7 +234,7 @@ struct ExportOptionsSheet: View {
                         Button("宽度 {width}") { insert("width") }
                         Button("高度 {height}") { insert("height") }
                     }
-                    .menuStyle(.button).fixedSize()
+                    .menuStyle(.button).glassButton().fixedSize()
                 }
             }
         } footer: {
@@ -348,7 +348,7 @@ struct SyncSheet: View {
             Text("离线或已被修改的原片会跳过并计数。同步后可在提示中一键撤回。").font(.callout).foregroundStyle(.secondary)
             HStack {
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
                 Button("应用到 \(count) 项") {
                     app.sheet = nil
                     app.synchronize(sections: sections, includeLUT: includeLUT, stages: stages)
@@ -373,7 +373,7 @@ struct SnapshotSheet: View {
             SheetHeader(title: L("快照与版本"), subtitle: L("快照保存一个命名版本，重启后仍可恢复。只保存参数，不复制原片。"))
             HStack {
                 TextField("版本名称，例如：自然暖调", text: $name).textFieldStyle(.roundedBorder)
-                Button("保存当前版本") { app.editor.saveSnapshot(named: name); name = ""; snapshots = app.editor.snapshots() }
+                Button("保存当前版本") { app.editor.saveSnapshot(named: name); name = ""; snapshots = app.editor.snapshots() }.glassButton()
             }
             List(snapshots) { value in
                 HStack {
@@ -382,7 +382,7 @@ struct SnapshotSheet: View {
                         Text(value.record.savedAt.formatted(date: .numeric, time: .shortened)).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("恢复") { app.editor.restoreSnapshot(value); app.sheet = nil }
+                    Button("恢复") { app.editor.restoreSnapshot(value); app.sheet = nil }.glassButton().controlSize(.small)
                 }
             }
             .frame(height: 220)
@@ -405,7 +405,7 @@ struct SavePresetSheet: View {
             TextField("预设名称", text: $name).textFieldStyle(.roundedBorder)
             HStack {
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
                 Button("保存") { app.savePreset(named: name); app.sheet = nil }.defaultActionButton()
             }
         }
@@ -466,7 +466,7 @@ struct LivePreviewSheet: View {
             HStack {
                 Text("Live Photo").font(.headline)
                 Spacer()
-                Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([resources.imageURL]) }
+                Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([resources.imageURL]) }.glassButton()
                 Button("完成") { app.sheet = nil }.defaultActionButton()
             }
             ZStack {
@@ -510,12 +510,13 @@ struct TutorSettingsSheet: View {
                         HStack {
                             Label("已保存在钥匙串中", systemImage: "key.fill")
                             Spacer()
-                            Button("移除", role: .destructive, action: tutor.removeKey)
+                            Button("移除", role: .destructive, action: tutor.removeKey).glassButton().controlSize(.small)
                         }
                     } else {
                         HStack {
                             SecureField("sk-ant-…", text: $keyInput)
                             Button("保存") { tutor.saveKey(keyInput); keyInput = "" }
+                                .glassButton().controlSize(.small)
                                 .disabled(keyInput.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                     }
@@ -569,7 +570,7 @@ struct MatchLookSheet: View {
             HStack {
                 Text("方法：在 Lab 色彩空间里对齐两张照片的平均值和分布（Reinhard 色彩迁移）。").font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+                Button("取消") { app.sheet = nil }.keyboardShortcut(.cancelAction).glassButton()
             }
         }
         .padding(22).frame(width: 640)
