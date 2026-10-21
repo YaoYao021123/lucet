@@ -7,12 +7,40 @@ struct MediaTimeline: View {
     let app: AppModel
     var editor: EditorModel { app.editor }
     @UIState private var zoomSelection = false
+    @AppStorage("timeline.style") private var style = TimelineStyle.current
+
+    /// The button row in the chosen style (see `TimelineStyle`).
+    @ViewBuilder private var bar: some View {
+        let transport = TransportBar(app: app, zoomSelection: $zoomSelection)
+        switch style {
+        case .current:
+            transport.padding(.horizontal, 14).padding(.vertical, 7)
+        case .large:
+            transport.controlSize(.large).padding(.horizontal, 14).padding(.vertical, 9)
+        case .strip, .stripGrouped:
+            glassStrip(transport.environment(\.groupedActions, style == .stripGrouped))
+                .padding(.horizontal, 14).padding(.vertical, 8)
+        case .floating:
+            // The row takes no room of its own: the glass bar hovers over the bottom of the picture above.
+            Color.clear.frame(height: 4)
+                .overlay(alignment: .top) {
+                    glassStrip(transport).padding(.horizontal, 18).offset(y: -108)
+                }
+                .zIndex(1)
+        }
+    }
+
+    private func glassStrip(_ content: some View) -> some View {
+        content
+            .environment(\.flatButtons, true)
+            .padding(.horizontal, 18).padding(.vertical, 7)
+            .modifier(GlassCapsule())
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             WorkbenchTheme.hairline.frame(height: 1)
-            TransportBar(app: app, zoomSelection: $zoomSelection)
-                .padding(.horizontal, 14).padding(.vertical, 7)
+            bar
             TimelineTrack(editor: editor, zoomSelection: zoomSelection)
                 .padding(.horizontal, 22).frame(height: 92)
             if let music = editor.musicURL {
@@ -36,11 +64,23 @@ struct MediaTimeline: View {
             .font(.caption).monospacedDigit().foregroundStyle(.secondary)
             .padding(.horizontal, 22).padding(.bottom, 9)
         }
-        .background(WorkbenchTheme.panel)
+        .background(style == .large ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(WorkbenchTheme.panel))
+    }
+}
+
+/// One Liquid Glass capsule (a material one before macOS 26).
+private struct GlassCapsule: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if DebugSnapshot.directory == nil, #available(macOS 26, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content.background(.ultraThinMaterial, in: Capsule())
+        }
     }
 }
 
 private struct TransportBar: View {
+    @Environment(\.groupedActions) private var grouped
     @UIState private var showCovers = false
     let app: AppModel
     @Binding var zoomSelection: Bool
@@ -83,6 +123,20 @@ private struct TransportBar: View {
         GlassGroup { liveButtons }
     }
 
+    private var rangeButton: some View {
+        Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help(L("以播放头为中心选取 3 秒输出"))
+    }
+
+    private var pickCoverButton: some View {
+        Button("挑封面") { showCovers.toggle() }.glassButton()
+            .help(L("从片段里取几帧，推荐最清晰、人像最好的一张"))
+            .popover(isPresented: $showCovers, arrowEdge: .top) { CoverPickerView(editor: editor, isPresented: $showCovers) }
+    }
+
+    private var setCoverButton: some View {
+        Button("设为封面", action: editor.setCoverAtPlayhead).glassButton().help(L("把播放头位置设为 Live 封面（C）"))
+    }
+
     private var liveButtons: some View {
         HStack(spacing: 8) {
             Menu {
@@ -96,11 +150,19 @@ private struct TransportBar: View {
             }
             .menuStyle(.button).glassButton().fixedSize()
             .help("变速后视频与原声同步变化，背景音乐保持原节奏")
-            Button("选取 3 秒", action: editor.selectLiveRange).glassButton().help(L("以播放头为中心选取 3 秒输出"))
-            Button("挑封面") { showCovers.toggle() }.glassButton()
-                .help(L("从片段里取几帧，推荐最清晰、人像最好的一张"))
-                .popover(isPresented: $showCovers, arrowEdge: .top) { CoverPickerView(editor: editor, isPresented: $showCovers) }
-            Button("设为封面", action: editor.setCoverAtPlayhead).glassButton().help(L("把播放头位置设为 Live 封面（C）"))
+            if grouped {
+                HStack(spacing: 0) {
+                    rangeButton
+                    Divider().frame(height: 14).padding(.horizontal, 4)
+                    pickCoverButton
+                    Divider().frame(height: 14).padding(.horizontal, 4)
+                    setCoverButton
+                }
+            } else {
+                rangeButton
+                pickCoverButton
+                setCoverButton
+            }
             Button(action: app.makeLive) {
                 Label("制作 Live", systemImage: "livephoto")
             }

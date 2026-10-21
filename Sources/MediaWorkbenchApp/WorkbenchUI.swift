@@ -348,11 +348,46 @@ extension View {
 
     /// Secondary actions: Liquid Glass buttons on macOS 26, bordered before. Snapshot captures do not draw glass, so
     /// their dark glass-style labels would sit on the dark panel; they get the bordered style (as the segmented controls do).
-    @ViewBuilder func glassButton(_ shape: ButtonBorderShape = .capsule) -> some View {
-        if DebugSnapshot.directory == nil, #available(macOS 26, *) {
-            self.buttonStyle(.glass).buttonBorderShape(shape)
+    /// Inside a glass surface of their own (`flatButtons`) they are plain text and icons: glass on glass only muddies.
+    func glassButton(_ shape: ButtonBorderShape = .capsule) -> some View {
+        modifier(GlassButtonModifier(shape: shape))
+    }
+}
+
+private struct GlassButtonModifier: ViewModifier {
+    let shape: ButtonBorderShape
+    @Environment(\.flatButtons) private var flat
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if flat {
+            content.buttonStyle(.borderless)
+        } else if DebugSnapshot.directory == nil, #available(macOS 26, *) {
+            content.buttonStyle(.glass).buttonBorderShape(shape)
         } else {
-            self.buttonStyle(.bordered).buttonBorderShape(shape)
+            content.buttonStyle(.bordered).buttonBorderShape(shape)
+        }
+    }
+}
+
+private struct FlatButtonsKey: EnvironmentKey { static let defaultValue = false }
+private struct GroupedActionsKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    /// Secondary buttons draw flat (they sit on a glass bar that is the glass).
+    var flatButtons: Bool { get { self[FlatButtonsKey.self] } set { self[FlatButtonsKey.self] = newValue } }
+    /// Related actions are shown as one group with hairline dividers.
+    var groupedActions: Bool { get { self[GroupedActionsKey.self] } set { self[GroupedActionsKey.self] = newValue } }
+}
+
+/// PREVIEW: ways to draw the video timeline's button row, switchable from the 视图 menu until one is chosen.
+enum TimelineStyle: String, CaseIterable {
+    case current, floating, strip, stripGrouped, large
+    var title: String {
+        switch self {
+        case .current: L("现状：每个按钮一块玻璃")
+        case .floating: L("A · 悬浮在画面上的玻璃条")
+        case .strip: L("B · 一条玻璃条，按钮是平的")
+        case .stripGrouped: L("B + D · 玻璃条，三个动作合成一组")
+        case .large: L("C · 半透明底，按钮更大")
         }
     }
 }

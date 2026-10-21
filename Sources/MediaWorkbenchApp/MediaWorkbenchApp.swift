@@ -59,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// Menus read only rarely-changing state, so editing never rebuilds the menu bar.
 struct WorkbenchCommands: Commands {
     let app: AppModel
+    @AppStorage("timeline.style") private var timelineStyle = TimelineStyle.current
     var editor: EditorModel { app.editor }
 
     var body: some Commands {
@@ -150,6 +151,11 @@ struct WorkbenchCommands: Commands {
             Divider()
             Button("显示或隐藏素材库") { app.showSidebar.toggle() }.keyboardShortcut("s", modifiers: [.command, .option])
             Button("显示或隐藏检查器") { app.showInspector.toggle() }.keyboardShortcut("i", modifiers: [.command, .option])
+            Divider()
+            // PREVIEW: pick how the video timeline's buttons look; removed once one is chosen.
+            Picker("时间线按钮样式（预览）", selection: $timelineStyle) {
+                ForEach(TimelineStyle.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
             Divider()
         }
         CommandMenu("学习") {
