@@ -313,17 +313,17 @@ struct SidebarMaterial: NSViewRepresentable {
 
 extension View {
     @ViewBuilder func primaryButton() -> some View {
-        if #available(macOS 26, *) {
+        // Snapshot captures don't draw glass (the prominent label would vanish), so they get the filled style.
+        if DebugSnapshot.directory == nil, #available(macOS 26, *) {
             self.buttonStyle(.glassProminent).tint(WorkbenchTheme.accentFill)
         } else {
             self.buttonStyle(.borderedProminent).tint(WorkbenchTheme.accentFill)
         }
     }
 
-    /// A sheet's Return button: the system fills it with the tint and draws its own white label, so the
-    /// tint is the fill white text reads on (the sheet itself keeps the lighter `accent`).
+    /// A sheet's Return button: the prominent glass style (accent fill, white label), like every other primary action.
     func defaultActionButton() -> some View {
-        self.keyboardShortcut(.defaultAction).tint(WorkbenchTheme.accentFill)
+        self.keyboardShortcut(.defaultAction).primaryButton()
     }
 
     /// Native segmented picker whose selected segment is filled with the accent. The fill is dark enough
@@ -344,9 +344,10 @@ extension View {
         }
     }
 
-    /// Secondary actions: Liquid Glass buttons on macOS 26, bordered before.
+    /// Secondary actions: Liquid Glass buttons on macOS 26, bordered before. Snapshot captures do not draw glass, so
+    /// their dark glass-style labels would sit on the dark panel; they get the bordered style (as the segmented controls do).
     @ViewBuilder func glassButton(_ shape: ButtonBorderShape = .capsule) -> some View {
-        if #available(macOS 26, *) {
+        if DebugSnapshot.directory == nil, #available(macOS 26, *) {
             self.buttonStyle(.glass).buttonBorderShape(shape)
         } else {
             self.buttonStyle(.bordered).buttonBorderShape(shape)
