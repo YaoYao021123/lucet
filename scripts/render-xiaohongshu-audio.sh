@@ -22,12 +22,19 @@ fi
 audio="$root/dist/audio"; mkdir -p "$audio"
 slug() { echo "$1" | sed -E 's/^zh-CN-//; s/Neural$//' | tr 'A-Z' 'a-z'; }
 
+# The silent picture is rendered once and reused, but not when video.html changed after it was made.
+fresh_picture() {
+  if [ ! -f dist/xiaohongshu.mp4 ] || [ docs/marketing/xiaohongshu/video.html -nt dist/xiaohongshu.mp4 ]; then
+    bash scripts/render-xiaohongshu-video.sh
+  fi
+}
+
 # ---- music-only cut: the video as designed -----------------------------------------------------------------------
 music_cut() {
   mkdir -p "$audio/design"
   "$py" scripts/audio/make-voiceover.py --design-only --out "$audio/design"
   "$py" scripts/audio/make-music.py "$audio/design/timeline.json" "$audio/music-design.wav"
-  [ -f dist/xiaohongshu.mp4 ] || bash scripts/render-xiaohongshu-video.sh
+  fresh_picture
   ffmpeg -loglevel error -y -i dist/xiaohongshu.mp4 -i "$audio/music-design.wav" -filter_complex \
     "[1:a]aformat=channel_layouts=stereo,loudnorm=I=-17:TP=-1.5:LRA=9[a]" -map 0:v -map "[a]" \
     -c:v copy -c:a aac -b:a 192k -ar 48000 -shortest dist/xiaohongshu-music.mp4
