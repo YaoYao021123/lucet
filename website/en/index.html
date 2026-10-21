@@ -283,6 +283,7 @@ footer .wrap{display:grid;gap:10px}
           <li><b>Subject</b>: finds people, animals and objects in front automatically; invert it for the background</li>
           <li>Each layer has its own exposure, contrast, highlights, shadows, temperature, saturation, clarity, dehaze and more; “Show mask” paints its area red</li>
           <li>Masks stick to the picture: crop or rotate later and they stay in place</li>
+          <li>Gradient, ellipse and brush masks also work on videos and Live Photos (Subject and Remove are for photos)</li>
         </ul>
       </div>
       <div>
@@ -398,6 +399,8 @@ footer .wrap{display:grid;gap:10px}
         <p>Lucet reads the photo and points out what's really going on: where it's overexposed, where there's a color cast, how many degrees the horizon tilts, with an adjustment you can try in one click. Hover over a slider's name and the picture highlights only what it affects.</p>
         <ul>
           <li>Interactive lessons: a few minutes each, using animation and your own photo to explain the histogram, exposure, curves, white balance, aperture, focal length, video frame rates and Log, while you try it</li>
+          <li>Many lessons are in 3D, and you can drag to turn them: your photo's brightness as a little mountain range, its colors as a cloud inside the RGB cube, light passing through a lens, a shutter as a slab of time</li>
+          <li>Offered, never pushed: right-click a slider to ask what it does, or use the small play button beside a section's title. Nothing opens by itself, and one switch turns it all off</li>
           <li>Drag any light or dark slider and the histogram marks which part it changes, from darkest to brightest</li>
           <li>Choose Beginner, Intermediate or Advanced and the explanations change depth</li>
           <li>Ask anything, like “Why does the sky look gray?” (optional, uses your own AI key, off by default)</li>
@@ -416,6 +419,7 @@ footer .wrap{display:grid;gap:10px}
           <li>JPEG, HEIC or PNG, optionally resized for social media</li>
           <li>HDR photos export with a gain map and stay HDR, edits included</li>
           <li><b>AI HDR</b>: ordinary photos glow on HDR screens too; a neural network decides how bright each highlight should be</li>
+          <li><b>Edit a Live Photo</b> and it stays a Live Photo: the photo and the motion are graded together, and it keeps its original photo, date and place. <b>Pick cover</b> samples frames and marks the sharpest one (and the best faces)</li>
           <li>Export presets, file-name patterns (date, number, size) and an optional text watermark</li>
           <li>Capture time and camera info are kept; location is removed by default</li>
           <li>Exports run in the background while you move on to the next photo</li>
@@ -433,6 +437,7 @@ footer .wrap{display:grid;gap:10px}
           <li><b>Dehaze, Fade, Grain, Black &amp; White</b> in Full mode's effects; Dehaze estimates how hazy each area is with the dark-channel method</li>
           <li><b>History</b>: every change has a name; click one to go back to it, even after quitting</li>
           <li><b>Search by content</b>: type “sky”, “dog” or “sunset” in the library and photos showing it appear, recognized on your Mac</li>
+          <li><b>Import from Photos</b>: browse your Photos library as a grid and bring in only the shots you pick, or the first N; the originals in Photos are never changed</li>
         </ul>
       </div>
     </div>
@@ -467,7 +472,7 @@ footer .wrap{display:grid;gap:10px}
         <h2>Built with AI, one plain sentence at a time</h2>
         <p>Lucet's first version was a prototype written by ChatGPT. I handed it to Claude Code and asked it to find the problems first, then fix them step by step: large folders stopped freezing the app, the interface was rebuilt into what you see now, and Auto, preset thumbnails and learn-as-you-edit were added. This web page and the promo video were made the same way: written with web technology, then rendered.</p>
         <p>The most interesting part: almost every change started with an ordinary sentence, like “this blue is too bright”, “not enough information” or “too many boxes”. You don't have to learn to code first. Describe the feeling clearly and let the AI try, change and test.</p>
-        <p>AI makes mistakes too, and they can look convincing. A photo of a latte on a white table was once judged “too bright overall”, with a suggestion to lower exposure by 1.5 stops, even though a white table is supposed to be bright. Problems like that showed up the moment the app was really used, and each was fixed and covered by a test.</p>
+        <p>AI makes mistakes too, and they can look convincing. A photo of a latte on a white table was once judged “too bright overall”, with a suggestion to lower exposure by 1.5 stops, even though a white table is supposed to be bright. Problems like that showed up the moment the app was really used, and each was fixed and covered by a test. Editing a Live Photo once exported an ordinary video and quietly lost the photo half; now the export sheet asks whether you want a Live Photo, the photo only, or the video.</p>
         <p>There's a partner, too: the partner's web edition of Lucet (open source, Apache-2.0) has algorithms for grouping similar shots, matching colors and local masks, and they've been ported into this Mac app.</p>
         <p>So Lucet would like to be built with you as well. Share ideas in GitHub Issues, and if you build things with Claude Code or other AI tools, tell us how you work.</p>
         <p style="margin-top:26px"><a class="btn glass" href="https://github.com/YaoYao021123/lucet/issues">Share your ideas on GitHub</a></p>
@@ -488,7 +493,11 @@ footer .wrap{display:grid;gap:10px}
 <i>20f2a4d</i>English interface
 <i>ee78815</i>Export the grade as a LUT, match colors
 <i>d12af94</i>Similar shots and bursts
-<i>79f4324</i>Local adjustments</pre>
+<i>79f4324</i>Local adjustments
+<i>cb0deeb</i>Projects: one job, one live look
+<i>0fdb184</i>AI Look: a grade made for each photo
+<i>f97775b</i>AI HDR: ordinary photos glow on HDR screens
+<i>351e666</i>Edit a Live Photo, keep it a Live Photo</pre>
     </div>
   </div>
 </section>
