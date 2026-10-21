@@ -55,12 +55,17 @@ struct ExportOptionsSheet: View {
     private var entries: [LibraryEntry] { target == .current ? app.currentEntry.map { [$0] } ?? [] : app.library.actionTargets }
     /// A Live Photo open in the editor: its output is a choice, not "a video".
     private var isLiveCurrent: Bool { target == .current && app.editor.isLiveInput }
+    /// An ordinary video can become a long exposure, a loop or a bounce, too.
+    private var isPlainVideoCurrent: Bool { target == .current && app.editor.isVideo && !app.editor.isLiveInput }
+    private var plainEffect: LiveOutput? { isPlainVideoCurrent && settings.liveOutput.isEffect ? settings.liveOutput : nil }
     private var hasImages: Bool {
         if isLiveCurrent { return settings.liveOutput.producesPhoto }
+        if let effect = plainEffect { return effect == .longExposure }
         return target == .current ? !app.editor.isVideo : entries.contains { !$0.isVideo }
     }
     private var hasVideos: Bool {
         if isLiveCurrent { return settings.liveOutput == .video }
+        if plainEffect != nil { return false }
         return target == .current ? app.editor.isVideo : entries.contains { $0.isVideo || $0.hasLiveCompanion }
     }
     private var presets: [ExportPreset] { ExportPreset.builtIns + app.exportPresets }
@@ -85,7 +90,7 @@ struct ExportOptionsSheet: View {
                          : "存为文件，可以选择位置。")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                if isLiveCurrent { liveSection }
+                if isLiveCurrent { liveSection } else if isPlainVideoCurrent { videoEffectSection }
                 if hasImages { photoSection }
                 if hasVideos {
                     Section("视频") {
@@ -146,6 +151,19 @@ struct ExportOptionsSheet: View {
         } footer: {
             Text(liveOutputNote)
                 .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var videoEffectSection: some View {
+        Section {
+            Picker("导出为", selection: Binding(get: { plainEffect ?? .video }, set: { settings.liveOutput = $0 })) {
+                Text(LiveOutput.video.title).tag(LiveOutput.video)
+                Divider()
+                ForEach([LiveOutput.longExposure, .loop, .bounce], id: \.self) { Text($0.title).tag($0) }
+            }
+        } footer: {
+            Text(plainEffect == nil ? L("导出调色、裁切后的视频。")
+                 : liveOutputNote + " " + L("片段最长 15 秒。")).font(.caption).foregroundStyle(.secondary)
         }
     }
 
