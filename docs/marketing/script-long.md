@@ -1,7 +1,7 @@
 # Lucet 光集 · 长版口播稿（中文 + English）
 
 适合：B 站 / 视频号 / 小红书长视频 / YouTube，真人出镜 + 录屏穿插。
-时长：中文约 6.5 分钟（按每秒 5 个字，含标点），英文约 8 分钟（每分钟约 140 词）。`【…】` 里你自己的话不计在内。想剪短，先删第 2 段的滑块列举、第 5 段的功能细节和第 5b 段，故事线不受影响。
+时长：中文约 6.5 分钟（按每秒 5 个字，含标点），英文约 8 分钟（每分钟约 140 词）。`【…】` 里你自己的话不计在内。想剪短，先删第 2 段的滑块列举、第 5 段的功能细节和第 5b 段，故事线不受影响。「边调边学」的内容在专章里：[script-learn.md](script-learn.md)。
 
 > 2026-10-20 更新：界面已经有中文和 English，所以去掉了「只有中文」的说法；新增第 5b 段（后来长出来的功能）；第 6 段提到 3D 课；第 8 段补上 RAW 的说明。这些改动让台词比上一版长约一分半钟（中文原来约 5 分钟，英文约 6 分钟）。
 
@@ -106,7 +106,7 @@ Live Photo 也能直接编辑：照片和动态一起调，导出来还是 Live 
 
 〔画面：真实录屏。拉渐变压暗天空（拖前后对比）；涂一笔去掉路牌；选一张参考照片；项目侧栏里改一张、整组跟着变；Live Photo 导出后在「照片」里按住会动。〕
 
-### 6. 边调边学（约 65 秒）
+### 6. 边调边学（约 45 秒；完整的一章见 [script-learn.md](script-learn.md)）
 
 但我最想做好的，其实是另一件事。
 
@@ -116,15 +116,14 @@ Live Photo 也能直接编辑：照片和动态一起调，导出来还是 Live 
 可惜，他只有几条视频，讲不完所有的基础。
 
 所以，我们把这种讲法，放进了 App 里。
-用你自己的照片：看它怎样碎成一个个像素，再按亮度堆成一座小山，那就是直方图；
-拖一拖光圈，看背景怎样慢慢变虚；
-拖一下「亮部」，直方图上会亮出它到底改了哪一段。
+用你自己的照片：看它怎样碎成一个个像素，再按亮度堆成一座小山，那就是直方图。
 
 现在一共有十三课，从直方图、曝光、曲线，到白平衡、光圈、焦距，还有视频的帧率和 Log。
 很多课里的画面是 3D 的，可以用手拖着转：照片的亮度变成一座山，照片的颜色变成立方体里的一团点。
 文字和动画，都是我们自己写、自己画的，而且还在一课一课地往上加。
+每一课都讲些什么，我单独做成了一章，下面接着讲。
 
-〔画面：互动课录屏：像素飞成直方图的动画；光圈滑块和虚化；五个亮度区随滑块亮起。〕
+〔画面：互动课录屏：像素飞成直方图的动画；一个 3D 场景拖着转。这一段只做预告，课程本身放在专章里。〕
 
 ### 7. 名字（约 10 秒）
 
@@ -245,7 +244,7 @@ Live Photos are editable too: the photo and the motion are graded together, it e
 
 [Real screen recording: dragging a gradient over the sky (before/after); one brush stroke removing a sign; picking a reference photo; changing one photo in a project and the whole set following; a Live Photo exported, then pressed and held in Photos.]
 
-### 6. Learning while you edit (~75 s)
+### 6. Learning while you edit (~55 s; the full chapter is in [script-learn.md](script-learn.md))
 
 But the thing I care about most is something else.
 
@@ -256,14 +255,13 @@ But he's only made a handful of videos. They can't cover all the basics.
 
 So we brought that way of teaching into the app — using *your own* photos.
 Watch your picture break into pixels and pile up by brightness into a little mountain: that's a histogram.
-Drag the aperture and watch the background soften.
-Drag "highlights", and the histogram lights up exactly the part it's changing.
 
 There are thirteen lessons now — histograms, exposure, curves, white balance, aperture, focal length, even frame rate and Log footage for video.
 Many of them are in 3D, and you can drag to turn them: your photo's brightness becomes a little mountain range, and its colors become a cloud of points inside a cube.
 Every word and every animation is our own, and we're still adding lessons one at a time.
+What each lesson teaches is a chapter of its own, coming up next.
 
-[Lesson recordings: pixels flying into a histogram; the aperture slider and background blur; the five brightness zones lighting up.]
+[Lesson recordings: pixels flying into a histogram; one 3D scene dragged around. This part is only a teaser; the lessons themselves are in the separate chapter.]
 
 ### 7. The name (~10 s)
 

@@ -83,6 +83,24 @@ function hist(x, y, w, h, at, d, lit = false) {
   line(x, y + h, x + w, y + h, at, d, { strokeWidth: 3 });
   curve([[x, y + h], [x + w * 0.12, y + h * 0.75], [x + w * 0.28, y + h * 0.25], [x + w * 0.42, y + h * 0.4], [x + w * 0.58, y + h * 0.15], [x + w * 0.78, y + h * 0.55], [x + w, y + h]], at, d + 0.2, { strokeWidth: 3.6 });
 }
+/* A page of three lessons: each has its question, a real still from the lesson, and its title; a key line at the bottom.
+   rows: [[questionAnchor, pictureAnchor, slot, question, caption], ...] */
+function wrapText(str, cx, y, per, at, d, o) {
+  const lines = str.includes("\n") ? str.split("\n") : [...str].reduce((a, c, i) => { if (i % per === 0) a.push(""); a[a.length - 1] += c; return a; }, []);
+  lines.forEach((l, n) => text(l, cx, y + n * 52, at, d + n * 0.1, o));
+}
+function lessonPage(title, rows, key1, key2) {
+  text(title, 540, 95, rows[0][0], 0, { size: 58, color: ORANGE });
+  rows.forEach(([qa, pa, slot, q, cap], i) => {
+    const cx = 190 + i * 350;
+    wrapText(q, cx, 190, 9, qa, 0, { size: 36 });
+    if (!pic(slot, cx, 330, 330, 290, pa, 0.1)) rect(cx - 165, 330, 330, 290, pa, 0.1, { strokeWidth: 3 });
+    text(cap, cx, 690, pa, 0.5, { size: 32, color: GREY });
+  });
+  const last = rows[rows.length - 1][1];
+  text(key1, 540, 850, last, 1.0, { size: 56, color: ORANGE });
+  text(key2, 540, 950, last, 1.6, { size: 46 });
+}
 function phone(x, y, w, h, at, d, fill) {
   rect(x, y, w, h, at, d, { fill, fillStyle: "solid" }); rect(x + 14, y + 22, w - 28, h - 70, at, d + 0.15, { strokeWidth: 2.4 });
   circle(x + w / 2, y + h - 24, 9, at, d + 0.3, { strokeWidth: 2.4 });
@@ -270,8 +288,8 @@ const BOARDS = {
     text("还有两个小型 AI 模型：AI 调色 · AI HDR", 540, 985, "ai", 0, { size: 46, color: ORANGE });
     text("都在你的 Mac 上运行，照片不会上传", 540, 1048, "ai", 0.7, { size: 40, color: GREY });
   },
-  /* 11a · where the teaching idea comes from */
-  inspire() {                        // anchors: filter, xiaoyang, few, inapp
+  /* 11 · where the teaching idea comes from (a teaser; the chapter on learning is separate) */
+  teach() {                        // anchors: filter, xiaoyang, few, inapp
     text("一键滤镜：照片好看了", 540, 140, "filter", 0, { size: 62 });
     text("下一次，还是不知道为什么", 540, 225, "filter", 0.7, { size: 46, color: GREY });
     text("?", 930, 215, "filter", 1.3, { size: 120, color: ORANGE });
@@ -283,24 +301,6 @@ const BOARDS = {
     [0, 1, 2].forEach(i => rect(120 + i * 70, 800, 56, 90, "few", i * 0.3, { strokeWidth: 2.6, fill: SOFT, fillStyle: "solid" }));
     text("可惜只有几条视频，讲不完基础", 660, 855, "few", 0.5, { size: 44, color: GREY });
     bubble(130, 930, 820, 110, "所以，把这种讲法放进 App 里", "inapp", 0, { size: 48, fill: MINT });
-  },
-  /* 11 · learn while editing */
-  learn() {                          // anchors: pixels, hist, aperture, highlight, thirteen
-    text("边调边学", 540, 110, "pixels", 0, { size: 62, color: ORANGE });
-    const greys = ["#e9ecef", "#ced4da", "#adb5bd", "#868e96", "#495057"];
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++)
-      rect(80 + c * 54, 190 + r * 54, 48, 48, "pixels", (r * 5 + c) * 0.04, { strokeWidth: 1.8, fill: greys[(r * 2 + c * 3) % 5], fillStyle: "solid" });
-    text("像素", 215, 460, "pixels", 0.9, { size: 42 });
-    arrow(380, 300, 500, 300, "hist", 0);
-    hist(540, 190, 440, 220, "hist", 0.3);
-    text("按亮度堆成小山 = 直方图", 760, 460, "hist", 1.0, { size: 40 });
-    circle(220, 640, 80, "aperture", 0, { strokeWidth: 4 });
-    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; line(220 + 80 * Math.cos(a), 640 + 80 * Math.sin(a), 220 + 36 * Math.cos(a + 0.9), 640 + 36 * Math.sin(a + 0.9), "aperture", 0.3 + i * 0.08, { strokeWidth: 3 }); }
-    [[360, 590], [410, 650], [370, 700]].forEach(([x, y], i) => circle(x, y, 22, "aperture", 0.9 + i * 0.15, { strokeWidth: 2.6, strokeLineDash: [8, 8], stroke: GREY }));
-    text("拖光圈，背景变虚", 260, 800, "aperture", 1.4, { size: 42 });
-    hist(600, 560, 380, 200, "highlight", 0, true);
-    text("拖「亮部」，亮出改了哪一段", 790, 820, "highlight", 0.9, { size: 40 });
-    text("十三课，还在一课一课地加", 540, 990, "thirteen", 0, { size: 60, color: ORANGE });
   },
   /* 12 · the name */
   name() {                           // anchors: name, lat, gather, photo
@@ -343,6 +343,92 @@ const BOARDS = {
     arrow(430, 900, 640, 900, "ai", 0.9, { stroke: ORANGE }); arrow(640, 930, 430, 930, "ai", 1.2, { stroke: ORANGE });
     text("你也在用 AI 做东西？", 540, 800, "ai", 1.6, { size: 48 });
     text("让每一个瞬间，自有光彩。", 540, 1066, "tag", 0, { size: 46, color: ORANGE });
+  },
+  /* ===== chapter 2: learning while you edit (script-learn.md) ===== */
+  /* L1 · how a lesson works */
+  why() {                            // anchors: filter, xiaoyang, inapp, own, anim, drag, quiz
+    text("一键滤镜：好看了，不知道为什么", 540, 100, "filter", 0, { size: 46 });
+    text("张小样（抖音）：用动画讲基础", 540, 170, "xiaoyang", 0, { size: 44, color: GREY });
+    text("所以，把这种讲法放进 App 里", 540, 240, "inapp", 0, { size: 50, color: ORANGE });
+    // three steps of every lesson
+    const cell = (x, at, label) => rect(x, 320, 300, 250, at, 0, { strokeWidth: 3 });
+    cell(60, "anim"); cell(390, "drag"); cell(720, "quiz");
+    line(150, 400, 150, 490, "anim", 0.3, { strokeWidth: 4 }); line(150, 400, 240, 445, "anim", 0.4, { strokeWidth: 4 }); line(240, 445, 150, 490, "anim", 0.5, { strokeWidth: 4 });
+    text("看动画", 210, 545, "anim", 0.7, { size: 46 });
+    line(430, 440, 650, 440, "drag", 0.3, { strokeWidth: 3, stroke: GREY }); circle(570, 440, 18, "drag", 0.5, { fill: ORANGE, fillStyle: "solid", stroke: ORANGE });
+    arrow(470, 500, 560, 458, "drag", 0.8, { stroke: ORANGE });
+    text("自己拖一拖", 540, 545, "drag", 0.9, { size: 46 });
+    text("?", 870, 480, "quiz", 0.3, { size: 130, color: ORANGE });
+    text("一个小问题", 870, 545, "quiz", 0.7, { size: 46 });
+    if (!pic("learn-panel", 270, 620, 300, 400, "own", 0.2)) rect(120, 620, 300, 400, "own", 0.2, { strokeWidth: 3 });
+    text("用你自己的照片", 740, 760, "own", 0.5, { size: 58, color: ORANGE });
+    text("不是固定的教程", 740, 840, "own", 1.0, { size: 44, color: GREY });
+    text("每一课，几分钟", 740, 960, "anim", 1.2, { size: 50 });
+  },
+  /* L2 · reading a photo */
+  read() {                           // anchors: q1, p1, q2, p2, q3, p3
+    lessonPage("看懂一张照片", [
+      ["q1", "p1", "lesson-pixels-histogram-3", "那座「小山」\n到底是什么？", "直方图从哪里来"],
+      ["q2", "p2", "lesson-five-zones-0", "「暗部」\n到底是哪一部分？", "五个亮度区"],
+      ["q3", "p3", "lesson-clipping-0", "为什么有的天空\n是一片白？", "纯白和死黑"]],
+      "格子 → 亮度 → 高度 → 直方图", "纯白的地方，后期找不回来");
+  },
+  /* L3 · light and shadow */
+  light() {                          // anchors: q1, p1, q2, p2, q3, p3
+    lessonPage("调整明暗", [
+      ["q1", "p1", "lesson-exposure-brightness-0", "天空为什么\n先「爆」掉？", "曝光和亮度不一样"],
+      ["q2", "p2", "lesson-tone-controls-0", "高光、阴影\n有什么区别？", "四个滑块各管一段"],
+      ["q3", "p3", "lesson-curves-1", "曲线只回答\n一个问题", "原来多亮，现在多亮"]],
+      "曝光：乘　亮度：加", "照片发灰？试试 S 形曲线");
+  },
+  /* L4 · color */
+  color() {                          // anchors: q1, p1, q2, p2, q3, p3
+    lessonPage("颜色", [
+      ["q1", "p1", "lesson-white-balance-0", "室内的照片\n为什么发黄？", "光本身有颜色"],
+      ["q2", "p2", "lesson-white-balance-1", "偏色\n怎么校正？", "点一个本该是白的地方"],
+      ["q3", "p3", "lesson-hsl-1", "怎样只让\n天空更蓝？", "HSL：只改一种颜色"]],
+      "色相 · 饱和度 · 明亮度", "压暗蓝色，天空变深，草地不动");
+  },
+  /* L5 · how shooting works */
+  shoot() {                          // anchors: q1, p1, q2, p2, q3, p3
+    lessonPage("拍摄的原理", [
+      ["q1", "p1", "lesson-aperture-1", "ƒ/4 为什么\n比 ƒ/2.8 小？", "光圈：开口大，景深薄"],
+      ["q2", "p2", "lesson-exposure-triangle-0", "为什么有的糊，\n有的噪点多？", "快门：开多久"],
+      ["q3", "p3", "lesson-focal-length-0", "手机的「2 倍」\n「5 倍」差在哪？", "焦距：看多宽"]],
+      "光圈 · 快门 · ISO：同一个亮度", "三种代价：景深 · 拖影 · 噪点");
+  },
+  /* L6 · video */
+  video() {                          // anchors: q1, p1, q2, p2
+    text("视频", 540, 95, "q1", 0, { size: 58, color: ORANGE });
+    const col = (cx, qa, pa, slot, q, cap, delay) => {
+      wrapText(q, cx, 190, 10, qa, 0, { size: 40 });
+      if (!pic(slot, cx, 330, 460, 390, pa, 0.1)) rect(cx - 230, 330, 460, 390, pa, 0.1, { strokeWidth: 3 });
+      text(cap, cx, 790, pa, 0.5, { size: 38, color: GREY });
+    };
+    col(280, "q1", "p1", "lesson-frame-rate-1", "视频的快门为什么\n不能越快越好？", "帧率与快门", 0);
+    col(800, "q2", "p2", "lesson-log-lut-1", "D-Log 为什么\n灰蒙蒙的？", "Log 素材与 LUT", 0);
+    text("快门 ≈ 1 ÷（2 × 帧率）", 280, 900, "p1", 1.0, { size: 44, color: ORANGE });
+    text("先套用转换 LUT，再调色", 800, 900, "p2", 1.0, { size: 44, color: ORANGE });
+  },
+  /* L7 · thirteen lessons */
+  lessons() {                        // anchors: count, three3d, levels, mine, coach, offer
+    text("一共 13 课", 540, 110, "count", 0, { size: 80, color: ORANGE });
+    line(240, 135, 840, 128, "count", 0.6, { stroke: ORANGE, strokeWidth: 5 });
+    const groups = [["看懂一张照片", ["直方图", "五个亮度区", "纯白和死黑"]], ["调整明暗", ["曝光和亮度", "四个滑块", "曲线"]],
+      ["颜色", ["白平衡", "HSL"]], ["拍摄的原理", ["光圈", "快门·ISO·曝光三角", "焦距"]], ["视频", ["帧率与快门", "Log 与 LUT"]]];
+    groups.forEach(([name, items], r) => {
+      const y = 215 + r * 100;
+      text(name, 60, y + 38, "count", 0.8 + r * 0.25, { size: 38, color: ORANGE, anchor: "start" });
+      let x = 330;
+      items.forEach((t, i) => { const w = Math.max(...[...t].map(() => 1)) * [...t].length * 29 + 44;
+        rect(x, y, w, 62, "count", 1.0 + r * 0.25 + i * 0.1, { strokeWidth: 2.6 });
+        text(t, x + w / 2, y + 43, "count", 1.1 + r * 0.25 + i * 0.1, { size: 30 }); x += w + 16; });
+    });
+    text("多数课里有 3D：拖着转", 540, 770, "three3d", 0, { size: 48 });
+    text("初级 · 中级 · 高级：讲解深浅跟着变", 540, 840, "levels", 0, { size: 44, color: ORANGE });
+    text("学过什么，只记在你的 Mac 上", 540, 910, "mine", 0, { size: 44 });
+    text("它还会指出这张照片的问题，一键试", 540, 980, "coach", 0, { size: 44, color: GREY });
+    text("想学才出现：右键滑块 · 区块标题旁的 ▶", 540, 1050, "offer", 0, { size: 40, color: GREEN });
   }
 };
 

@@ -7,6 +7,7 @@
 > 小红书的视频、图文 / 实况图、口播稿和发布文案在 [xiaohongshu/script.md](xiaohongshu/script.md)。
 > **「和 AI 一起做出来」的故事**（真实节点、数字、三篇帖子草稿）在 [story.md](story.md)。
 > 长版口播稿（中文约 6.5 分钟，English 约 8 分钟）在 [script-long.md](script-long.md)。
+> **「边调边学」专章**（互动课，中文约 6 分钟，English 约 7 分钟）单独成一章，在 [script-learn.md](script-learn.md)：它面向的是想学摄影的人，不只是想要一个 Mac 调色工具的人，适合单独发布，也可以每一节拆成一条短视频。
 
 ## 0. 名字和链接怎么写
 
@@ -49,7 +50,7 @@
 | 所有人（先讲） | 一键「自动」 | 先读这张照片再调；白底、雪景不压灰，夜景还是夜景，日落保留暖色；不满意 ⌘Z | `website/assets/compare-auto.gif`、`before.jpg` / `after.jpg` |
 | 所有人 | 六个滑块 + 能看见的预设 | 每个滑块一句人话；预设直接用你的照片预览 | `panel-presets.jpg` |
 | 所有人 | 调完存进「照片」 | iCloud 照片开着，iPhone 上就能看到；Live Photo 也能编辑，导出还是 Live Photo | `sheet-export.jpg` |
-| 想学的人 | 边调边学 | 13 节互动课，用你自己的照片；不少课是能拖着转的 3D；「五个亮度区」让你看见每个滑块改了哪一段 | `panel-learn.jpg` |
+| 想学的人 | 边调边学 | 13 节互动课，用你自己的照片；不少课是能拖着转的 3D；「五个亮度区」让你看见每个滑块改了哪一段；想学才出现，从不催你（滑块右键、区块标题旁的小播放键，可以整个关掉） | `panel-learn.jpg`、专章里的课程截图（`dist/lesson-stills/`） |
 | 想改一部分的人 | 局部调整 + 去除 | 渐变压暗天空、椭圆提亮主体、画笔涂；自动找到主体；一笔去掉电线、路人 | `compare-sky.gif`、`compare-remove.gif`、`shot-local.jpg` |
 | 想统一颜色的人 | 匹配色调 + 导出 LUT + 项目 | 借另一张照片的颜色；导出 `.cube` 给达芬奇 / Final Cut；一个项目里改一张、整组跟着变 | `compare-match.gif`、`shot-project.jpg` |
 | 拍得多的人 | 筛片 | 重复文件、相似连拍分组，并排对比，选一张留下；按内容搜「天空」「狗」；从「照片」里挑着导入 | `shot-similar.jpg`、`sheet-compare.jpg` |

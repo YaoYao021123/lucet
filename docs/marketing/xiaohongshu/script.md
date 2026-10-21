@@ -4,7 +4,7 @@
 
 - **视频**（第 1–5 节）：约 64 秒竖屏，画面和字幕已经做好（`video.html`），**你只需要录自己的声音，再按需换上自己的真实录屏**。
 - **图文 / 实况图**（第 6 节）：12 张卡片，图片在中间、文字在下面，每张可以是会动的实况图。
-- **真人出镜 + 手绘白板**（第 1c 节）：你的脸和声音，配 16 页手绘白板讲完整个故事。
+- **真人出镜 + 手绘白板**（第 1c 节）：你的脸和声音，配手绘白板。两章：**主故事**（15 页，[script-long.md](../script-long.md)）和**「边调边学」专章**（7 页，[script-learn.md](../script-learn.md)）。
 
 > 2026-10-20 更新：加入了局部调整、去除、匹配色调、项目这几项新功能（视频多了一个场景，图文多了四张卡片，白板多了一页「后来又长出来的」）；界面现在有中文和 English，所以所有「只有中文」的说法都改了；品牌统一写 Lucet 光集。
 
@@ -84,15 +84,23 @@ ENGINE=files bash scripts/render-xiaohongshu-audio.sh voice mine
 - `--no-sketches` 只要脸 + 字幕；`--no-music` 去掉背景音乐；`--no-trim` 保留所有停顿。
 - 一轮大约 10 分钟（大部分时间在逐帧画白板），之后改字幕重跑还是这个时间。
 
-**3. 白板是怎么跟着你说话的**：故事一共 **16 页**白板，按讲故事的顺序：`phone`（Mimo 只有手机版）→ `sliders`（专业软件的一堆滑块）→ `idea`（想法）→ `origin`（ChatGPT 原型 → Claude Code 挑毛病）→ `audit`（实测的改进）→ `sentences`（一句人话，一次修改）→ `mistake`（AI 也会错：白桌子的拿铁）→ `auto`（自动）→ `presets`（预设和裁剪）→ `save`（存进「照片」）→ `grow`（后来又长出来的：局部调整、去除、匹配色调、项目、AI）→ `inspire`（张小样和边调边学的由来）→ `learn`（像素 → 直方图、光圈、亮部）→ `name`（Lucet 光集）→ `honest`（现在的限制，和它不会做的事）→ `invite`（邀请）。**配长版口播稿（`teleprompter.html?v=long-zh`，约 6.5 分钟）16 页全部出现**；约 1 分钟的短版会出现其中 10 页左右。
+**3. 白板是怎么跟着你说话的**：白板分两章。**主故事 15 页**，按讲故事的顺序：`phone`（Mimo 只有手机版）→ `sliders`（专业软件的一堆滑块）→ `idea`（想法）→ `origin`（ChatGPT 原型 → Claude Code 挑毛病）→ `audit`（实测的改进）→ `sentences`（一句人话，一次修改）→ `mistake`（AI 也会错：白桌子的拿铁）→ `auto`（自动）→ `presets`（预设和裁剪）→ `save`（存进「照片」）→ `grow`（后来又长出来的：局部调整、去除、匹配色调、项目、AI）→ `teach`（张小样和边调边学的由来，只是预告）→ `name`（Lucet 光集）→ `honest`（现在的限制，和它不会做的事）→ `invite`（邀请）。**配长版口播稿（`teleprompter.html?v=long-zh`，约 6.5 分钟）15 页全部出现**；约 1 分钟的短版会出现其中 10 页左右。
+
+**「边调边学」专章 7 页**（口播稿 `script-learn.md`，提词器 `?v=learn-zh` / `?v=learn-en`，约 6 分钟）：`why`（一课怎么上：看动画、自己拖一拖、一个小问题）→ `read`（看懂一张照片：直方图、五个亮度区、纯白和死黑）→ `light`（调整明暗：曝光和亮度、四个滑块、曲线）→ `color`（颜色：白平衡、HSL）→ `shoot`（拍摄的原理：光圈、快门·ISO、焦距）→ `video`（帧率与快门、Log 与 LUT）→ `lessons`（一共 13 课，想学才出现）。剪这一章时加 `--chapter learn`：
+
+```sh
+.venv-audio/bin/python scripts/audio/build-talking-video.py 专章录像.mov --chapter learn
+```
 
 每个图形绑在一个“关键词”上（比如 `auto` 对应你说“自动”），工具在识别出的文字里找这些词，到那一秒就开始画。所以：**照提词器念就行，但想改词，要保留这些关键词**（词表在 `scripts/lib/sketch_pics.py` 的 `BOARDS`）。没听到的词，图会紧跟着上一个画出来，所以页面不会缺东西；整页都没提到，这一页就跳过。想改图，编辑 `sketches.html`（用 `?board=learn&play=1` 在 Chrome 里循环预览）。
 
-> 6 分钟以上的成片要把 16 页全部逐帧画出来，渲染大约要 40–50 分钟（只在第一次；改字幕再跑也是这个时间）。先用 `--plan-only` 看安排，再放心跑。
+> 6 分钟以上的成片要把全部页面逐帧画出来，渲染大约要 40–50 分钟（只在第一次；改字幕再跑也是这个时间）。先用 `--plan-only` 看安排，再放心跑。专章 7 页约 20–30 分钟。
 
-**白板里放真实截图**：`auto`、`presets`、`save`、`grow` 四页会放 `docs/marketing/xiaohongshu/pics/` 下的图片：`auto`、`presets`、`crop`、`save`，以及 `grow` 页的 `sky`（压暗天空）、`remove`（去掉路牌）、`match`（匹配色调）、`project`（项目），共 8 个名字（`.jpg` 或 `.png`）。现在放的是光集的真实截图；想换成你自己的截图或照片，用同样的文件名放进去覆盖即可，删掉某个文件就会回到手绘小图。成片里加 `--no-pics` 则全部用手绘图。图片也会一起打包进 `.excalidraw` 文件。目前只支持图片，不支持视频片段。
+**白板里放真实截图**：`docs/marketing/xiaohongshu/pics/` 里的**每个图片文件就是一个「位置」**，文件名（不含后缀）就是位置名；白板页按名字取图，没有这个文件就退回手绘。现有：`auto` `presets` `crop` `save`（主界面）、`sky` `remove` `match` `project`（`grow` 页的前后对比和项目）、`learn-panel`（专章的「学习」面板），以及 14 张课程截图 `lesson-<课>-<步骤>`（专章各页，来自应用自己的快照模式，3D 场景也在内）。想换成你自己的截图或照片，用同样的文件名放进去覆盖；删掉某个文件就回到手绘小图。成片里加 `--no-pics` 则全部用手绘图。图片也会一起打包进 `.excalidraw` 文件（缩到 700 像素宽）。目前只支持图片，不支持视频片段。
 
-**也可以在 excalidraw.com 里打开**：所有 16 页都在**一个文件**里：`docs/marketing/xiaohongshu/excalidraw/lucet-story.excalidraw`（按故事顺序排成 4 行、每行 4 页，每页一个带名字的框，如“1 phone”“2 sliders”）。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
+**重新拍课程截图**：`bash scripts/make-lesson-stills.sh 一张可以公开的风景照`，把全部 13 课、27 个步骤的截图放进 `dist/lesson-stills/`（`full/` 是整个课程窗口，`scene/` 只有动画那一块）。挑要用的复制到 `pics/lesson-<课>-<步骤>.jpg` 即可。动画本身的录屏请用 ⇧⌘5 自己录，我这边录不了。
+
+**也可以在 excalidraw.com 里打开**：两章的所有页面（共 22 页）都在**一个文件**里：`docs/marketing/xiaohongshu/excalidraw/lucet-story.excalidraw`。每章各有一个大标题，页面按顺序排成每行 4 页，每页一个带名字的框：主故事是“1 phone”“2 sliders”……，专章是“L1 why”“L2 read”……。打开 https://excalidraw.com ，把文件拖进页面（或菜单 → 打开）即可编辑、改字、加图。这是单向导出：在 excalidraw.com 里改的不会回到视频里的白板；视频里的图仍然来自 `sketches.html`。改了 `sketches.html` 后，运行 `python3 scripts/export-excalidraw.py` 重新导出。文字位置是估算的，个别地方需要手动挪一下。
 
 > 工具已经用一段合成语音的"替身录像"跑通过一遍（只验证版面、字幕、白板对时），没有正式成片。你的真实录像还没有。
 
