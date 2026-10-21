@@ -77,11 +77,15 @@ struct ParameterRow: View, @MainActor Equatable {
     var onHover: (InfluenceKind?) -> Void = { _ in }
     /// Hovering anywhere on the row or dragging: the histogram shows this control's zones.
     var onFocus: (Bool) -> Void = { _ in }
+    /// "What does this do?" in the row's menu: a demo on this photo (nil: none, or switched off).
+    var learnMore: (@MainActor () -> Void)?
+    /// Softly lit for a moment after a lesson about it.
+    var spotlit = false
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.title == rhs.title && lhs.value == rhs.value && lhs.range == rhs.range && lhs.step == rhs.step
             && lhs.decimals == rhs.decimals && lhs.suffix == rhs.suffix && lhs.neutral == rhs.neutral
-            && lhs.influence == rhs.influence
+            && lhs.influence == rhs.influence && lhs.spotlit == rhs.spotlit && (lhs.learnMore == nil) == (rhs.learnMore == nil)
     }
 
     @UIState private var position: Double?
@@ -122,7 +126,12 @@ struct ParameterRow: View, @MainActor Equatable {
         .frame(height: 18)
         .contentShape(Rectangle())
         .onHover { inside in if !dragging { onFocus(inside) } }
-        .contextMenu { Button("恢复默认值") { reset() } }
+        .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(spotlit ? 0.1 : 0)).padding(.horizontal, -4).padding(.vertical, -2))
+        .animation(.easeOut(duration: 0.8), value: spotlit)
+        .contextMenu {
+            Button("恢复默认值") { reset() }
+            if let learnMore { Button(L("「\(title)」是做什么的？")) { learnMore() } }
+        }
         .opacity(enabled ? 1 : 0.5)
     }
 
@@ -170,12 +179,15 @@ struct InspectorSection<Content: View>: View {
     var isOn: Binding<Bool>?
     var help: String?
     var onReset: (() -> Void)?
+    /// A demo of this section on the photo, offered next to the title while the pointer is over it.
+    var lesson: (@MainActor () -> Void)?
     @ViewBuilder var content: Content
     @AppStorage private var collapsed: Bool
+    @UIState private var hovering = false
 
     init(_ title: String, number: Int? = nil, isOn: Binding<Bool>? = nil, help: String? = nil,
-         startsCollapsed: Bool = false, onReset: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title; self.number = number; self.isOn = isOn; self.help = help; self.onReset = onReset
+         startsCollapsed: Bool = false, onReset: (() -> Void)? = nil, lesson: (@MainActor () -> Void)? = nil, @ViewBuilder content: () -> Content) {
+        self.title = title; self.number = number; self.isOn = isOn; self.help = help; self.onReset = onReset; self.lesson = lesson
         self.content = content()
         _collapsed = AppStorage(wrappedValue: startsCollapsed, "section.collapsed.\(title)")
     }
@@ -204,6 +216,15 @@ struct InspectorSection<Content: View>: View {
                 }
                 .buttonStyle(.plain)
                 .help(help ?? title)
+                if let lesson {
+                    // Quiet until wanted: it shows while the pointer is on the header and stays reachable by keyboard.
+                    Button(action: lesson) { Image(systemName: "play.circle").font(.caption) }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(WorkbenchTheme.textSecondary)
+                        .opacity(hovering ? 1 : 0)
+                        .help(L("用这张照片看一段演示"))
+                        .accessibilityLabel(L("\(title)演示"))
+                }
                 Spacer(minLength: 4)
                 if let onReset {
                     Button(action: onReset) { Image(systemName: "arrow.counterclockwise") }
@@ -231,6 +252,7 @@ struct InspectorSection<Content: View>: View {
         }
         .padding(.vertical, 7)
         .overlay(alignment: .bottom) { WorkbenchTheme.hairline.frame(height: 1) }
+        .onHover { hovering = $0 }
     }
 }
 

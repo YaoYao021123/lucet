@@ -70,6 +70,9 @@
 "完成「%@」。" = "Finished “%@”.";
 "正在分析画面，请稍后再试。" = "Still analyzing the image. Try again in a moment.";
 "对比" = "Compare";
+"基础" = "Basic";
+"调整" = "Adjustments";
+"为什么？" = "Why?";
 "预设「%@」" = "Preset “%@”";
 "无法应用预设" = "Couldn't apply the preset";
 "我的预设" = "My Preset";
@@ -396,7 +399,6 @@
 "点按曲线添加控制点，拖出框外删除。" = "Click the curve to add a point; drag a point out of the box to delete it.";
 
 /* GradeStages.swift */
-"基础" = "Basic";
 "中间调" = "Midtones";
 "亮部" = "Highlights";
 "整体" = "Global";
@@ -472,7 +474,6 @@
 "调色模式" = "Adjustment mode";
 "简单：几个常用滑块。完整：示波器、色轮、曲线、HSL、LUT 等全部工具。" = "Simple: a few everyday sliders. Full: every tool, including scopes, color wheels, curves, HSL and LUTs.";
 "最常用的几项。需要更多控制时切换到「完整」。" = "The controls you'll use most. Switch to “Full” when you need more control.";
-"调整" = "Adjustments";
 "这张照片还用了曲线、色轮、HSL 或 LUT 等调整，切换到「完整」可以查看。" = "This photo also uses curves, color wheels, HSL or a LUT. Switch to “Full” to see them.";
 "曝光、影调、白平衡与色彩" = "Exposure, tone, white balance and color";
 "DaVinci 式一级校色：暗部 / 中间调 / 亮部 / 整体。拖动色点偏色，下方滑块调亮度；按住 ⌥ 精细拖动。" = "DaVinci-style primary correction: shadows / midtones / highlights / global. Drag the dot to shift the color and use the slider below for brightness. Hold ⌥ for fine control.";
@@ -574,6 +575,7 @@
 
 /* LearnViews.swift */
 "\n点按查看讲解" = "\nClick for the explanation";
+"\n点按用这张照片看演示" = "\nClick to see a demo on this photo";
 "显示" = "Show";
 "修复" = "Fix";
 "试一试：%@（可撤销）" = "Try it: %@ (undoable)";
@@ -589,6 +591,8 @@
 "告诉我你的水平和想学什么，讲解会更适合你。" = "Tell Lucet your level and what you want to learn, and the explanations will suit you better.";
 "学习水平" = "Level";
 "悬停参数名时，在画面上显示影响范围" = "Show what a setting affects when you hover over its name";
+"编辑时提供演示入口" = "Offer demos while editing";
+"在滑块的右键菜单、分组标题旁和「自动」之后，提供用这张照片演示的入口。只在你点它时打开。" = "Offers a demo on this photo in a slider's right-click menu, next to section titles and after Auto. It opens only when you click it.";
 "学习路径" = "Learning Path";
 "按你选的方向排列；在照片上演示过或常用的技巧会打勾。" = "Ordered by your interests; techniques you've demonstrated or use often get a check mark.";
 "已掌握 %lld / %lld" = "%lld of %lld learned";
@@ -601,7 +605,6 @@
 "隐藏区域" = "Hide Area";
 "试一试" = "Try It";
 "作为一步应用，左右对比查看效果；⌘Z 撤销" = "Applies as one step and compares side by side; ⌘Z undoes it";
-"为什么？" = "Why?";
 "演示：" = "Demo: ";
 "演示" = "Demo";
 "在这张照片上演示：%@（可撤销）" = "Demonstrate on this photo: %@ (undoable)";
@@ -647,6 +650,7 @@
 "重播" = "Replay";
 "上一步" = "Back";
 "下一步" = "Next";
+"在我的照片上试试" = "Try it on my photo";
 "想一想" = "Think about it";
 "再看看画面。" = "Take another look at the image.";
 "答对了。" = "That's right.";
@@ -1654,6 +1658,9 @@
 "悬停名称可在画面上查看影响范围；" = "Hover over the name to see what it affects in the image; ";
 "%@数值" = "%@ value";
 "恢复默认值" = "Reset to Default";
+"「%@」是做什么的？" = "What does “%@” do?";
+"用这张照片看一段演示" = "See a short demo on this photo";
+"%@演示" = "%@ demo";
 "显示此步骤的效果" = "Show this step's effect";
 "隐藏此步骤的效果以比较（参数保留）" = "Hide this step's effect to compare (settings kept)";
 "state.off" = "off";
@@ -1704,5 +1711,3 @@
 "「%@」" = "“%@”";
 "%@：主要改变%@，阴影部分是它作用的范围。" = "%@: mainly changes %@; the shaded part is the range it acts on.";
 "%@（%@）" = "%@ (%@)";
-
-/* Not used by the current code (kept until reviewed) */

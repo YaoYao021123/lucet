@@ -146,6 +146,13 @@ enum DebugSnapshot {
             LessonPlayer.debugStartStep = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
             // Let the previous sheet close first, or SwiftUI keeps it (same lesson id).
             Task { @MainActor in try? await Task.sleep(for: .milliseconds(700)); app.openLesson(parts[0]) }
+        case "demo":
+            // "lesson@step": a lesson opened from editing (it leads back to the photo).
+            let parts = argument.split(separator: "@").map(String.init)
+            app.sheet = nil
+            LessonPlayer.debugStartStep = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
+            Task { @MainActor in try? await Task.sleep(for: .milliseconds(700)); app.demo(parts[0], parameters: [.highlights, .shadows], section: L("基础"))?() }
+        case "back": app.backToPhoto()
         case "crop":
             // "scale,horizontal,vertical,ratio"
             let v = argument.split(separator: ",").compactMap { Double($0) }

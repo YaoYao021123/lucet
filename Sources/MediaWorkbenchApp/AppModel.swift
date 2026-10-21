@@ -169,6 +169,10 @@ final class AppModel {
 
     /// What this user knows and wants to learn; drives the coach.
     var learner = LearnerProfile() { didSet { if learner != oldValue { scheduleLearnerSave() } } }
+    /// A lesson opened from editing, and where it leads back to (see AppModel+LearnLinks).
+    var lessonReturn: LessonReturn?
+    /// Sliders softly lit for a moment after a lesson, so "try it" finds them.
+    var spotlight: Set<AdjustmentParameter> = []
     /// 简单 shows a few plain controls; 完整 shows every grading stage. Beginners start simple.
     var colorMode = ColorMode.simple { didSet { UserDefaults.standard.set(colorMode.rawValue, forKey: "color.mode") } }
     @ObservationIgnored private var learnerSave: Task<Void, Never>?
@@ -499,7 +503,7 @@ final class AppModel {
         }
     }
 
-    func openLesson(_ id: String) { sheet = .lesson(id) }
+    func openLesson(_ id: String, returning: LessonReturn? = nil) { lessonReturn = returning; sheet = .lesson(id) }
 
     /// A finished lesson counts as having tried its concept, so the learning path ticks it.
     func completeLesson(_ lesson: Lesson) {
@@ -519,10 +523,15 @@ final class AppModel {
             })
         }
         guard let summary = result else { show(L("正在分析画面，请稍后再试。"), seconds: 2); return }
-        show(summary, actions: [
+        var actions: [Toast.Action] = [
             .init(title: L("对比")) { [weak self] in self?.editor.compareMode = self?.editor.isVideo == true ? .original : .split },
             .init(title: L("撤销")) { [weak self] in self?.editor.undo() }
-        ])
+        ]
+        // What Auto did, explained on this photo, for whoever wonders.
+        if let why = demo("tone-controls", parameters: [.highlights, .shadows, .whites, .blackPoint], section: simple ? L("调整") : L("基础")) {
+            actions.append(.init(title: L("为什么？"), perform: why))
+        }
+        show(summary, actions: actions)
     }
 
     func applyPreset(_ preset: GradePreset) {

@@ -6,12 +6,17 @@ import SwiftUI
 struct LessonPlayer: View {
     let app: AppModel
     let lesson: Lesson
-    @UIState private var index = LessonPlayer.debugStartStep
+    @UIState private var index: Int
     /// Developer snapshots open a lesson at a given step.
     nonisolated(unsafe) static var debugStartStep = 0
     @UIState private var photo: LessonPhoto?
     @UIState private var started = Date()
     @UIState private var chosen: Int?
+
+    init(app: AppModel, lesson: Lesson) {
+        self.app = app; self.lesson = lesson
+        _index = UIState(initialValue: min(max(0, LessonPlayer.debugStartStep), lesson.steps.count - 1))
+    }
 
     private var step: LessonStep { lesson.steps[index] }
 
@@ -55,7 +60,7 @@ struct LessonPlayer: View {
             }
             .animation(.snappy, value: index)
             Spacer()
-            Button("关闭") { app.sheet = nil }.keyboardShortcut(.cancelAction)
+            Button("关闭") { app.backToPhoto() }.keyboardShortcut(.cancelAction)
         }
         .padding(.horizontal, 18).frame(height: 54)
     }
@@ -79,6 +84,10 @@ struct LessonPlayer: View {
                 if index > 0 { Button("上一步") { go(index - 1) }.glassButton() }
                 if index < lesson.steps.count - 1 {
                     Button("下一步") { go(index + 1) }.primaryButton().keyboardShortcut(.defaultAction)
+                } else if app.lessonReturn != nil {
+                    // Opened while editing: straight back to the sliders it was about.
+                    Button("在我的照片上试试") { app.completeLesson(lesson); app.backToPhoto() }
+                        .primaryButton().keyboardShortcut(.defaultAction)
                 } else {
                     Button("完成") { finish() }.primaryButton().keyboardShortcut(.defaultAction)
                 }

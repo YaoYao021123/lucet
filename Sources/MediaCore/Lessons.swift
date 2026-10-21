@@ -218,4 +218,17 @@ extension Lesson {
     ]
 
     public static func lesson(_ id: String) -> Lesson? { catalog.first { $0.id == id } }
+
+    /// The lesson that shows what a slider does, for "what does this do?" while editing.
+    public static func about(_ parameter: AdjustmentParameter) -> Lesson? {
+        switch parameter {
+        case .exposure, .brightness: lesson("exposure-brightness")
+        case .highlights, .shadows, .whites, .blackPoint, .contrast: lesson("tone-controls")
+        case .warmth, .tint: lesson("white-balance")
+        default: nil
+        }
+    }
+
+    /// The first lesson about a concept (the coach's tips name concepts).
+    public static func about(_ concept: Concept) -> Lesson? { catalog.first { $0.concept == concept } }
 }

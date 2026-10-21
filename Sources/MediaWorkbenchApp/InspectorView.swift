@@ -104,7 +104,8 @@ struct ColorPanel: View {
         VStack(alignment: .leading, spacing: 0) {
             InsightStrip(app: app)
             PresetStrip(app: app)
-            InspectorSection(L("调整"), help: L("最常用的几项。需要更多控制时切换到「完整」。"), onReset: { editor.resetStage(.basic) }) {
+            InspectorSection(L("调整"), help: L("最常用的几项。需要更多控制时切换到「完整」。"), onReset: { editor.resetStage(.basic) },
+                             lesson: app.demo("tone-controls", parameters: [.highlights, .shadows], section: L("调整"))) {
                 let values = editor.adjustments
                 ZoneHistogramFeed(editor: editor).padding(.bottom, 6)
                 VStack(spacing: 2) {
@@ -114,7 +115,9 @@ struct ColorPanel: View {
                                      help: control.hint + "\n\n" + control.parameter.explanation,
                                      influence: app.learner.hoverHints ? InfluenceKind.forParameter(control.parameter) : nil,
                                      onChange: { editor.setAdjustment(control.parameter, $0) }, onEditing: editor.beginEditing,
-                                     onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(control.parameter, $0) })
+                                     onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(control.parameter, $0) },
+                                     learnMore: app.demo(for: control.parameter, section: L("调整")),
+                                     spotlit: app.spotlight.contains(control.parameter))
                             .equatable()
                     }
                 }
@@ -132,10 +135,12 @@ struct ColorPanel: View {
             ScopePanel(editor: editor, level: app.learner.level).padding(.top, 4).padding(.bottom, 4)
             InsightStrip(app: app)
             PresetStrip(app: app)
-            InspectorSection(L("基础"), number: 1, isOn: stage(.basic), help: L("曝光、影调、白平衡与色彩"), onReset: { editor.resetStage(.basic) }) {
+            InspectorSection(L("基础"), number: 1, isOn: stage(.basic), help: L("曝光、影调、白平衡与色彩"), onReset: { editor.resetStage(.basic) },
+                             lesson: app.demo("tone-controls", parameters: [.highlights, .shadows, .whites, .blackPoint], section: L("基础"))) {
                 VStack(spacing: 6) {
                     ForEach([AdjustmentSection.exposure, .tone, .whiteBalance, .color], id: \.self) { section in
-                        AdjustmentRows(editor: editor, section: section, hints: app.learner.hoverHints)
+                        AdjustmentRows(editor: editor, section: section, hints: app.learner.hoverHints,
+                                       learn: { app.demo(for: $0, section: L("基础")) }, spotlight: app.spotlight)
                     }
                 }
             }
@@ -145,15 +150,15 @@ struct ColorPanel: View {
                 WheelGrid(editor: editor)
             }
             InspectorSection(L("曲线"), number: 3, isOn: stage(.curves), help: L("RGB 主曲线与红绿蓝单通道曲线。"),
-                             startsCollapsed: true, onReset: { editor.resetStage(.curves) }) {
+                             startsCollapsed: true, onReset: { editor.resetStage(.curves) }, lesson: app.demo("curves", section: L("曲线"))) {
                 CurveSection(editor: editor)
             }
             InspectorSection(L("HSL 色彩混合"), number: 4, isOn: stage(.hsl), help: L("分别调整 8 个色系的色相、饱和度与明亮度。"),
-                             startsCollapsed: true, onReset: { editor.resetStage(.hsl) }) {
+                             startsCollapsed: true, onReset: { editor.resetStage(.hsl) }, lesson: app.demo("hsl", section: L("HSL 色彩混合"))) {
                 HSLPanel(editor: editor)
             }
             InspectorSection(L("风格 LUT"), number: 5, isOn: stage(.lut),
-                             help: L("LUT 把颜色映射为另一种风格。相机 Log 素材需先套用对应的转换 LUT。"), onReset: { editor.resetStage(.lut) }) {
+                             help: L("LUT 把颜色映射为另一种风格。相机 Log 素材需先套用对应的转换 LUT。"), onReset: { editor.resetStage(.lut) }, lesson: app.demo("log-lut", section: L("风格 LUT"))) {
                 LUTControls(app: app)
             }
             InspectorSection(L("细节"), number: 6, isOn: stage(.detail), help: L("降噪和去雾在调色之前，黑白在 HSL 之后；锐化、褪色、暗角和颗粒最后进行。"),
@@ -206,6 +211,9 @@ struct AdjustmentRows: View {
     let editor: EditorModel
     let section: AdjustmentSection
     var hints = true
+    /// "What does this do?" for a slider, when there's a demo for it.
+    var learn: (AdjustmentParameter) -> (@MainActor () -> Void)? = { _ in nil }
+    var spotlight: Set<AdjustmentParameter> = []
     var body: some View {
         let values = editor.adjustments
         let changed = section.parameters.contains { values[$0] != 0 }
@@ -227,7 +235,8 @@ struct AdjustmentRows: View {
                              suffix: parameter == .exposure ? "EV" : "", help: parameter.explanation,
                              influence: hints ? InfluenceKind.forParameter(parameter) : nil,
                              onChange: { editor.setAdjustment(parameter, $0) }, onEditing: editor.beginEditing,
-                             onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(parameter, $0) })
+                             onHover: { editor.hoverInfluence = $0 }, onFocus: { editor.focus(parameter, $0) },
+                             learnMore: learn(parameter), spotlit: spotlight.contains(parameter))
                     .equatable()
             }
         }

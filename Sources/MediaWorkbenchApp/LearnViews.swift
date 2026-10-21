@@ -37,11 +37,13 @@ struct InsightStrip: View {
             if let top = state.insights.first, top.severity >= 0.3 {
                 HStack(spacing: 6) {
                     Image(systemName: top.symbol).foregroundStyle(.secondary).frame(width: 16)
-                    Button { app.inspectorTab = .learn } label: {
+                    // The tip's lesson, played on this photo and leading back here; the Learn tab when there's none.
+                    let demo = Lesson.about(top.concept).flatMap { app.demo($0.id, section: nil) }
+                    Button { if let demo { demo() } else { app.inspectorTab = .learn } } label: {
                         Text(top.title).font(.caption.weight(.semibold)).lineLimit(1)
                     }
                     .buttonStyle(.plain)
-                    .help(top.observation + L("\n点按查看讲解"))
+                    .help(top.observation + (demo == nil ? L("\n点按查看讲解") : L("\n点按用这张照片看演示")))
                     Spacer(minLength: 4)
                     if top.influence != nil || top.showsClipping {
                         Button("显示") { showArea(top) }.buttonStyle(.borderless).font(.caption)
@@ -131,6 +133,9 @@ struct LearnPanel: View {
                     }
                     Toggle("悬停参数名时，在画面上显示影响范围", isOn: Binding(get: { profile.hoverHints }, set: { app.learner.hoverHints = $0 }))
                         .toggleStyle(.checkbox).font(.caption)
+                    Toggle("编辑时提供演示入口", isOn: Binding(get: { profile.learnLinks }, set: { app.learner.learnLinks = $0 }))
+                        .toggleStyle(.checkbox).font(.caption)
+                        .help(L("在滑块的右键菜单、分组标题旁和「自动」之后，提供用这张照片演示的入口。只在你点它时打开。"))
                 }
             }
             InspectorSection(L("学习路径"), help: L("按你选的方向排列；在照片上演示过或常用的技巧会打勾。")) {
