@@ -1039,6 +1039,7 @@
 "无法读取视频画面。" = "Couldn't read the video's frames.";
 "读取视频画面时出错。" = "Something went wrong reading the video's frames.";
 "片段里没有可用的画面。" = "There are no usable frames in the clip.";
+"长曝光、循环和往返适合 15 秒以内的片段，请先缩短选取范围。" = "Long exposure, loop and bounce suit clips of 15 seconds or less. Shorten the selection first.";
 "无法创建视频文件。" = "Couldn't create the video file.";
 "视频写入失败。" = "Writing the video failed.";
 
@@ -1537,6 +1538,8 @@
 "保留 HDR" = "Keep HDR";
 "封面不变时，照片带增益图导出，在 HDR 屏幕上高光更亮；动态部分是普通亮度，和 iPhone 拍的一样。" = "While the cover is unchanged, the photo keeps its gain map, so highlights are brighter on HDR screens. The motion stays at standard brightness, as the iPhone records it.";
 "封面带 AI 增益图导出，在 HDR 屏幕上亮处发光；动态部分是普通亮度。" = "The cover gets an AI gain map, so bright areas glow on HDR screens. The motion stays at standard brightness.";
+"导出调色、裁切后的视频。" = "Exports the video with your colour and crop edits.";
+"片段最长 15 秒。" = "Clips can be up to 15 seconds.";
 "这是一张 Live Photo：同样的调色会用在照片和动态部分上，导出后仍是 Live Photo。" = "This is a Live Photo: the same edits apply to the photo and the motion, and it stays a Live Photo.";
 "只保存调色后的那张照片（原始尺寸，保留拍摄信息），不带动态。" = "Saves only the edited photo (full size, capture info kept), without motion.";
 "只保存调色后的动态部分，是一段普通视频。" = "Saves only the edited motion, as an ordinary video.";

@@ -97,4 +97,9 @@ struct LiveEffectsTests {
         #expect(abs(bounceSeconds - 58.0 / 30) < 0.12, "bounce \(bounceSeconds)")      // 30 forward + 28 back
         #expect(abs(loopSeconds - 20.0 / 30) < 0.12, "loop \(loopSeconds)")            // 30 frames − 10 overlap
     }
+
+    @Test func longClipsAreRefusedWithAMessage() {
+        #expect(throws: Never.self) { try LiveEffects.checkLength(15) }
+        #expect(throws: (any Error).self) { try LiveEffects.checkLength(15.5) }
+    }
 }

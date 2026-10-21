@@ -899,7 +899,11 @@ final class AppModel {
     }
 
     /// How the open item leaves when it is a Live Photo (nil for ordinary photos and videos).
-    private var currentLiveMode: LiveOutput? { editor.isLiveInput ? exportSettings.liveOutput : nil }
+    /// For an ordinary video it is only ever an effect (long exposure, loop, bounce); nil means export it as it is.
+    private var currentLiveMode: LiveOutput? {
+        if editor.isLiveInput { return exportSettings.liveOutput }
+        return editor.isVideo && exportSettings.liveOutput.isEffect ? exportSettings.liveOutput : nil
+    }
 
     /// A Live Photo is 0.5–3 s. When the selection isn't, offer the fix instead of only explaining the rule.
     /// Returns true when the range is fine; after a fix the user starts the export again.
