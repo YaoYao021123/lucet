@@ -178,6 +178,7 @@ footer .wrap{display:grid;gap:10px}
     <a class="brand" href="#top"><img src="../assets/guangji-symbol-dark.svg" alt="" width="26" height="26">Lucet</a>
     <div class="links">
       <a href="#why">Why</a>
+      <a href="#steps">How it works</a>
       <a href="#features">Features</a>
       <a href="#dji">DJI footage</a>
       <a href="#made">How it's made</a>
@@ -226,6 +227,31 @@ footer .wrap{display:grid;gap:10px}
   </div>
 </section>
 
+<section id="steps">
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">Three steps</p>
+      <h2>Import, click Auto, save</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>Import</h3><p>Drag a folder of photos or videos into the window. Photos and videos with the same name become one Live Photo. Rate, pick and reject to find the good ones first.</p></div>
+      <div class="step"><h3>Adjust</h3><p>Press <code>A</code> for Auto, choose a preset and fine-tune with six sliders. Press <code>\</code> to see the original.</p></div>
+      <div class="step"><h3>Save</h3><p>Save to Photos or share with friends. Come back later and every adjustment is still there, ready to undo.</p></div>
+    </div>
+
+    <div class="window" style="margin-top:56px">
+      <img src="../assets/en/shot-browse.jpg" width="2415" height="960" alt="Lucet's library: a thumbnail grid of drone photos, a Live Photo and a DJI video" loading="lazy">
+    </div>
+
+    <div class="cards">
+      <div class="card"><h3>Browse and organize</h3><p>Thumbnails show each photo as edited. Ratings 0–5, pick and reject, filters by type and rating, and file-name search.</p></div>
+      <div class="card"><h3>Full mode</h3><p>Scopes (histogram, waveform, parade, vectorscope), color wheels, curves, the HSL color mixer and creative LUTs, in a fixed order with every step switchable for comparison.</p></div>
+      <div class="card"><h3>Collage Live</h3><p>Combine several 3-second clips into one Live Photo, with each panel graded on its own.</p></div>
+      <div class="card"><h3>Undo and versions</h3><p>Undo and redo any time, and keep several named versions of a photo to return to.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="features">
   <div class="wrap">
     <div class="center">
@@ -269,6 +295,54 @@ footer .wrap{display:grid;gap:10px}
         </ul>
       </div>
       <div class="shot"><img src="../assets/en/panel-presets.jpg" width="660" height="880" alt="Lucet's right-hand panel: five preset thumbnails and six simple sliders" loading="lazy"></div>
+    </div>
+
+    <div class="feature stack">
+      <div class="text">
+        <p class="kicker">Drag to crop</p>
+        <h3>Drag right on the photo, just like in the Photos app</h3>
+        <p>Open Crop and the whole photo appears with the crop frame on top: drag the frame to move it and a corner to resize it, and the aspect ratio holds. Straighten, rotate and flip live here too, and Lucet tells you when the horizon is tilted.</p>
+      </div>
+      <div class="window">
+        <img src="../assets/en/shot-crop.jpg" width="2415" height="1514" alt="Dragging the crop frame on the picture to crop an aerial photo square" loading="lazy">
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <p class="kicker">Save to Photos · Live Photos</p>
+        <h3>Done editing? One step back to your iPhone.</h3>
+        <p>Exports go straight into Photos on your Mac by default, and with iCloud Photos on they sync to your iPhone. Trim a video to 3 seconds or less and it becomes a real Live Photo. Files work too, or share directly with the system share sheet.</p>
+        <ul>
+          <li>JPEG, HEIC or PNG, optionally resized for social media</li>
+          <li>HDR photos export with a gain map and stay HDR, edits included</li>
+          <li><b>AI HDR</b>: ordinary photos glow on HDR screens too; a neural network decides how bright each highlight should be</li>
+          <li><b>Edit a Live Photo</b> and it stays a Live Photo: the photo and the motion are graded together, and it keeps its original photo, date and place. <b>Pick cover</b> samples frames and marks the sharpest one (and the best faces)</li>
+          <li>Export presets, file-name patterns (date, number, size) and an optional text watermark</li>
+          <li>Capture time and camera info are kept; location is removed by default</li>
+          <li>Exports run in the background while you move on to the next photo</li>
+          <li>Originals are never changed; every export is a new copy</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="../assets/en/sheet-export.jpg" width="1000" height="1404" alt="The export window: save to Photos or a folder, with format, quality, size, file name and watermark options" loading="lazy" style="width:min(100%,440px)"></div>
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">Learn as you edit</p>
+        <h3>Not a tutorial. A lesson about the photo in front of you.</h3>
+        <p>Lucet reads the photo and points out what's really going on: where it's overexposed, where there's a color cast, how many degrees the horizon tilts, with an adjustment you can try in one click. Hover over a slider's name and the picture highlights only what it affects.</p>
+        <ul>
+          <li>Interactive lessons: a few minutes each, using animation and your own photo to explain the histogram, exposure, curves, white balance, aperture, focal length, video frame rates and Log, while you try it</li>
+          <li>Many lessons are in 3D, and you can drag to turn them: your photo's brightness as a little mountain range, its colors as a cloud inside the RGB cube, light passing through a lens, a shutter as a slab of time</li>
+          <li>Offered, never pushed: right-click a slider to ask what it does, or use the small play button beside a section's title. Nothing opens by itself, and one switch turns it all off</li>
+          <li>Drag any light or dark slider and the histogram marks which part it changes, from darkest to brightest</li>
+          <li>Choose Beginner, Intermediate or Advanced and the explanations change depth</li>
+          <li>Ask anything, like “Why does the sky look gray?” (optional, uses your own AI key, off by default)</li>
+          <li>Your learning history stays on your Mac</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="../assets/en/panel-learn.jpg" width="660" height="870" alt="The Learn panel: tips about this photo, Ask About This Photo, and the learning level" loading="lazy"></div>
     </div>
 
     <div class="feature">
@@ -324,18 +398,7 @@ footer .wrap{display:grid;gap:10px}
       </div>
     </div>
 
-    <div class="feature stack">
-      <div class="text">
-        <p class="kicker">Drag to crop</p>
-        <h3>Drag right on the photo, just like in the Photos app</h3>
-        <p>Open Crop and the whole photo appears with the crop frame on top: drag the frame to move it and a corner to resize it, and the aspect ratio holds. Straighten, rotate and flip live here too, and Lucet tells you when the horizon is tilted.</p>
-      </div>
-      <div class="window">
-        <img src="../assets/en/shot-crop.jpg" width="2415" height="1514" alt="Dragging the crop frame on the picture to crop an aerial photo square" loading="lazy">
-      </div>
-    </div>
-
-    <div class="feature reverse">
+    <div class="feature">
       <div class="text">
         <p class="kicker">Match colors · Export a LUT</p>
         <h3>Like another photo's colors? Bring this one closer</h3>
@@ -392,43 +455,6 @@ footer .wrap{display:grid;gap:10px}
       </div>
     </div>
 
-    <div class="feature reverse">
-      <div class="text">
-        <p class="kicker">Learn as you edit</p>
-        <h3>Not a tutorial. A lesson about the photo in front of you.</h3>
-        <p>Lucet reads the photo and points out what's really going on: where it's overexposed, where there's a color cast, how many degrees the horizon tilts, with an adjustment you can try in one click. Hover over a slider's name and the picture highlights only what it affects.</p>
-        <ul>
-          <li>Interactive lessons: a few minutes each, using animation and your own photo to explain the histogram, exposure, curves, white balance, aperture, focal length, video frame rates and Log, while you try it</li>
-          <li>Many lessons are in 3D, and you can drag to turn them: your photo's brightness as a little mountain range, its colors as a cloud inside the RGB cube, light passing through a lens, a shutter as a slab of time</li>
-          <li>Offered, never pushed: right-click a slider to ask what it does, or use the small play button beside a section's title. Nothing opens by itself, and one switch turns it all off</li>
-          <li>Drag any light or dark slider and the histogram marks which part it changes, from darkest to brightest</li>
-          <li>Choose Beginner, Intermediate or Advanced and the explanations change depth</li>
-          <li>Ask anything, like “Why does the sky look gray?” (optional, uses your own AI key, off by default)</li>
-          <li>Your learning history stays on your Mac</li>
-        </ul>
-      </div>
-      <div class="shot"><img src="../assets/en/panel-learn.jpg" width="660" height="870" alt="The Learn panel: tips about this photo, Ask About This Photo, and the learning level" loading="lazy"></div>
-    </div>
-
-    <div class="feature">
-      <div class="text">
-        <p class="kicker">Save to Photos · Live Photos</p>
-        <h3>Done editing? One step back to your iPhone.</h3>
-        <p>Exports go straight into Photos on your Mac by default, and with iCloud Photos on they sync to your iPhone. Trim a video to 3 seconds or less and it becomes a real Live Photo. Files work too, or share directly with the system share sheet.</p>
-        <ul>
-          <li>JPEG, HEIC or PNG, optionally resized for social media</li>
-          <li>HDR photos export with a gain map and stay HDR, edits included</li>
-          <li><b>AI HDR</b>: ordinary photos glow on HDR screens too; a neural network decides how bright each highlight should be</li>
-          <li><b>Edit a Live Photo</b> and it stays a Live Photo: the photo and the motion are graded together, and it keeps its original photo, date and place. <b>Pick cover</b> samples frames and marks the sharpest one (and the best faces)</li>
-          <li>Export presets, file-name patterns (date, number, size) and an optional text watermark</li>
-          <li>Capture time and camera info are kept; location is removed by default</li>
-          <li>Exports run in the background while you move on to the next photo</li>
-          <li>Originals are never changed; every export is a new copy</li>
-        </ul>
-      </div>
-      <div class="shot"><img src="../assets/en/sheet-export.jpg" width="1000" height="1404" alt="The export window: save to Photos or a folder, with format, quality, size, file name and watermark options" loading="lazy" style="width:min(100%,440px)"></div>
-    </div>
-
     <div class="feature stack">
       <div class="text">
         <p class="kicker">And also</p>
@@ -460,6 +486,42 @@ footer .wrap{display:grid;gap:10px}
         <p class="small" style="margin-top:16px">Still planned: applying the conversion LUT to D-Log footage automatically (for now you import the matching LUT yourself).</p>
       </div>
       <div class="shot"><img src="../assets/en/panel-info.jpg" width="660" height="1330" alt="The Info panel: a DJI video's codec, frame rate, bitrate, color space and bit depth" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center">
+    <p class="eyebrow">Privacy</p>
+    <h2>Your photos stay on your Mac</h2>
+    <p class="lead">Lucet has no account and no analytics, and uploads no photos. The only thing that goes online is the optional “Ask About This Photo”: it's off by default, and after you add your own key it sends a small preview (which you can turn off) and the adjustment settings only when you click Ask. Location is never included.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">Is it for you?</p>
+      <h2>Straight answers before you download</h2>
+    </div>
+    <div class="fit">
+      <div>
+        <h3>A good fit if you</h3>
+        <ul>
+          <li>Shoot with DJI or iPhone and want to make it look good on your Mac before sharing</li>
+          <li>Find Lightroom and Photoshop too complex and just want brightness, color and a crop</li>
+          <li>Want to finally understand what “highlights” and “shadows” really do</li>
+          <li>Like tools that never touch the original and can always undo</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Not a fit yet if you</h3>
+        <ul>
+          <li>Need multi-track video editing, transitions or titles</li>
+          <li>Do in-depth RAW development or commercial-scale batch retouching</li>
+          <li>Use an Intel Mac or a system older than macOS 15</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
@@ -518,67 +580,6 @@ footer .wrap{display:grid;gap:10px}
         <div class="us"><b>Let your moments shine.</b><p>让每一个瞬间，自有光彩。</p></div>
       </div>
     </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="center">
-      <p class="eyebrow">Three steps</p>
-      <h2>Import, click Auto, save</h2>
-    </div>
-    <div class="steps">
-      <div class="step"><h3>Import</h3><p>Drag a folder of photos or videos into the window. Photos and videos with the same name become one Live Photo. Rate, pick and reject to find the good ones first.</p></div>
-      <div class="step"><h3>Adjust</h3><p>Press <code>A</code> for Auto, choose a preset and fine-tune with six sliders. Press <code>\</code> to see the original.</p></div>
-      <div class="step"><h3>Save</h3><p>Save to Photos or share with friends. Come back later and every adjustment is still there, ready to undo.</p></div>
-    </div>
-
-    <div class="window" style="margin-top:56px">
-      <img src="../assets/en/shot-browse.jpg" width="2415" height="960" alt="Lucet's library: a thumbnail grid of drone photos, a Live Photo and a DJI video" loading="lazy">
-    </div>
-
-    <div class="cards">
-      <div class="card"><h3>Browse and organize</h3><p>Thumbnails show each photo as edited. Ratings 0–5, pick and reject, filters by type and rating, and file-name search.</p></div>
-      <div class="card"><h3>Full mode</h3><p>Scopes (histogram, waveform, parade, vectorscope), color wheels, curves, the HSL color mixer and creative LUTs, in a fixed order with every step switchable for comparison.</p></div>
-      <div class="card"><h3>Collage Live</h3><p>Combine several 3-second clips into one Live Photo, with each panel graded on its own.</p></div>
-      <div class="card"><h3>Undo and versions</h3><p>Undo and redo any time, and keep several named versions of a photo to return to.</p></div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="center">
-      <p class="eyebrow">Is it for you?</p>
-      <h2>Straight answers before you download</h2>
-    </div>
-    <div class="fit">
-      <div>
-        <h3>A good fit if you</h3>
-        <ul>
-          <li>Shoot with DJI or iPhone and want to make it look good on your Mac before sharing</li>
-          <li>Find Lightroom and Photoshop too complex and just want brightness, color and a crop</li>
-          <li>Want to finally understand what “highlights” and “shadows” really do</li>
-          <li>Like tools that never touch the original and can always undo</li>
-        </ul>
-      </div>
-      <div>
-        <h3>Not a fit yet if you</h3>
-        <ul>
-          <li>Need multi-track video editing, transitions or titles</li>
-          <li>Do in-depth RAW development or commercial-scale batch retouching</li>
-          <li>Use an Intel Mac or a system older than macOS 15</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap center">
-    <p class="eyebrow">Privacy</p>
-    <h2>Your photos stay on your Mac</h2>
-    <p class="lead">Lucet has no account and no analytics, and uploads no photos. The only thing that goes online is the optional “Ask About This Photo”: it's off by default, and after you add your own key it sends a small preview (which you can turn off) and the adjustment settings only when you click Ask. Location is never included.</p>
   </div>
 </section>
 

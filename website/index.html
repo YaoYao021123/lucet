@@ -186,6 +186,7 @@ footer .wrap{display:grid;gap:10px}
     <a class="brand" href="#top"><img src="assets/guangji-symbol-dark.svg" alt="" width="26" height="26">Lucet 光集</a>
     <div class="links">
       <a href="#why">为什么做</a>
+      <a href="#steps">怎么用</a>
       <a href="#features">功能</a>
       <a href="#dji">DJI 素材</a>
       <a href="#made">怎么做的</a>
@@ -234,6 +235,31 @@ footer .wrap{display:grid;gap:10px}
   </div>
 </section>
 
+<section id="steps">
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">三步上手</p>
+      <h2>导入、点自动、存起来</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>导入</h3><p>把照片或视频文件夹拖进窗口。同名的照片和视频会自动合成一个 Live Photo。可以打星、选用、排除，先挑出好的。</p></div>
+      <div class="step"><h3>调色</h3><p>按 <code>A</code> 自动，再挑一个预设，用六个滑块微调。想看原图，按 <code>\</code>。</p></div>
+      <div class="step"><h3>存起来</h3><p>存到「照片」，或共享给朋友。之后再回来，所有调整都还在，也可以随时撤销。</p></div>
+    </div>
+
+    <div class="window" style="margin-top:56px">
+      <img src="assets/shot-browse.jpg" width="2415" height="960" alt="光集的素材库：无人机照片、拼图 Live、Live Photo 和一段 DJI 视频的缩略图网格" loading="lazy">
+    </div>
+
+    <div class="cards">
+      <div class="card"><h3>浏览与整理</h3><p>缩略图网格显示已调色的样子。评级 0–5、选用与排除、按类型和评级筛选、搜索文件名。</p></div>
+      <div class="card"><h3>完整模式</h3><p>示波器（直方图、波形、分量、矢量）、色轮、曲线、HSL 色彩混合、风格 LUT，处理顺序固定且每一步都能单独开关对比。</p></div>
+      <div class="card"><h3>拼图 Live</h3><p>把多段 3 秒视频拼成一张 Live Photo，每个画面各自调色。</p></div>
+      <div class="card"><h3>撤销与版本</h3><p>随时撤销、重做，还可以给一张照片存多个命名版本，随时回到某一个。</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="features">
   <div class="wrap">
     <div class="center">
@@ -277,6 +303,54 @@ footer .wrap{display:grid;gap:10px}
         </ul>
       </div>
       <div class="shot"><img src="assets/panel-presets.jpg" width="660" height="880" alt="光集右侧面板：五个预设的缩略图和六个简单滑块" loading="lazy"></div>
+    </div>
+
+    <div class="feature stack">
+      <div class="text">
+        <p class="kicker">拖动裁剪</p>
+        <h3>在照片上直接拖，就像在「照片」App 里一样</h3>
+        <p>打开「构图」，整张照片会显示出来，裁剪框直接在画面上：拖动框移动，拖四个角缩放，画幅比例自动保持。拉直、旋转、镜像也都在这里，地平线歪了还会提醒你。</p>
+      </div>
+      <div class="window">
+        <img src="assets/shot-crop.jpg" width="2415" height="1514" alt="在画面上拖动裁剪框，把一张航拍照片裁成正方形" loading="lazy">
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="text">
+        <p class="kicker">存进「照片」· Live Photo</p>
+        <h3>调完，一步回到你的 iPhone</h3>
+        <p>导出时默认直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。把一段视频剪成 3 秒以内，还能做成真正的 Live Photo。想要文件也行，或者直接用系统共享发给朋友。</p>
+        <ul>
+          <li>JPEG / HEIC / PNG，可缩小到社交平台常用尺寸</li>
+          <li>HDR 照片带增益图导出，调过色也仍是 HDR</li>
+          <li><b>AI HDR 光感</b>：普通照片也能在 HDR 屏幕上发光，神经网络判断每处高光该亮多少</li>
+          <li><b>编辑 Live Photo</b> 后仍然是 Live Photo：照片和动态一起调色，导出时保留原照片、拍摄日期和地点；<b>挑封面</b>会抽帧并标出最清晰的一张（和最好的人脸）</li>
+          <li>导出预设、文件名规则（日期、序号、尺寸），以及可选的文字水印</li>
+          <li>默认保留拍摄时间、相机信息，移除位置信息</li>
+          <li>导出在后台进行，你可以接着调下一张</li>
+          <li>原片从不被修改，导出的永远是一份新副本</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/sheet-export.jpg" width="1000" height="1434" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸、文件名和水印" loading="lazy" style="width:min(100%,440px)"></div>
+    </div>
+
+    <div class="feature reverse">
+      <div class="text">
+        <p class="kicker">边调边学</p>
+        <h3>不是教程，而是讲你手上这一张</h3>
+        <p>光集会读这张照片，指出真正的问题：哪里过曝了、哪里偏色、地平线歪了多少度，并给一个可以一键试用的调整。悬停在滑块名上，画面会只高亮它影响的区域。</p>
+        <ul>
+          <li>互动课：几分钟一课，用动画和你自己的照片讲清直方图、曝光、曲线、白平衡、光圈、焦距、视频帧率和 Log，边看边动手</li>
+          <li>很多课里的画面是 3D 的，可以用手拖着转：照片的亮度变成一座山，颜色变成立方体里的一团点，光穿过镜头，快门是一块「时间的厚板」</li>
+          <li>想学才出现，从不催你：在滑块上点右键问「是做什么的？」，或点区块标题旁的小播放键；不会自己弹出来，一个开关可以整个关掉</li>
+          <li>拖动任何一个明暗滑块，直方图都会标出它改变的是哪一段（最暗部到最亮部）</li>
+          <li>可以选「入门 / 进阶 / 专业」，讲解的深浅会跟着变</li>
+          <li>想问什么，直接问：「天空为什么发灰？」（可选，需要你自己的 AI 密钥，默认关闭）</li>
+          <li>学习记录只保存在你的 Mac 上</li>
+        </ul>
+      </div>
+      <div class="shot"><img src="assets/panel-learn.jpg" width="660" height="870" alt="光集的学习面板：针对这张照片的提示、问问这张照片、学习水平选择" loading="lazy"></div>
     </div>
 
     <div class="feature">
@@ -332,18 +406,7 @@ footer .wrap{display:grid;gap:10px}
       </div>
     </div>
 
-    <div class="feature stack">
-      <div class="text">
-        <p class="kicker">拖动裁剪</p>
-        <h3>在照片上直接拖，就像在「照片」App 里一样</h3>
-        <p>打开「构图」，整张照片会显示出来，裁剪框直接在画面上：拖动框移动，拖四个角缩放，画幅比例自动保持。拉直、旋转、镜像也都在这里，地平线歪了还会提醒你。</p>
-      </div>
-      <div class="window">
-        <img src="assets/shot-crop.jpg" width="2415" height="1514" alt="在画面上拖动裁剪框，把一张航拍照片裁成正方形" loading="lazy">
-      </div>
-    </div>
-
-    <div class="feature reverse">
+    <div class="feature">
       <div class="text">
         <p class="kicker">匹配色调 · 导出 LUT</p>
         <h3>喜欢哪张的颜色，就让这张向它靠拢</h3>
@@ -400,43 +463,6 @@ footer .wrap{display:grid;gap:10px}
       </div>
     </div>
 
-    <div class="feature reverse">
-      <div class="text">
-        <p class="kicker">边调边学</p>
-        <h3>不是教程，而是讲你手上这一张</h3>
-        <p>光集会读这张照片，指出真正的问题：哪里过曝了、哪里偏色、地平线歪了多少度，并给一个可以一键试用的调整。悬停在滑块名上，画面会只高亮它影响的区域。</p>
-        <ul>
-          <li>互动课：几分钟一课，用动画和你自己的照片讲清直方图、曝光、曲线、白平衡、光圈、焦距、视频帧率和 Log，边看边动手</li>
-          <li>很多课里的画面是 3D 的，可以用手拖着转：照片的亮度变成一座山，颜色变成立方体里的一团点，光穿过镜头，快门是一块「时间的厚板」</li>
-          <li>想学才出现，从不催你：在滑块上点右键问「是做什么的？」，或点区块标题旁的小播放键；不会自己弹出来，一个开关可以整个关掉</li>
-          <li>拖动任何一个明暗滑块，直方图都会标出它改变的是哪一段（最暗部到最亮部）</li>
-          <li>可以选「入门 / 进阶 / 专业」，讲解的深浅会跟着变</li>
-          <li>想问什么，直接问：「天空为什么发灰？」（可选，需要你自己的 AI 密钥，默认关闭）</li>
-          <li>学习记录只保存在你的 Mac 上</li>
-        </ul>
-      </div>
-      <div class="shot"><img src="assets/panel-learn.jpg" width="660" height="870" alt="光集的学习面板：针对这张照片的提示、问问这张照片、学习水平选择" loading="lazy"></div>
-    </div>
-
-    <div class="feature">
-      <div class="text">
-        <p class="kicker">存进「照片」· Live Photo</p>
-        <h3>调完，一步回到你的 iPhone</h3>
-        <p>导出时默认直接存入 Mac 的「照片」，开启 iCloud 照片后会同步到 iPhone。把一段视频剪成 3 秒以内，还能做成真正的 Live Photo。想要文件也行，或者直接用系统共享发给朋友。</p>
-        <ul>
-          <li>JPEG / HEIC / PNG，可缩小到社交平台常用尺寸</li>
-          <li>HDR 照片带增益图导出，调过色也仍是 HDR</li>
-          <li><b>AI HDR 光感</b>：普通照片也能在 HDR 屏幕上发光，神经网络判断每处高光该亮多少</li>
-          <li><b>编辑 Live Photo</b> 后仍然是 Live Photo：照片和动态一起调色，导出时保留原照片、拍摄日期和地点；<b>挑封面</b>会抽帧并标出最清晰的一张（和最好的人脸）</li>
-          <li>导出预设、文件名规则（日期、序号、尺寸），以及可选的文字水印</li>
-          <li>默认保留拍摄时间、相机信息，移除位置信息</li>
-          <li>导出在后台进行，你可以接着调下一张</li>
-          <li>原片从不被修改，导出的永远是一份新副本</li>
-        </ul>
-      </div>
-      <div class="shot"><img src="assets/sheet-export.jpg" width="1000" height="1434" alt="导出窗口：保存到「照片」或文件夹，格式、质量、尺寸、文件名和水印" loading="lazy" style="width:min(100%,440px)"></div>
-    </div>
-
     <div class="feature stack">
       <div class="text">
         <p class="kicker">还有这些</p>
@@ -468,6 +494,42 @@ footer .wrap{display:grid;gap:10px}
         <p class="small" style="margin-top:16px">还在计划中：D-Log 素材自动套用转换 LUT（现在需要你自己导入对应的 LUT）。</p>
       </div>
       <div class="shot"><img src="assets/panel-info.jpg" width="660" height="1330" alt="信息面板：一段 DJI 视频的编码、帧率、码率、色彩空间和位深" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center">
+    <p class="eyebrow">隐私</p>
+    <h2>你的照片，只在你的 Mac 上</h2>
+    <p class="lead">光集没有账号，没有统计，不上传任何照片。唯一会联网的是可选的「问问这张照片」：默认关闭，你填入自己的密钥后，只有在你点「提问」时才会发送一张缩小的预览（可以关掉）和调整参数，不含拍摄地点。</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center">
+      <p class="eyebrow">适合谁</p>
+      <h2>先说清楚，省得你白下载</h2>
+    </div>
+    <div class="fit">
+      <div>
+        <h3>适合你，如果</h3>
+        <ul>
+          <li>用 DJI 或 iPhone 拍，想在 Mac 上快速调好再分享</li>
+          <li>觉得 Lightroom、Photoshop 太复杂，只想调亮度、颜色、裁一裁</li>
+          <li>想顺便弄明白「高光」「阴影」到底在调什么</li>
+          <li>喜欢原片不被动、随时能撤销的工具</li>
+        </ul>
+      </div>
+      <div>
+        <h3>暂时不适合，如果</h3>
+        <ul>
+          <li>你需要多轨道视频剪辑、转场、字幕</li>
+          <li>你要做 RAW 深度冲洗或商业级批量修图</li>
+          <li>你用的是 Intel 芯片的 Mac 或低于 macOS 15 的系统</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
@@ -526,67 +588,6 @@ footer .wrap{display:grid;gap:10px}
         <div class="us"><b>让每一个瞬间，自有光彩。</b><p>Let your moments shine.</p></div>
       </div>
     </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="center">
-      <p class="eyebrow">三步上手</p>
-      <h2>导入、点自动、存起来</h2>
-    </div>
-    <div class="steps">
-      <div class="step"><h3>导入</h3><p>把照片或视频文件夹拖进窗口。同名的照片和视频会自动合成一个 Live Photo。可以打星、选用、排除，先挑出好的。</p></div>
-      <div class="step"><h3>调色</h3><p>按 <code>A</code> 自动，再挑一个预设，用六个滑块微调。想看原图，按 <code>\</code>。</p></div>
-      <div class="step"><h3>存起来</h3><p>存到「照片」，或共享给朋友。之后再回来，所有调整都还在，也可以随时撤销。</p></div>
-    </div>
-
-    <div class="window" style="margin-top:56px">
-      <img src="assets/shot-browse.jpg" width="2415" height="960" alt="光集的素材库：无人机照片、拼图 Live、Live Photo 和一段 DJI 视频的缩略图网格" loading="lazy">
-    </div>
-
-    <div class="cards">
-      <div class="card"><h3>浏览与整理</h3><p>缩略图网格显示已调色的样子。评级 0–5、选用与排除、按类型和评级筛选、搜索文件名。</p></div>
-      <div class="card"><h3>完整模式</h3><p>示波器（直方图、波形、分量、矢量）、色轮、曲线、HSL 色彩混合、风格 LUT，处理顺序固定且每一步都能单独开关对比。</p></div>
-      <div class="card"><h3>拼图 Live</h3><p>把多段 3 秒视频拼成一张 Live Photo，每个画面各自调色。</p></div>
-      <div class="card"><h3>撤销与版本</h3><p>随时撤销、重做，还可以给一张照片存多个命名版本，随时回到某一个。</p></div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="center">
-      <p class="eyebrow">适合谁</p>
-      <h2>先说清楚，省得你白下载</h2>
-    </div>
-    <div class="fit">
-      <div>
-        <h3>适合你，如果</h3>
-        <ul>
-          <li>用 DJI 或 iPhone 拍，想在 Mac 上快速调好再分享</li>
-          <li>觉得 Lightroom、Photoshop 太复杂，只想调亮度、颜色、裁一裁</li>
-          <li>想顺便弄明白「高光」「阴影」到底在调什么</li>
-          <li>喜欢原片不被动、随时能撤销的工具</li>
-        </ul>
-      </div>
-      <div>
-        <h3>暂时不适合，如果</h3>
-        <ul>
-          <li>你需要多轨道视频剪辑、转场、字幕</li>
-          <li>你要做 RAW 深度冲洗或商业级批量修图</li>
-          <li>你用的是 Intel 芯片的 Mac 或低于 macOS 15 的系统</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap center">
-    <p class="eyebrow">隐私</p>
-    <h2>你的照片，只在你的 Mac 上</h2>
-    <p class="lead">光集没有账号，没有统计，不上传任何照片。唯一会联网的是可选的「问问这张照片」：默认关闭，你填入自己的密钥后，只有在你点「提问」时才会发送一张缩小的预览（可以关掉）和调整参数，不含拍摄地点。</p>
   </div>
 </section>
 
