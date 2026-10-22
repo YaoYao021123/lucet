@@ -156,6 +156,72 @@ struct VideoLiveTests {
         #expect(saved["exposure"] == 0.4 && saved["warmth"] == 25)
     }
 
+    @Test func gradientAndEllipseMasksGradeEveryFrameOfALive() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let raw = folder.appendingPathComponent("source.mov")
+        try await fixtureVideo(raw)
+        let clip = ClipSettings(start: 0.5, end: 2.5, cover: 1.25)
+        // Brighten the top with a gradient and darken the middle with an ellipse.
+        var sky = LocalAdjustment(shape: .linear); sky.start = CGPoint(x: 0.5, y: 0); sky.end = CGPoint(x: 0.5, y: 0.4)
+        sky.adjustments = .init(); sky.adjustments.exposure = 1
+        var spot = LocalAdjustment(shape: .radial); spot.center = CGPoint(x: 0.5, y: 0.6); spot.radii = CGSize(width: 0.15, height: 0.15)
+        spot.adjustments = .init(); spot.adjustments.exposure = -1
+        let masked = MediaEdits(locals: [sky, spot])
+        #expect(masked.hasAdjustments)
+
+        func luma(_ url: URL, at time: Double, _ y: CGFloat) async throws -> Float {
+            let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+            generator.requestedTimeToleranceBefore = .zero; generator.requestedTimeToleranceAfter = .zero
+            let image = CIImage(cgImage: try await generator.image(at: CMTime(seconds: time, preferredTimescale: 600)).image)
+            var values = [Float](repeating: 0, count: 4)
+            values.withUnsafeMutableBytes {
+                ColorPipeline.context().render(image, toBitmap: $0.baseAddress!, rowBytes: 16,
+                    bounds: CGRect(x: image.extent.midX, y: image.extent.maxY - y * image.extent.height, width: 1, height: 1), format: .RGBAf, colorSpace: ColorPipeline.outputSpace)
+            }
+            return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2]
+        }
+        let plain = try await LivePhotoPipeline.export(raw, to: folder.appendingPathComponent("plain"), clip: clip, edits: MediaEdits())
+        let graded = try await LivePhotoPipeline.export(raw, to: folder.appendingPathComponent("masked"), clip: clip, edits: masked)
+        for time in [0.1, 1.5] {   // frames before and after the cover
+            #expect(try await luma(graded.videoURL, at: time, 0.05) > luma(plain.videoURL, at: time, 0.05) + 0.05, "top lifted at \(time)")
+            #expect(try await luma(graded.videoURL, at: time, 0.6) < luma(plain.videoURL, at: time, 0.6) - 0.03, "middle darkened at \(time)")
+            #expect(abs(try await luma(graded.videoURL, at: time, 0.95) - luma(plain.videoURL, at: time, 0.95)) < 0.03, "bottom untouched at \(time)")
+        }
+    }
+
+    @Test func aFileOpeningWithAnEmptyEditStillMakesALive() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let raw = folder.appendingPathComponent("source.mov"), gapped = folder.appendingPathComponent("gapped.mov")
+        try await fixtureVideo(raw)
+        // 50 ms of nothing before the first frame, as some encoders write it.
+        let source = AVURLAsset(url: raw)
+        let composition = AVMutableComposition()
+        let track = try #require(composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid))
+        let video = try #require(try await source.loadTracks(withMediaType: .video).first)
+        try track.insertTimeRange(try await video.load(.timeRange), of: video, at: CMTime(value: 3, timescale: 60))
+        let session = try #require(AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough))
+        try await session.export(to: gapped, as: .mov)
+        let segments = try await #require(try await AVURLAsset(url: gapped).loadTracks(withMediaType: .video).first).load(.segments)
+        #expect(segments.first?.isEmpty == true, "the fixture should open with an empty edit")
+
+        let live = try await LivePhotoPipeline.export(gapped, to: folder.appendingPathComponent("Live"),
+                                                      clip: ClipSettings(start: 0, end: 2.5, cover: 1), edits: MediaEdits())
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: live.videoURL))
+        generator.requestedTimeToleranceBefore = .zero; generator.requestedTimeToleranceAfter = .zero
+        let first = CIImage(cgImage: try await generator.image(at: .zero).image)
+        var mean = [Float](repeating: 0, count: 4)
+        let average = first.applyingFilter("CIAreaAverage", parameters: [kCIInputExtentKey: CIVector(cgRect: first.extent)])
+        mean.withUnsafeMutableBytes {
+            ColorPipeline.context().render(average, toBitmap: $0.baseAddress!, rowBytes: 16, bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
+                                           format: .RGBAf, colorSpace: ColorPipeline.outputSpace)
+        }
+        #expect(mean[0] + mean[1] + mean[2] > 0.1, "the first frame is a picture, not black")
+    }
+
     @Test func canceledVideoExportNeverPublishesOutput() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -233,6 +299,36 @@ struct VideoLiveTests {
         let rms = try await audioRMS(resources.videoURL)
         #expect(rms > 0.035 && rms < 0.05)
     }
+    @Test func aiHDRMotionGlowsFrameByFrameAndPairsWithItsCover() async throws {
+        try #require(AutoHDR.shared != nil)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let source = folder.appendingPathComponent("source.mov")
+        try await fixtureVideo(source, highlights: true)
+        // The network is slow in debug builds; a small map keeps the test quick (the app works at 384).
+        MotionGain.size = 96
+        defer { MotionGain.size = 384 }
+        // A map every 0.1 s over the range, blended in between.
+        let gain = try #require(await MotionGain.make(source, from: 0.5, to: 0.7, step: 0.1))
+        #expect(gain.maps.count == 3)
+        let between = try #require(gain.at(0.65))
+        #expect(between.extent == gain.maps[0].extent)
+
+        var edits = MediaEdits(hdrEffect: true); edits.hdrAmount = 1
+        let clip = ClipSettings(start: 0.5, end: 1, cover: 0.75)
+        let live = try await LivePhotoPipeline.export(source, to: folder.appendingPathComponent("AI-HDR-Live"), clip: clip, edits: edits)
+        let meta = try await MediaInspector.inspect(live.videoURL)
+        #expect(meta.transferFunction == AVVideoTransferFunction_ITU_R_2100_HLG)
+        let cover = try ImageGradeSession.decode(live.imageURL)
+        #expect(cover.contentHeadroom > 1)
+        let maximum = cover.applyingFilter("CIAreaMaximum", parameters: [kCIInputExtentKey: CIVector(cgRect: cover.extent)])
+        var pixels = [Float](repeating: 0, count: 4)
+        pixels.withUnsafeMutableBytes { ColorPipeline.context().render(maximum, toBitmap: $0.baseAddress!, rowBytes: 16,
+            bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBAf, colorSpace: ColorPipeline.linearSpace) }
+        #expect(pixels[0] > 1.05, "the highlights glow past SDR white: \(pixels[0])")
+    }
+
     @Test func acceleratedLiveKeepsMusicDurationAndMapsCoverToOutputTime() async throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

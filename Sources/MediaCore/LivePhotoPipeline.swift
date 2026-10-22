@@ -12,9 +12,98 @@ public struct LivePhotoResources: Sendable {
     public let coverSeconds: Double
 }
 
+/// When, where and with what a movie was shot, as its metadata says.
+public struct CaptureMetadata: Sendable, Equatable {
+    public var date: Date?
+    /// ISO 6709, e.g. "+22.48617+113.91070+012.000/".
+    public var location: String?
+    public var make: String?
+    public var model: String?
+    public init(date: Date? = nil, location: String? = nil, make: String? = nil, model: String? = nil) {
+        self.date = date; self.location = location; self.make = make; self.model = model
+    }
+
+    public static func read(_ url: URL) async -> CaptureMetadata {
+        let asset = AVURLAsset(url: url)
+        var result = CaptureMetadata()
+        if let created = try? await asset.load(.creationDate) { result.date = try? await created.load(.dateValue) }
+        guard let items = try? await asset.load(.commonMetadata) else { return result }
+        func string(_ key: AVMetadataKey) async -> String? {
+            guard let item = AVMetadataItem.metadataItems(from: items, withKey: key, keySpace: .common).first,
+                  let value = try? await item.load(.stringValue)?.trimmingCharacters(in: .whitespaces), !value.isEmpty else { return nil }
+            return value
+        }
+        if result.date == nil, let text = await string(.commonKeyCreationDate) {
+            result.date = ISO8601DateFormatter().date(from: text) ?? Self.appleDate.date(from: text)
+        }
+        result.make = await string(.commonKeyMake); result.model = await string(.commonKeyModel)
+        // DJI cameras name themselves only in the encoder tag ("DJI Lito X1").
+        if result.model == nil, let software = await string(.commonKeySoftware), software.hasPrefix("DJI") { result.make = "DJI"; result.model = software }
+        if let location = await string(.commonKeyLocation), MediaDetails.parseISO6709(location) != nil { result.location = location }
+        return result
+    }
+
+    /// QuickTime's own date style ("2026-10-17T22:56:46+0800").
+    static let appleDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter
+    }()
+
+    /// EXIF, TIFF and (unless `removeLocation`) GPS for a still taken at `date`, in this Mac's time zone.
+    func imageProperties(at date: Date?, removeLocation: Bool) -> [CFString: Any] {
+        var properties: [CFString: Any] = [:]
+        var tiff: [CFString: Any] = [:]
+        if let date {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+            let offset = DateFormatter()
+            offset.locale = formatter.locale; offset.dateFormat = "xxx"
+            properties[kCGImagePropertyExifDictionary] = [
+                kCGImagePropertyExifDateTimeOriginal: formatter.string(from: date), kCGImagePropertyExifDateTimeDigitized: formatter.string(from: date),
+                kCGImagePropertyExifOffsetTimeOriginal: offset.string(from: date), kCGImagePropertyExifOffsetTimeDigitized: offset.string(from: date)
+            ]
+            tiff[kCGImagePropertyTIFFDateTime] = formatter.string(from: date)
+        }
+        if let make { tiff[kCGImagePropertyTIFFMake] = make }
+        if let model { tiff[kCGImagePropertyTIFFModel] = model }
+        if !tiff.isEmpty { properties[kCGImagePropertyTIFFDictionary] = tiff }
+        if !removeLocation, let location, let (latitude, longitude, altitude) = MediaDetails.parseISO6709(location) {
+            var gps: [CFString: Any] = [
+                kCGImagePropertyGPSLatitude: abs(latitude), kCGImagePropertyGPSLatitudeRef: latitude >= 0 ? "N" : "S",
+                kCGImagePropertyGPSLongitude: abs(longitude), kCGImagePropertyGPSLongitudeRef: longitude >= 0 ? "E" : "W"
+            ]
+            if let altitude { gps[kCGImagePropertyGPSAltitude] = abs(altitude); gps[kCGImagePropertyGPSAltitudeRef] = altitude < 0 ? 1 : 0 }
+            properties[kCGImagePropertyGPSDictionary] = gps
+        }
+        return properties
+    }
+
+    /// QuickTime metadata for a movie taken at `date`.
+    func movieMetadata(at date: Date?, removeLocation: Bool) -> [AVMetadataItem] {
+        func item(_ identifier: AVMetadataIdentifier, _ value: String) -> AVMetadataItem {
+            let item = AVMutableMetadataItem()
+            item.identifier = identifier; item.value = value as NSString; item.dataType = kCMMetadataBaseDataType_UTF8 as String
+            return item
+        }
+        var items: [AVMetadataItem] = []
+        if let date { items.append(item(.quickTimeMetadataCreationDate, Self.appleDate.string(from: date))) }
+        if !removeLocation, let location { items.append(item(.quickTimeMetadataLocationISO6709, location)) }
+        if let make { items.append(item(.quickTimeMetadataMake, make)) }
+        if let model { items.append(item(.quickTimeMetadataModel, model)) }
+        return items
+    }
+}
+
 public enum LivePhotoPipeline {
     /// Creates an atomic new folder. Original media is never modified.
+    /// - Parameter keyPhoto: the original still of a Live Photo being edited. When it is given and still matches
+    ///   the cover frame, the key photo is that picture graded at full size with its capture date, camera and
+    ///   (unless `removeLocation`) place, instead of a frame cut from the video.
+    /// - Parameter keepHDR: an HDR key photo keeps its gain map, as the iPhone wrote it (the motion stays SDR,
+    ///   like the camera's own).
     public static func export(_ url: URL, to directory: URL, clip: ClipSettings, edits: MediaEdits,
+                              keyPhoto: URL? = nil, removeLocation: Bool = true, keepHDR: Bool = true,
                               progress: (@Sendable (Double) -> Void)? = nil) async throws -> LivePhotoResources {
         guard directory.isFileURL, !FileManager.default.fileExists(atPath: directory.path) else { throw VideoWorkError.outputExists }
         let duration = try await AVURLAsset(url: url).load(.duration).seconds
@@ -29,31 +118,67 @@ public enum LivePhotoPipeline {
         } else {
             videoProgress = nil
         }
-        try await VideoPipeline.export(url, to: encoded, clip: clip, edits: edits, progress: videoProgress)
-        let asset = AVURLAsset(url: encoded)
+        let identifier = UUID().uuidString
+        let imageName = edits.hdrEffect ? "LivePhoto.heic" : "LivePhoto.jpg"
+        let imageURL = staging.appendingPathComponent(imageName)
+        let videoURL = staging.appendingPathComponent("LivePhoto.mov")
+        // Only trimmed (the cover, colour and shape untouched): the camera's movie is cut without re-encoding,
+        // so everything it wrote stays, frames and sound as well as the timed tracks the system reads (how
+        // the photo lines up with the motion, orientation, per-frame Live Photo info).
+        var trimmedCover: CMTime?
+        if keyPhoto != nil, isOnlyTrimmed(edits: edits, clip: clip) {
+            trimmedCover = try? await trimWithoutReencoding(url, clip: clip, identifier: identifier, removeLocation: removeLocation, to: videoURL)
+            if trimmedCover == nil { try? FileManager.default.removeItem(at: videoURL) } else { progress?(0.8) }
+        }
+        if trimmedCover == nil { try await VideoPipeline.export(url, to: encoded, clip: clip, edits: edits, progress: videoProgress) }
+        let asset = AVURLAsset(url: trimmedCover == nil ? encoded : videoURL)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.dynamicRangePolicy = edits.hdrEffect ? .matchSource : .forceSDR
         generator.requestedTimeToleranceBefore = .zero
         generator.requestedTimeToleranceAfter = .zero
-        let (photo, actualTime) = try await generator.image(at: CMTime(seconds: clip.outputCover, preferredTimescale: 60000))
-        let identifier = UUID().uuidString
-        let imageName = edits.hdrEffect ? "LivePhoto.heic" : "LivePhoto.jpg"
-        let imageURL = staging.appendingPathComponent(imageName)
-        let videoURL = staging.appendingPathComponent("LivePhoto.mov")
+        let (photo, generatedTime) = try await generator.image(at: trimmedCover ?? CMTime(seconds: clip.outputCover, preferredTimescale: 60000))
+        let actualTime = trimmedCover ?? generatedTime
+        // When and where: a cover cut from a clip is dated at its own moment in the clip, so a Live Photo
+        // made from a drone or camera clip sorts by when it was shot, not when it was made.
+        let capture = await CaptureMetadata.read(url)
+        let coverMoment = capture.date?.addingTimeInterval(clip.start + actualTime.seconds * clip.speed)
+        var stillDate = coverMoment
         if edits.hdrEffect {
-            try HDRExpansion.writeCover(CIImage(cgImage: photo), identifier: identifier, to: imageURL)
+            try HDRExpansion.writeCover(CIImage(cgImage: photo), identifier: identifier, to: imageURL,
+                                        properties: capture.imageProperties(at: coverMoment, removeLocation: removeLocation))
+        } else if let keyPhoto, writeOriginalKeyPhoto(keyPhoto, edits: edits, frame: photo, identifier: identifier,
+                                                       removeLocation: removeLocation, keepHDR: keepHDR, to: imageURL) {
+            // The original photo, graded, is the key photo, with its own date; the movie keeps the source's.
+            stillDate = capture.date
         } else {
-            guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
-                throw StraighteningError.renderFailed
+            var properties = capture.imageProperties(at: coverMoment, removeLocation: removeLocation)
+            properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
+            properties[kCGImagePropertyOrientation] = 1
+            properties[kCGImageDestinationLossyCompressionQuality] = 0.95
+            // AI HDR on a cover cut from the motion: the frame as graded for ordinary screens, the predicted
+            // glow as a gain map for HDR ones. The motion stays SDR.
+            if keepHDR, edits.hdrAmount > 0, let model = AutoHDR.shared, let gain = model.gain(for: photo) {
+                let base = CIImage(cgImage: photo)
+                let hdr = ColorPipeline.applyHDR(base, gain: gain, amount: edits.hdrAmount)
+                if let data = HDRGain.encode(base: base, hdr: hdr, format: .jpeg, quality: 0.95) {
+                    try ImageExporter.write(ImageExporter.Rendered(bitmap: photo, properties: properties, format: .jpeg, hdrData: data),
+                                            to: imageURL, source: url)
+                }
             }
-            CGImageDestinationAddImage(destination, photo, [
-                kCGImagePropertyMakerAppleDictionary: ["17": identifier],
-                kCGImagePropertyOrientation: 1, kCGImageDestinationLossyCompressionQuality: 0.95
-            ] as CFDictionary)
-            guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
+            if !FileManager.default.fileExists(atPath: imageURL.path) {
+                guard let destination = CGImageDestinationCreateWithURL(imageURL as CFURL, UTType.jpeg.identifier as CFString, 1, nil) else {
+                    throw StraighteningError.renderFailed
+                }
+                CGImageDestinationAddImage(destination, photo, properties as CFDictionary)
+                guard CGImageDestinationFinalize(destination) else { throw StraighteningError.renderFailed }
+            }
         }
-        try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration)
+        if trimmedCover == nil {
+            // Re-encoded: the camera's clip-wide Live Photo tags still apply; its per-frame tracks would not.
+            try await pairMovie(asset, to: videoURL, identifier: identifier, coverTime: actualTime, duration: clip.outputDuration,
+                                metadata: capture.movieMetadata(at: stillDate, removeLocation: removeLocation) + appleLiveTags(of: url))
+        }
         progress?(0.9)
         // Decode through Photos before publishing, so an invalid pair is not
         // presented as a successful Live export. No photo-library access occurs.
@@ -69,16 +194,84 @@ public enum LivePhotoPipeline {
             "lutEncoding": edits.lut?.encoding.rawValue ?? "none",
             "originalVolume": clip.originalVolume, "music": clip.musicURL?.lastPathComponent ?? "none",
             "musicVolume": clip.musicVolume, "hdrEffect": edits.hdrEffect,
-            "output": edits.hdrEffect ? "SDR-derived HDR effect: HEIC gain map + HEVC Main10 Rec.2020 HLG MOV" : "SDR sRGB JPEG + Rec.709 MOV",
+            "output": edits.hdrEffect ? "SDR-derived HDR effect: HEIC gain map + HEVC Main10 Rec.2020 HLG MOV"
+                : trimmedCover != nil ? "original movie trimmed without re-encoding" : "SDR sRGB JPEG + Rec.709 MOV",
             "identifier": identifier]
         try JSONSerialization.data(withJSONObject: recipe, options: [.prettyPrinted, .sortedKeys])
             .write(to: staging.appendingPathComponent("recipe.json"), options: .withoutOverwriting)
-        try FileManager.default.removeItem(at: encoded)
+        try? FileManager.default.removeItem(at: encoded)
         try Task.checkCancellation()
         try FileManager.default.moveItem(at: staging, to: directory)
         progress?(1)
         return LivePhotoResources(imageURL: directory.appendingPathComponent(imageName),
             videoURL: directory.appendingPathComponent("LivePhoto.mov"), identifier: identifier, coverSeconds: actualTime.seconds)
+    }
+
+    /// Nothing but the range (and the cover, which the caller checks) differs from the camera's movie.
+    static func isOnlyTrimmed(edits: MediaEdits, clip: ClipSettings) -> Bool {
+        !edits.hasGrade && !edits.hasGeometry && !edits.hdrEffect && clip.speed == 1 && clip.musicURL == nil && clip.originalVolume == 1
+    }
+
+    /// Cuts a Live Photo's movie to the clip as it is (passthrough), with a new content identifier and, for
+    /// sharing, without its place. Returns the photo's time in the cut movie, or nil when the cut isn't a usable
+    /// Live movie (not a Live movie, or the photo's moment fell outside the range); the caller renders one then.
+    private static func trimWithoutReencoding(_ url: URL, clip: ClipSettings, identifier: String, removeLocation: Bool,
+                                              to output: URL) async throws -> CMTime? {
+        let asset = AVURLAsset(url: url)
+        guard try await coverTime(in: url) != nil,
+              let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough) else { return nil }
+        session.timeRange = CMTimeRange(start: CMTime(seconds: clip.start, preferredTimescale: 60000),
+                                        end: CMTime(seconds: clip.end, preferredTimescale: 60000))
+        var metadata: [AVMetadataItem] = []
+        for item in try await asset.load(.metadata) {
+            guard let key = item.identifier, key != .quickTimeMetadataContentIdentifier else { continue }
+            if removeLocation, key == .quickTimeMetadataLocationISO6709 || key == .quickTimeUserDataLocationISO6709
+                || key.rawValue.hasPrefix("mdta/com.apple.quicktime.location") { continue }
+            metadata.append(item)
+        }
+        let contentID = AVMutableMetadataItem()
+        contentID.identifier = .quickTimeMetadataContentIdentifier
+        contentID.value = identifier as NSString
+        contentID.dataType = kCMMetadataBaseDataType_UTF8 as String
+        session.metadata = metadata + [contentID]
+        try await session.export(to: output, as: .mov)
+        guard let cover = try await coverTime(in: output), abs(cover - clip.outputCover) < 0.05 else { return nil }
+        return CMTime(seconds: cover, preferredTimescale: 60000)
+    }
+
+    /// The camera's clip-wide Live Photo tags (the motion "vitality" score, the auto flag, the playback intent):
+    /// true of the moment whatever the grade. Nothing that names the content, date, place or camera.
+    static func appleLiveTags(of url: URL) async -> [AVMetadataItem] {
+        guard let items = try? await AVURLAsset(url: url).load(.metadata) else { return [] }
+        var tags: [AVMetadataItem] = []
+        for item in items {
+            guard let key = item.identifier?.rawValue,
+                  key.hasPrefix("mdta/com.apple.quicktime.live-photo.") || key == "mdta/com.apple.quicktime.full-frame-rate-playback-intent",
+                  let value = try? await item.load(.value) else { continue }
+            let copy = AVMutableMetadataItem()
+            copy.identifier = item.identifier; copy.value = value; copy.dataType = item.dataType
+            tags.append(copy)
+        }
+        return tags
+    }
+
+    /// Grades the original still with the same edits as the movie and writes it as the Live Photo's key photo.
+    /// Returns false (so the caller falls back to a video frame) when it can't be used: it must have the
+    /// same shape as the movie, or the pair would show a jump between the still and the motion.
+    private static func writeOriginalKeyPhoto(_ original: URL, edits: MediaEdits, frame: CGImage, identifier: String,
+                                              removeLocation: Bool, keepHDR: Bool, to imageURL: URL) -> Bool {
+        var photoEdits = edits
+        photoEdits.hdrEffect = false
+        var options = ImageExportOptions()
+        options.format = .jpeg; options.quality = 0.95; options.keepMetadata = true
+        options.removeLocation = removeLocation; options.keepHDR = keepHDR
+        guard let rendered = try? ImageExporter.render(original, edits: photoEdits, options: options) else { return false }
+        let stillShape = Double(rendered.width) / Double(rendered.height), movieShape = Double(frame.width) / Double(frame.height)
+        guard abs(stillShape - movieShape) / movieShape < 0.02 else { return false }
+        var properties = rendered.properties
+        properties[kCGImagePropertyMakerAppleDictionary] = ["17": identifier]
+        let paired = ImageExporter.Rendered(bitmap: rendered.bitmap, properties: properties, format: rendered.format, hdrData: rendered.hdrData)
+        return (try? ImageExporter.write(paired, to: imageURL, source: original)) != nil
     }
 
     public static func load(imageURL: URL, videoURL: URL) async throws -> PHLivePhoto {
@@ -87,7 +280,7 @@ public enum LivePhotoPipeline {
                                 targetSize: CGSize(width: 1200, height: 1200), contentMode: .aspectFit) { photo, info in
                 guard !(info[PHLivePhotoInfoIsDegradedKey] as? Bool ?? false) else { return }
                 if let photo { continuation.resume(returning: photo) }
-                else { continuation.resume(throwing: info[PHLivePhotoInfoErrorKey] as? Error ?? VideoWorkError.failed("系统未识别 Live Photo 配对")) }
+                else { continuation.resume(throwing: info[PHLivePhotoInfoErrorKey] as? Error ?? VideoWorkError.failed(L("系统未识别 Live Photo 配对"))) }
             }
         }
     }
@@ -117,7 +310,7 @@ public enum LivePhotoPipeline {
             guard reader.canAdd(output) else { continue }
             reader.add(output)
             let adaptor = AVAssetReaderOutputMetadataAdaptor(assetReaderTrackOutput: output)
-            guard reader.startReading() else { throw reader.error ?? VideoWorkError.failed("无法读取 Live 封面时间") }
+            guard reader.startReading() else { throw reader.error ?? VideoWorkError.failed(L("无法读取 Live 封面时间")) }
             defer { reader.cancelReading() }
             // Only a short Live resource is inspected; cap ancillary camera
             // metadata groups instead of scanning an arbitrary movie forever.
@@ -133,14 +326,15 @@ public enum LivePhotoPipeline {
         return nil
     }
 
-    private static func pairMovie(_ asset: AVAsset, to output: URL, identifier: String, coverTime: CMTime, duration: Double) async throws {
+    private static func pairMovie(_ asset: AVAsset, to output: URL, identifier: String, coverTime: CMTime, duration: Double,
+                                  metadata: [AVMetadataItem] = []) async throws {
         let reader = try AVAssetReader(asset: asset)
         let writer = try AVAssetWriter(outputURL: output, fileType: .mov)
         let contentID = AVMutableMetadataItem()
         contentID.identifier = .quickTimeMetadataContentIdentifier
         contentID.value = identifier as NSString
         contentID.dataType = kCMMetadataBaseDataType_UTF8 as String
-        writer.metadata = [contentID]
+        writer.metadata = [contentID] + metadata
         var channels: [(AVAssetReaderTrackOutput, AVAssetWriterInput)] = []
         for type in [AVMediaType.video, .audio] {
             for track in try await asset.loadTracks(withMediaType: type) {
@@ -150,7 +344,7 @@ public enum LivePhotoPipeline {
                 read.alwaysCopiesSampleData = false
                 let write = AVAssetWriterInput(mediaType: type, outputSettings: nil, sourceFormatHint: format)
                 if type == .video { write.transform = try await track.load(.preferredTransform) }
-                guard reader.canAdd(read), writer.canAdd(write) else { throw VideoWorkError.failed("无法添加配对轨道") }
+                guard reader.canAdd(read), writer.canAdd(write) else { throw VideoWorkError.failed(L("无法添加配对轨道")) }
                 reader.add(read); writer.add(write); channels.append((read, write))
             }
         }
@@ -160,12 +354,12 @@ public enum LivePhotoPipeline {
             kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType as String: kCMMetadataBaseDataType_SInt8]
         guard CMMetadataFormatDescriptionCreateWithMetadataSpecifications(allocator: kCFAllocatorDefault,
             metadataType: kCMMetadataFormatType_Boxed, metadataSpecifications: [spec] as CFArray,
-            formatDescriptionOut: &metadataFormat) == noErr, let metadataFormat else { throw VideoWorkError.failed("封面时间格式无效") }
+            formatDescriptionOut: &metadataFormat) == noErr, let metadataFormat else { throw VideoWorkError.failed(L("封面时间格式无效")) }
         let metadataInput = AVAssetWriterInput(mediaType: .metadata, outputSettings: nil, sourceFormatHint: metadataFormat)
         let adaptor = AVAssetWriterInputMetadataAdaptor(assetWriterInput: metadataInput)
-        guard writer.canAdd(metadataInput) else { throw VideoWorkError.failed("无法写入封面时间") }
+        guard writer.canAdd(metadataInput) else { throw VideoWorkError.failed(L("无法写入封面时间")) }
         writer.add(metadataInput)
-        guard writer.startWriting(), reader.startReading() else { throw writer.error ?? reader.error ?? VideoWorkError.failed("配对写入未开始") }
+        guard writer.startWriting(), reader.startReading() else { throw writer.error ?? reader.error ?? VideoWorkError.failed(L("配对写入未开始")) }
         writer.startSession(atSourceTime: .zero)
         let still = AVMutableMetadataItem()
         still.keySpace = .quickTimeMetadata; still.key = "com.apple.quicktime.still-image-time" as NSString
@@ -174,30 +368,30 @@ public enum LivePhotoPipeline {
         do {
             while !metadataInput.isReadyForMoreMediaData {
                 try Task.checkCancellation()
-                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed("封面时间轨道未就绪") }
+                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed(L("封面时间轨道未就绪")) }
                 try await Task.sleep(for: .milliseconds(2))
             }
-            guard adaptor.append(group) else { throw writer.error ?? VideoWorkError.failed("封面时间写入失败") }
+            guard adaptor.append(group) else { throw writer.error ?? VideoWorkError.failed(L("封面时间写入失败")) }
             metadataInput.markAsFinished()
             var finished = Set<Int>()
             while finished.count < channels.count {
                 try Task.checkCancellation()
-                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed("配对写入中断") }
+                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed(L("配对写入中断")) }
                 var advanced = false
                 for (index, channel) in channels.enumerated() where !finished.contains(index) && channel.1.isReadyForMoreMediaData {
                     if let sample = channel.0.copyNextSampleBuffer() {
-                        guard channel.1.append(sample) else { throw writer.error ?? VideoWorkError.failed("媒体样本写入失败") }
+                        guard channel.1.append(sample) else { throw writer.error ?? VideoWorkError.failed(L("媒体样本写入失败")) }
                     } else { channel.1.markAsFinished(); finished.insert(index) }
                     advanced = true
                 }
                 if !advanced { try await Task.sleep(for: .milliseconds(2)) }
             }
-            guard reader.status == .completed else { throw reader.error ?? VideoWorkError.failed("配对读取失败") }
+            guard reader.status == .completed else { throw reader.error ?? VideoWorkError.failed(L("配对读取失败")) }
             // Keep Live length exact even when the final 59.94 fps sample
             // straddles the requested end time by a fraction of a frame.
             writer.endSession(atSourceTime: CMTime(seconds: duration, preferredTimescale: 60000))
             await writer.finishWriting()
-            guard writer.status == .completed else { throw writer.error ?? VideoWorkError.failed("配对未完成") }
+            guard writer.status == .completed else { throw writer.error ?? VideoWorkError.failed(L("配对未完成")) }
         } catch { reader.cancelReading(); writer.cancelWriting(); throw error }
     }
 }

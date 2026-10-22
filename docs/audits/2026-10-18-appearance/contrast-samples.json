@@ -1,0 +1,178 @@
+[
+  {
+    "id": "parameter",
+    "screenshot": "03-basic-expanded.png",
+    "bounds_px": [
+      2240,
+      780,
+      2315,
+      812
+    ],
+    "foreground_srgb": [
+      124,
+      117,
+      132
+    ],
+    "background_srgb": [
+      45,
+      37,
+      52
+    ],
+    "approximate_ratio": 3.32,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "project",
+    "screenshot": "01-browse-current.png",
+    "bounds_px": [
+      30,
+      340,
+      437,
+      390
+    ],
+    "foreground_srgb": [
+      90,
+      89,
+      100
+    ],
+    "background_srgb": [
+      33,
+      31,
+      43
+    ],
+    "approximate_ratio": 2.36,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "duration",
+    "screenshot": "04-learn.png",
+    "bounds_px": [
+      2796,
+      396,
+      2857,
+      420
+    ],
+    "foreground_srgb": [
+      97,
+      93,
+      114
+    ],
+    "background_srgb": [
+      43,
+      39,
+      59
+    ],
+    "approximate_ratio": 2.28,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "lesson-help",
+    "screenshot": "05-lesson.png",
+    "bounds_px": [
+      1455,
+      344,
+      1905,
+      375
+    ],
+    "foreground_srgb": [
+      96,
+      94,
+      104
+    ],
+    "background_srgb": [
+      40,
+      38,
+      50
+    ],
+    "approximate_ratio": 2.33,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "metadata",
+    "screenshot": "08-system-light-info.png",
+    "bounds_px": [
+      2240,
+      500,
+      2340,
+      532
+    ],
+    "foreground_srgb": [
+      126,
+      118,
+      134
+    ],
+    "background_srgb": [
+      45,
+      37,
+      53
+    ],
+    "approximate_ratio": 3.38,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "preset",
+    "screenshot": "14-simple.png",
+    "bounds_px": [
+      2440,
+      503,
+      2517,
+      529
+    ],
+    "foreground_srgb": [
+      123,
+      119,
+      140
+    ],
+    "background_srgb": [
+      43,
+      39,
+      59
+    ],
+    "approximate_ratio": 3.34,
+    "method": "ICC to sRGB; median of brightest 2% and darkest 35%; raster estimate only"
+  },
+  {
+    "id": "transport",
+    "foreground_srgb": [
+      255,
+      255,
+      255
+    ],
+    "background_srgb": [
+      210,
+      210,
+      210
+    ],
+    "approximate_ratio": 1.51,
+    "screenshot": "12-system-dark-audio.png",
+    "bounds_px": [
+      615,
+      1318,
+      673,
+      1377
+    ],
+    "method": "representative solid colors in screenshot"
+  },
+  {
+    "id": "export",
+    "foreground_srgb": [
+      255,
+      255,
+      255
+    ],
+    "background_srgb": [
+      106,
+      153,
+      206
+    ],
+    "approximate_ratio": 2.97,
+    "screenshot": "15-photo-export.png",
+    "bounds_px": [
+      560,
+      474,
+      669,
+      519
+    ],
+    "method": "representative colors; system-drawn control, approximate"
+  }
+]
