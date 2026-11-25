@@ -12,10 +12,10 @@ public enum VideoWorkError: Error, LocalizedError {
     case invalidRange, missingTrack, outputExists, failed(String)
     public var errorDescription: String? {
         switch self {
-        case .invalidRange: "片段起止时间或封面时间无效。"
-        case .missingTrack: "没有可用的视频或音频轨道。"
-        case .outputExists: "目标已存在，请选择新的文件名。"
-        case .failed(let detail): "媒体处理失败：\(detail)"
+        case .invalidRange: L("片段起止时间或封面时间无效。")
+        case .missingTrack: L("没有可用的视频或音频轨道。")
+        case .outputExists: L("目标已存在，请选择新的文件名。")
+        case .failed(let detail): L("媒体处理失败：\(detail)")
         }
     }
 }
@@ -64,6 +64,52 @@ public struct PreparedVideo {
     public let duration: Double
 }
 
+public enum VideoCodecChoice: String, Codable, CaseIterable, Sendable {
+    case h264, hevc
+    public var title: String { self == .h264 ? L("H.264（兼容）") : L("HEVC（更小）") }
+    var preset: String { self == .h264 ? AVAssetExportPresetHighestQuality : AVAssetExportPresetHEVCHighestQuality }
+}
+
+/// AI HDR for the motion (experimental): gain maps worked out on frames a short step apart and blended in
+/// between, so the glow follows the picture without flickering.
+struct MotionGain: @unchecked Sendable {
+    let start: Double
+    let step: Double
+    let maps: [CIImage]
+    /// Long side the glow is worked out at; the gain map is smooth, so small is enough. Tests lower it.
+    nonisolated(unsafe) static var size = 384
+
+    /// The gain at a moment of the source movie.
+    func at(_ seconds: Double) -> CIImage? {
+        guard let first = maps.first else { return nil }
+        guard maps.count > 1, step > 0 else { return first }
+        let position = min(Double(maps.count - 1), max(0, (seconds - start) / step))
+        let index = min(maps.count - 2, Int(position)), fraction = position - Double(index)
+        return maps[index + 1].applyingFilter("CIDissolveTransition", parameters: [kCIInputTargetImageKey: maps[index], kCIInputTimeKey: 1 - fraction])
+            .cropped(to: first.extent)
+    }
+
+    /// Gain maps every `step` seconds over a range of the source (a single map when the range is a moment).
+    static func make(_ url: URL, from start: Double, to end: Double, step: Double) async -> MotionGain? {
+        guard let model = AutoHDR.shared else { return nil }
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.dynamicRangePolicy = .forceSDR
+        generator.maximumSize = CGSize(width: 512, height: 512)
+        let tolerance = CMTime(value: 1, timescale: 60)
+        generator.requestedTimeToleranceBefore = tolerance; generator.requestedTimeToleranceAfter = tolerance
+        let count = end > start ? Int(((end - start) / step).rounded(.up)) + 1 : 1
+        var frames: [CGImage] = []
+        for index in 0..<count {
+            guard !Task.isCancelled,
+                  let frame = try? await generator.image(at: CMTime(seconds: min(end, start + Double(index) * step), preferredTimescale: 600)).image else { return nil }
+            frames.append(frame)
+        }
+        let maps = model.gains(for: frames, size: size)
+        return maps.isEmpty ? nil : MotionGain(start: start, step: step, maps: maps)
+    }
+}
+
 public enum VideoPipeline {
     /// Previews and exports the same selected range, geometry, LUT and audio mix.
     public static func prepare(_ url: URL, clip: ClipSettings, edits: MediaEdits,
@@ -76,8 +122,12 @@ public enum VideoPipeline {
         guard let video = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
             throw VideoWorkError.missingTrack
         }
-        let range = CMTimeRange(start: CMTime(seconds: clip.start, preferredTimescale: 600),
-                                duration: CMTime(seconds: clip.end - clip.start, preferredTimescale: 600))
+        // Some encoders open a file with a few milliseconds of nothing (an empty edit); a frame there has no
+        // picture, so the range starts at the first real frame.
+        let firstFrame = try await sourceVideo.load(.segments).first { !$0.isEmpty }?.timeMapping.target.start ?? .zero
+        let end = CMTime(seconds: clip.end, preferredTimescale: 60000)
+        let start = min(max(CMTime(seconds: clip.start, preferredTimescale: 60000), firstFrame), end - CMTime(seconds: 0.05, preferredTimescale: 60000))
+        let range = CMTimeRange(start: start, end: end)
         try video.insertTimeRange(range, of: sourceVideo, at: .zero)
         video.preferredTransform = try await sourceVideo.load(.preferredTransform)
         var mixInputs: [AVMutableAudioMixInputParameters] = []
@@ -118,6 +168,14 @@ public enum VideoPipeline {
         let transfer = extensions?[kCMFormatDescriptionExtension_TransferFunction as String] as? String
         let sourceIsHDR = transfer == AVVideoTransferFunction_ITU_R_2100_HLG || transfer == AVVideoTransferFunction_SMPTE_ST_2084_PQ
         var filtered: AVVideoComposition?
+        // AI HDR on the motion: both HDR switches on, for an ordinary source. Exports work out the glow every
+        // 0.1 s (at most 300 times); the preview uses the cover's for the whole clip.
+        var motionGain: MotionGain?
+        if edits.hdrEffect, edits.hdrAmount > 0, !sourceIsHDR {
+            motionGain = preview == nil
+                ? await MotionGain.make(url, from: clip.start, to: clip.end, step: max(0.1, (clip.end - clip.start) / 300))
+                : await MotionGain.make(url, from: clip.cover, to: clip.cover, step: 1)
+        }
         if sdr || edits.hasLUT || edits.hasAdjustments || edits.hasGeometry || edits.hdrEffect {
             let context = ColorPipeline.context()
             let natural = try await sourceVideo.load(.naturalSize)
@@ -128,7 +186,8 @@ public enum VideoPipeline {
             let previewSize = CGSize(width: previewWidth, height: previewHeight)
             let value = try await AVMutableVideoComposition.videoComposition(with: composition, applyingCIFiltersWithHandler: { request in
                 do {
-                    let settings = preview?.snapshot() ?? edits
+                    let showOriginal = preview?.showsOriginal == true
+                    let settings = showOriginal ? MediaEdits() : (preview?.snapshot() ?? edits)
                     // This path is deliberately SDR; the unfiltered AVPlayer path
                     // retains the source HDR transfer function for native playback.
                     // Rec.709 composition properties below ask AVFoundation to
@@ -137,13 +196,21 @@ public enum VideoPipeline {
                     // An HLG composition gives SDR frames an HDR container's
                     // headroom metadata. It does not make those source pixels
                     // HDR; tone mapping that metadata would darken white twice.
-                    let source = settings.hdrEffect && !sourceIsHDR ? request.sourceImage
-                        : ColorPipeline.toneMap(request.sourceImage, sourceHeadroom: max(1, request.sourceImage.contentHeadroom))
+                    // A moment with no frame (a gap in the file) arrives as an endless empty picture; give it the clip's size.
+                    let picture = request.sourceImage.extent.isInfinite ? request.sourceImage.cropped(to: CGRect(origin: .zero, size: size)) : request.sourceImage
+                    let source = settings.hdrEffect && !sourceIsHDR && !showOriginal ? picture
+                        : ColorPipeline.toneMap(picture, sourceHeadroom: max(1, picture.contentHeadroom))
                     // Scale before grading: 4K source decoding is retained, but
                     // interactive LUT/HDR/geometry work uses a bounded canvas.
                     let small = preview == nil ? source : source.transformed(by: .init(scaleX: previewScale, y: previewScale))
                     let graded = try ColorPipeline.grade(small, edits: settings)
-                    let expanded = settings.hdrEffect ? try HDRExpansion.image(graded) : graded
+                    let expanded: CIImage
+                    if settings.hdrEffect, settings.hdrAmount > 0, let motionGain,
+                       let gain = motionGain.at(clip.start + request.compositionTime.seconds * clip.speed) {
+                        expanded = ColorPipeline.applyHDR(graded, gain: gain, amount: settings.hdrAmount)
+                    } else {
+                        expanded = settings.hdrEffect ? try HDRExpansion.image(graded) : graded
+                    }
                     var frame = try ColorPipeline.geometry(expanded, edits: settings)
                     if preview != nil {
                         // A stable canvas permits angle changes without replacing
@@ -177,6 +244,7 @@ public enum VideoPipeline {
     }
 
     public static func export(_ url: URL, to output: URL, clip: ClipSettings, edits: MediaEdits,
+                              codec: VideoCodecChoice = .h264,
                               progress: (@Sendable (Double) -> Void)? = nil) async throws {
         try Task.checkCancellation()
         guard output.isFileURL, !FileManager.default.fileExists(atPath: output.path) else { throw VideoWorkError.outputExists }
@@ -190,8 +258,8 @@ public enum VideoPipeline {
             progress?(1)
             return
         }
-        guard let exporter = AVAssetExportSession(asset: prepared.asset, presetName: AVAssetExportPresetHighestQuality) else {
-            throw VideoWorkError.failed("无法创建编码器")
+        guard let exporter = AVAssetExportSession(asset: prepared.asset, presetName: codec.preset) else {
+            throw VideoWorkError.failed(L("无法创建编码器"))
         }
         exporter.videoComposition = prepared.videoComposition; exporter.audioMix = prepared.audioMix
         exporter.audioTimePitchAlgorithm = .spectral
@@ -248,21 +316,21 @@ public enum VideoPipeline {
             channels.append((readAudio, writeAudio))
         }
         for (read, write) in channels {
-            guard reader.canAdd(read), writer.canAdd(write) else { throw VideoWorkError.failed("HDR 编码器不支持当前轨道") }
+            guard reader.canAdd(read), writer.canAdd(write) else { throw VideoWorkError.failed(L("HDR 编码器不支持当前轨道")) }
             reader.add(read); writer.add(write)
         }
-        guard writer.startWriting(), reader.startReading() else { throw writer.error ?? reader.error ?? VideoWorkError.failed("HDR 编码未开始") }
+        guard writer.startWriting(), reader.startReading() else { throw writer.error ?? reader.error ?? VideoWorkError.failed(L("HDR 编码未开始")) }
         writer.startSession(atSourceTime: .zero)
         do {
             var finished = Set<Int>()
             var reported = 0.0
             while finished.count < channels.count {
                 try Task.checkCancellation()
-                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed("HDR 编码中断") }
+                guard writer.status == .writing else { throw writer.error ?? VideoWorkError.failed(L("HDR 编码中断")) }
                 var advanced = false
                 for (index, channel) in channels.enumerated() where !finished.contains(index) && channel.1.isReadyForMoreMediaData {
                     if let sample = channel.0.copyNextSampleBuffer() {
-                        guard channel.1.append(sample) else { throw writer.error ?? VideoWorkError.failed("HDR 样本写入失败") }
+                        guard channel.1.append(sample) else { throw writer.error ?? VideoWorkError.failed(L("HDR 样本写入失败")) }
                         if index == 0 {
                             let fraction = min(0.99, CMSampleBufferGetPresentationTimeStamp(sample).seconds / prepared.duration)
                             if fraction - reported >= 0.02 { progress?(fraction); reported = fraction }
@@ -272,10 +340,10 @@ public enum VideoPipeline {
                 }
                 if !advanced { try await Task.sleep(for: .milliseconds(2)) }
             }
-            guard reader.status == .completed else { throw reader.error ?? VideoWorkError.failed("HDR 读取未完成") }
+            guard reader.status == .completed else { throw reader.error ?? VideoWorkError.failed(L("HDR 读取未完成")) }
             writer.endSession(atSourceTime: CMTime(seconds: prepared.duration, preferredTimescale: 60000))
             await writer.finishWriting()
-            guard writer.status == .completed else { throw writer.error ?? VideoWorkError.failed("HDR 导出未完成") }
+            guard writer.status == .completed else { throw writer.error ?? VideoWorkError.failed(L("HDR 导出未完成")) }
         } catch { reader.cancelReading(); writer.cancelWriting(); throw error }
     }
 }
